@@ -1,0 +1,12 @@
+INCLUDES = -Iinclude
+WARNINGS = -Wall -Wextra -Wstrict-aliasing
+CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
+CXXFLAGS_DEBUG = $(CXXFLAGS) -g3 -O0
+LDFLAGS  =
+CXX      = clang++
+
+!cxx_c_debug = |> ^ c++ %f^ $(CXX) $(CXXFLAGS_DEBUG) -c %f -o %o |>
+!cxx_link = |> ^ link %f^ $(CXX) $(LDFLAGS) %f -o %o |>
+
+: foreach src/dort/*.cpp |> !cxx_c_debug |> build/d/%B.o {debug_objs}
+: {debug_objs} |> !cxx_link |> build/d/dort
