@@ -3,15 +3,16 @@
 #include "dort/geometry.hpp"
 
 namespace dort {
-  struct Hit {
-    float t;
-    float ray_epsilon;
+  struct DiffGeom {
     Point p;
-    Vector normal;
+    Normal nn;
   };
 
   class Shape {
   public:
-    virtual bool hit(const Ray& ray, Hit& out_hit) const = 0;;
+    Shape() {}
+    virtual bool hit(const Ray& ray, float& out_t_hit,
+        float& out_ray_epsilon, DiffGeom& out_diff_geom) const = 0;
+    virtual Box bound() const = 0;
   };
 }

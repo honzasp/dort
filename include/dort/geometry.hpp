@@ -3,6 +3,10 @@
 #include "dort/vec.hpp"
 
 namespace dort {
+  struct Point;
+  struct Vector;
+  struct Normal;
+
   struct Point {
     Vec3 v;
 
@@ -17,6 +21,15 @@ namespace dort {
     Vector(): v() {}
     Vector(float x, float y, float z): v(x, y, z) {}
     explicit Vector(const Vec3& v): v(v) {}
+  };
+
+  struct Normal {
+    Vec3 v;
+
+    Normal(): v() {}
+    Normal(float x, float y, float z): v(x, y, z) {}
+    explicit Normal(const Vec3& v): v(v) {}
+    explicit Normal(const Vector& vec): v(vec.v) {}
   };
 
   inline Point operator+(const Point& pt, const Vector& vec) {
@@ -40,16 +53,31 @@ namespace dort {
     return dot(vec1.v, vec2.v);
   }
 
+  inline Normal operator+(const Normal& n1, const Normal& n2) {
+    return Normal(n1.v + n2.v);
+  }
+
+  inline Normal normalize(const Normal& norm) {
+    return Normal(normalize(norm.v));
+  }
+
+  inline float dot(const Normal& n1, const Normal& n2) {
+    return dot(n1.v, n2.v);
+  }
+
   template<class T>
   float abs_dot(const T& v1, const T& v2) {
     return abs(dot(v1, v2));
   }
 
-  inline bool is_finite(Vector vec) {
+  inline bool is_finite(const Vector& vec) {
     return is_finite(vec.v);
   }
-  inline bool is_finite(Point pt) {
+  inline bool is_finite(const Point& pt) {
     return is_finite(pt.v);
+  }
+  inline bool is_finite(const Normal& norm) {
+    return is_finite(norm.v);
   }
 
   struct Ray {
@@ -66,4 +94,17 @@ namespace dort {
       return this->orig + this->dir * t;
     }
   };
+
+  struct Box {
+    Point p_min;
+    Point p_max;
+
+    Box(): 
+      p_min(INFINITY, INFINITY, INFINITY),
+      p_max(-INFINITY, INFINITY, INFINITY) { }
+    Box(const Point& p_min, const Point& p_max):
+      p_min(p_min), p_max(p_max) { }
+  };
+
+  Box union_box(const Box& b1, const Box& b2);
 }

@@ -2,6 +2,8 @@
 #include <memory>
 #include <vector>
 #include "dort/main.hpp"
+#include "dort/geometric_primitive.hpp"
+#include "dort/list_primitive.hpp"
 #include "dort/sphere.hpp"
 
 namespace dort {
@@ -10,23 +12,33 @@ namespace dort {
     uint32_t img_height = 400;
     float scale = 0.1f;
 
-    std::unique_ptr<Shape> shape(new Sphere(10.f));
+    auto sphere = std::make_shared<Sphere>(10.f);
+    auto red = Spectrum::from_rgb(1.f, 0.f, 0.f);
+    auto green = Spectrum::from_rgb(0.f, 1.f, 0.f);
 
-    std::vector<float> image(img_width * img_height);
+    std::vector<std::unique_ptr<Primitive>> prims;
+    prims.push_back(std::unique_ptr<Primitive>(
+          new GeometricPrimitive(sphere, red)));
+
+    std::unique_ptr<Primitive> root_prim(new ListPrimitive(std::move(prims)));
+
+    std::vector<RgbSpectrum> image(img_width * img_height);
     for(uint32_t y = 0; y < img_height; ++y) {
       for(uint32_t x = 0; x < img_width; ++x) {
         float world_x = float(x) * scale - float(img_width) * 0.5f * scale;
         float world_y = float(y) * scale - float(img_height) * 0.5f * scale;
 
         Ray ray(Point(world_x, world_y, -10.f), Vector(0.f, 0.f, 1.f));
-        Hit hit;
-        float pixel;
-        if(shape->hit(ray, hit)) {
-          assert_2(is_finite(ray.dir));
-          assert_2(is_finite(hit.normal));
-          pixel = abs_dot(ray.dir, normalize(hit.normal));
+        Intersection isect;
+        Spectrum pixel;
+        if(root_prim->intersect(ray, isect)) {
+          assert(is_finite(ray.dir));
+          assert(is_finite(isect.diff_geom.nn));
+          Spectrum color = isect.primitive->get_color(isect.diff_geom);
+          Normal ray_nn = Normal(normalize(ray.dir));
+          pixel = abs_dot(ray_nn, isect.diff_geom.nn) * color;
         } else {
-          pixel = 1.f;
+          pixel = Spectrum::from_rgb(0.f, 0.f, 1.f);
         }
 
         image.at(y * img_width + x) = pixel;
@@ -35,9 +47,11 @@ namespace dort {
 
     FILE* output = std::fopen("output.ppm", "w");
     std::fprintf(output, "P6 %u %u 255\n", img_width, img_height);
-    for(float pixel: image) {
-      uint8_t level = clamp(floor_int32(256.f * pixel), 0, 255);
-      uint8_t rgb[3] = { level, level, level };
+    for(Spectrum pixel: image) {
+      uint8_t r_level = clamp(floor_int32(256.f * pixel.red()), 0, 255);
+      uint8_t g_level = clamp(floor_int32(256.f * pixel.green()), 0, 255);
+      uint8_t b_level = clamp(floor_int32(256.f * pixel.blue()), 0, 255);
+      uint8_t rgb[3] = { r_level, g_level, b_level };
       std::fwrite(rgb, 3, 1, output);
     }
     std::fclose(output);

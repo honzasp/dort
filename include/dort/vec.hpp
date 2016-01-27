@@ -26,7 +26,7 @@ namespace dort {
     }
 
     float operator[](uint32_t i) const {
-      assert_2(i < 3);
+      assert(i < 3);
       return this->coords[i];
     }
   };

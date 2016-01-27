@@ -6,7 +6,8 @@ namespace dort {
     radius(radius)
   { }
 
-  bool Sphere::hit(const Ray& ray, Hit& out_hit) const
+  bool Sphere::hit(const Ray& ray, float& out_t_hit,
+      float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
     // solve a quadratic equation for t0 and t1
     float A = dot(ray.dir.v, ray.dir.v);
@@ -33,10 +34,17 @@ namespace dort {
     }
 
     // compute the hit
-    out_hit.p = ray(t_hit);
-    out_hit.t = t_hit;
-    out_hit.normal = out_hit.p - Point(0.f, 0.f, 0.f);
-    out_hit.ray_epsilon = 5e-4f * t_hit;
+    Point p_hit = ray(t_hit);
+    out_diff_geom.p = p_hit;
+    out_diff_geom.nn = normalize(Normal(p_hit - Point(0.f, 0.f, 0.f)));
+    out_t_hit = t_hit;
+    out_ray_epsilon = 5e-4f * t_hit;
     return true;
+  }
+
+  Box Sphere::bound() const
+  {
+    float r = this->radius;
+    return Box(Point(-r, -r, -r), Point(r, r, r));
   }
 }
