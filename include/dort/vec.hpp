@@ -1,5 +1,4 @@
 #pragma once
-#include "dort/dort.hpp"
 #include "dort/math.hpp"
 
 namespace dort {
@@ -26,6 +25,11 @@ namespace dort {
     }
 
     float operator[](uint32_t i) const {
+      assert(i < 3);
+      return this->coords[i];
+    }
+
+    float& operator[](uint32_t i) {
       assert(i < 3);
       return this->coords[i];
     }

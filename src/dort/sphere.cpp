@@ -23,14 +23,12 @@ namespace dort {
 
     // find the first t that is in the range
     float t_hit;
-    if(t0 > ray.t_max) {
-      return false;
-    } else if(t1 < ray.t_min) {
-      return false;
-    } else if(t0 > ray.t_min) {
+    if(ray.t_min < t0 && t0 < ray.t_max) {
       t_hit = t0;
-    } else {
+    } else if(ray.t_min < t1 && t1 < ray.t_min) {
       t_hit = t1;
+    } else {
+      return false;
     }
 
     // compute the hit

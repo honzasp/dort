@@ -4,13 +4,14 @@
 #include "dort/main.hpp"
 #include "dort/geometric_primitive.hpp"
 #include "dort/list_primitive.hpp"
+#include "dort/transform_primitive.hpp"
 #include "dort/sphere.hpp"
 
 namespace dort {
   int main() {
     uint32_t img_width = 600;
     uint32_t img_height = 400;
-    float scale = 0.1f;
+    float zoom = 0.1f;
 
     auto sphere = std::make_shared<Sphere>(10.f);
     auto red = Spectrum::from_rgb(1.f, 0.f, 0.f);
@@ -19,14 +20,19 @@ namespace dort {
     std::vector<std::unique_ptr<Primitive>> prims;
     prims.push_back(std::unique_ptr<Primitive>(
           new GeometricPrimitive(sphere, red)));
+    prims.push_back(std::unique_ptr<Primitive>(
+          new TransformPrimitive(
+            scale(2.f, 1.f, 1.f) * translate(Vector(10.f, 3.f, -2.f)),
+            std::unique_ptr<Primitive>(
+              new GeometricPrimitive(sphere, green)))));
 
     std::unique_ptr<Primitive> root_prim(new ListPrimitive(std::move(prims)));
 
     std::vector<RgbSpectrum> image(img_width * img_height);
     for(uint32_t y = 0; y < img_height; ++y) {
       for(uint32_t x = 0; x < img_width; ++x) {
-        float world_x = float(x) * scale - float(img_width) * 0.5f * scale;
-        float world_y = float(y) * scale - float(img_height) * 0.5f * scale;
+        float world_x = float(x) * zoom - float(img_width) * 0.5f * zoom;
+        float world_y = float(y) * zoom - float(img_height) * 0.5f * zoom;
 
         Ray ray(Point(world_x, world_y, -10.f), Vector(0.f, 0.f, 1.f));
         Intersection isect;

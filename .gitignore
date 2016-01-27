@@ -3,3 +3,4 @@
 build/
 .tup/
 *.ppm
+Session.vim

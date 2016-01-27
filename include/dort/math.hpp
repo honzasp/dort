@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include "dort/dort.hpp"
 
 #ifdef INFINITY
 #undef INFINITY

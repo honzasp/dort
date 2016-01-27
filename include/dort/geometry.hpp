@@ -35,6 +35,9 @@ namespace dort {
   inline Point operator+(const Point& pt, const Vector& vec) {
     return Point(pt.v + vec.v);
   }
+  inline Point operator-(const Point& pt, const Vector& vec) {
+    return Point(pt.v - vec.v);
+  }
   inline Vector operator-(const Point& pt1, const Point& pt2) {
     return Vector(pt1.v - pt2.v);
   }
@@ -86,7 +89,7 @@ namespace dort {
     float t_min;
     float t_max;
 
-    Ray(Point orig, Vector dir, float t_min = 0.f, float t_max = INFINITY):
+    Ray(Point orig, Vector dir, float t_min = -INFINITY, float t_max = INFINITY):
       orig(orig), dir(dir), t_min(t_min), t_max(t_max)
     { }
 
