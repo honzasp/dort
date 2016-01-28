@@ -28,6 +28,10 @@ namespace dort {
     Ray apply_inv(const Ray& ray) const;
   };
 
+  Transform identity();
   Transform translate(const Vector& delta);
+  Transform translate(float x, float y, float z);
   Transform scale(float x, float y, float z);
+  Transform rotate_x(float angle);
+  Transform rotate_y(float angle);
 }

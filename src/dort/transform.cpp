@@ -77,6 +77,27 @@ namespace dort {
     return Normal(mul_mat_transpose_0(this->mat_inv, norm.v));
   }
 
+  DiffGeom Transform::apply_inv(const DiffGeom& dg) const
+  {
+    DiffGeom ret = dg;
+    ret.p = this->apply_inv(dg.p);
+    ret.nn = normalize(this->apply_inv(dg.nn));
+    return ret;
+  }
+
+  Ray Transform::apply_inv(const Ray& ray) const
+  {
+    Ray ret(ray);
+    ret.orig = this->apply_inv(ray.orig);
+    ret.dir = this->apply_inv(ray.dir);
+    return ret;
+  }
+
+  Transform identity()
+  {
+    return Transform(Mat4x4(1.f), Mat4x4(1.f));
+  }
+
   Transform translate(const Vector& delta)
   {
     Mat4x4 mat(1.f);
@@ -90,6 +111,11 @@ namespace dort {
     mat_inv.cols[3][2] = -delta.v.z;
 
     return Transform(mat, mat_inv);
+  }
+
+  Transform translate(float x, float y, float z)
+  {
+    return translate(Vector(x, y, z));
   }
 
   Transform scale(float x, float y, float z)
@@ -107,20 +133,29 @@ namespace dort {
     return Transform(mat, mat_inv);
   }
 
-  DiffGeom Transform::apply_inv(const DiffGeom& dg) const
+  Transform rotate_x(float angle)
   {
-    DiffGeom ret = dg;
-    ret.p = this->apply_inv(dg.p);
-    ret.nn = normalize(this->apply_inv(dg.nn));
-    return ret;
+    float sin_th = sin(angle);
+    float cos_th = cos(angle);
+
+    Mat4x4 mat(1.f);
+    mat.cols[1][1] = cos_th;
+    mat.cols[1][2] = sin_th;
+    mat.cols[2][1] = -sin_th;
+    mat.cols[2][2] = cos_th;
+    return Transform(mat, transpose(mat));
   }
 
-  Ray Transform::apply_inv(const Ray& ray) const
+  Transform rotate_y(float angle)
   {
-    Ray ret(ray);
-    ret.orig = this->apply_inv(ray.orig);
-    ret.dir = this->apply_inv(ray.dir);
-    return ret;
-  }
+    float sin_th = sin(angle);
+    float cos_th = cos(angle);
 
+    Mat4x4 mat(1.f);
+    mat.cols[0][0] = cos_th;
+    mat.cols[0][2] = sin_th;
+    mat.cols[2][0] = -sin_th;
+    mat.cols[2][2] = cos_th;
+    return Transform(mat, transpose(mat));
+  }
 }

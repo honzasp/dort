@@ -35,6 +35,12 @@ namespace dort {
   inline Point operator+(const Point& pt, const Vector& vec) {
     return Point(pt.v + vec.v);
   }
+  inline Point operator+(const Point& pt1, const Point& pt2) {
+    return Point(pt1.v + pt2.v);
+  }
+  inline Vector operator+(const Vector& vec1, const Vector& vec2) {
+    return Vector(vec1.v + vec2.v);
+  }
   inline Point operator-(const Point& pt, const Vector& vec) {
     return Point(pt.v - vec.v);
   }
@@ -47,13 +53,21 @@ namespace dort {
   inline Vector operator*(float a, const Vector& vec) {
     return Vector(a * vec.v);
   }
+  inline Point operator*(const Point& pt, float a) {
+    return Point(pt.v * a);
+  }
+  inline Point operator*(float a, const Point& pt) {
+    return Point(a * pt.v);
+  }
 
   inline Vector normalize(const Vector& vec) {
     return Vector(normalize(vec.v));
   }
-
   inline float dot(const Vector& vec1, const Vector& vec2) {
     return dot(vec1.v, vec2.v);
+  }
+  inline Vector cross(const Vector& vec1, const Vector& vec2) {
+    return Vector(cross(vec1.v, vec2.v));
   }
 
   inline Normal operator+(const Normal& n1, const Normal& n2) {
@@ -63,7 +77,6 @@ namespace dort {
   inline Normal normalize(const Normal& norm) {
     return Normal(normalize(norm.v));
   }
-
   inline float dot(const Normal& n1, const Normal& n2) {
     return dot(n1.v, n2.v);
   }
@@ -110,4 +123,5 @@ namespace dort {
   };
 
   Box union_box(const Box& b1, const Box& b2);
+  Box union_box(const Box& box, const Point& pt);
 }

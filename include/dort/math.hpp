@@ -36,6 +36,8 @@ namespace dort {
   inline float sqrt(float a) { return std::sqrt(a); }
   inline float floor(float a) { return std::floor(a); }
   inline float abs(float a) { return std::abs(a); }
+  inline float sin(float a) { return std::sin(a); }
+  inline float cos(float a) { return std::cos(a); }
   inline bool is_finite(float a) { return std::isfinite(a); }
   inline float min(float a, float b) { return std::fmin(a, b); }
   inline float max(float a, float b) { return std::fmax(a, b); }

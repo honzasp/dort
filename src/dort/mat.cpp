@@ -19,6 +19,17 @@ namespace dort {
     }
   }
 
+  Mat4x4 transpose(const Mat4x4& mat)
+  {
+    Mat4x4 ret;
+    for(uint32_t col = 0; col < 4; ++col) {
+      for(uint32_t row = 0; row < 4; ++row) {
+        ret.cols[col][row] = mat.cols[row][col];
+      }
+    }
+    return ret;
+  }
+
   Mat4x4 mul_mats(const Mat4x4& m1, const Mat4x4& m2)
   {
     Mat4x4 ret;
