@@ -4,66 +4,42 @@
 #include "dort/main.hpp"
 #include "dort/geometric_primitive.hpp"
 #include "dort/list_primitive.hpp"
+#include "dort/read_ply.hpp"
 #include "dort/transform_primitive.hpp"
 #include "dort/triangle_mesh.hpp"
 #include "dort/sphere.hpp"
 
 namespace dort {
   int main() {
-    uint32_t img_width = 600;
-    uint32_t img_height = 400;
-    float zoom = 0.1f;
+    uint32_t img_width = 200;
+    uint32_t img_height = 600;
+    float zoom = 0.05f;
 
-    Transform cube_trans = identity()
-      * translate(-2.f, 1.f, -5.f)
-      * rotate_x(PI * 0.2) * rotate_y(PI * 0.1)
-      * scale(6.f, 6.f, 6.f);
+    auto red = Spectrum(1.f, 0.2f, 0.1f);
 
-    TriangleMesh cube;
-    cube.points = {
-      cube_trans.apply(Point(-1.f, +1.f, -1.f)),
-      cube_trans.apply(Point(+1.f, +1.f, -1.f)),
-      cube_trans.apply(Point(+1.f, -1.f, -1.f)),
-      cube_trans.apply(Point(-1.f, -1.f, -1.f)),
-      cube_trans.apply(Point(-1.f, +1.f, +1.f)),
-      cube_trans.apply(Point(+1.f, +1.f, +1.f)),
-      cube_trans.apply(Point(+1.f, -1.f, +1.f)),
-      cube_trans.apply(Point(-1.f, -1.f, +1.f)),
-    };
-    cube.vertices = {
-      0, 1, 2,
-      0, 2, 3,
-      1, 6, 2,
-      1, 5, 6,
-      0, 5, 1,
-      0, 4, 5,
-      0, 3, 4,
-      3, 7, 4,
-      3, 2, 7,
-      2, 6, 7,
-      6, 5, 7,
-      5, 4, 7,
-    };
-
-    auto sphere = std::make_shared<Sphere>(10.f);
-    auto red = Spectrum::from_rgb(1.f, 0.f, 0.f);
-    auto green = Spectrum::from_rgb(0.f, 1.f, 0.f);
-    auto cyan = Spectrum::from_rgb(0.f, 1.f, 1.f);
-
-    std::vector<std::unique_ptr<Primitive>> prims;
-    prims.push_back(std::unique_ptr<Primitive>(
-          new GeometricPrimitive(sphere, red)));
-    prims.push_back(std::unique_ptr<Primitive>(
-          new TransformPrimitive(
-            scale(2.f, 1.f, 1.f) * translate(Vector(10.f, 3.f, -2.f)),
-            std::unique_ptr<Primitive>(
-              new GeometricPrimitive(sphere, green)))));
-    for(uint32_t i = 0; i < 12; ++i) {
-      prims.push_back(std::unique_ptr<Primitive>(
-            new GeometricPrimitive(std::make_shared<Triangle>(&cube, i), cyan)));
+    TriangleMesh mesh;
+    std::vector<Triangle> triangles;
+    if(!read_ply(std::fopen("data/ketchup.ply", "r"), mesh, triangles)) {
+      std::fprintf(stderr, "Could not open ketchup\n");
+      return 1;
     }
 
-    std::unique_ptr<Primitive> root_prim(new ListPrimitive(std::move(prims)));
+    std::vector<std::unique_ptr<Primitive>> prims;
+    for(auto& triangle: triangles) {
+      prims.push_back(std::unique_ptr<Primitive>(
+            new GeometricPrimitive(std::make_shared<Triangle>(triangle), red)));
+    }
+
+    std::printf("%lu primitives\n", prims.size());
+
+    std::unique_ptr<Primitive> mesh_prim(new ListPrimitive(std::move(prims)));
+    std::unique_ptr<Primitive> root_prim(new TransformPrimitive(
+            identity()
+          * rotate_y(PI * 0.1f)
+          * rotate_x(PI * 0.6f) 
+          * scale(3.f, 3.f, 3.f)
+          * translate(0.f, 0.f, -4.f),
+          std::move(mesh_prim)));
 
     std::vector<RgbSpectrum> image(img_width * img_height);
     for(uint32_t y = 0; y < img_height; ++y) {
@@ -86,7 +62,10 @@ namespace dort {
 
         image.at(y * img_width + x) = pixel;
       }
+      std::printf(".");
+      std::fflush(stdout);
     }
+    std::printf("\n");
 
     FILE* output = std::fopen("output.ppm", "w");
     std::fprintf(output, "P6 %u %u 255\n", img_width, img_height);

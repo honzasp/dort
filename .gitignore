@@ -4,3 +4,4 @@ build/
 .tup/
 *.ppm
 Session.vim
+data/*.ply
