@@ -39,8 +39,8 @@ namespace dort {
   inline float sin(float a) { return std::sin(a); }
   inline float cos(float a) { return std::cos(a); }
   inline bool is_finite(float a) { return std::isfinite(a); }
-  inline float min(float a, float b) { return std::fmin(a, b); }
-  inline float max(float a, float b) { return std::fmax(a, b); }
+  template<class T> T min(T a, T b) { return (b < a) ? b : a; }
+  template<class T> T max(T a, T b) { return (a < b) ? b : a; }
 
   inline int32_t floor_int32(float a) {
     return int32_t(floor(a));

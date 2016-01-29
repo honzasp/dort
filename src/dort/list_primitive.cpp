@@ -5,7 +5,7 @@ namespace dort {
     primitives(std::move(prims))
   {
     for(auto& prim: this->primitives) {
-      this->total_bound = union_box(this->total_bound, prim->bound());
+      this->total_bounds = union_box(this->total_bounds, prim->bounds());
     }
   }
 
@@ -18,9 +18,9 @@ namespace dort {
     return any_hit;
   }
 
-  Box ListPrimitive::bound() const
+  Box ListPrimitive::bounds() const
   {
-    return this->total_bound;
+    return this->total_bounds;
   }
 
   Spectrum ListPrimitive::get_color(const DiffGeom&) const

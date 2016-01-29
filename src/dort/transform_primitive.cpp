@@ -12,9 +12,9 @@ namespace dort {
     return true;
   }
 
-  Box TransformPrimitive::bound() const
+  Box TransformPrimitive::bounds() const
   {
-    return this->obj_to_world.apply(this->inside->bound());
+    return this->obj_to_world.apply(this->inside->bounds());
   }
 
   Spectrum TransformPrimitive::get_color(const DiffGeom&) const

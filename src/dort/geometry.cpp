@@ -1,3 +1,4 @@
+#include <utility>
 #include "dort/geometry.hpp"
 
 namespace dort {
@@ -25,5 +26,28 @@ namespace dort {
           max(box.p_max.v.x, pt.v.x),
           max(box.p_max.v.y, pt.v.y),
           max(box.p_max.v.z, pt.v.z)));
+  }
+
+  bool box_hit_p(const Box& box, const Ray& ray)
+  {
+    float t0 = ray.t_min;
+    float t1 = ray.t_max;
+    for(uint32_t i = 0; i < 3; ++i) {
+      float inv_dir = 1.f / ray.dir.v[i];
+      float t_near = (box.p_min.v[i] - ray.orig.v[i]) * inv_dir;
+      float t_far = (box.p_max.v[i] - ray.orig.v[i]) * inv_dir;
+      if(t_near > t_far) {
+        std::swap(t_near, t_far);
+      }
+      // if inv_dir is infinity (division by zero), t_near and t_far are NaN's,
+      // so these comparisons must ensure that t0 and t1 are not updated in that
+      // case
+      t0 = t_near > t0 ? t_near : t0;
+      t1 = t_far < t1 ? t_far : t1;
+      if(t0 > t1) {
+        return false;
+      }
+    }
+    return true;
   }
 }

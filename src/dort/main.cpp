@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include "dort/main.hpp"
+#include "dort/bvh_primitive.hpp"
 #include "dort/geometric_primitive.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/read_ply.hpp"
@@ -32,7 +33,8 @@ namespace dort {
 
     std::printf("%lu primitives\n", prims.size());
 
-    std::unique_ptr<Primitive> mesh_prim(new ListPrimitive(std::move(prims)));
+    std::unique_ptr<Primitive> mesh_prim(new BvhPrimitive(
+          std::move(prims), 4, BvhSplitMethod::Middle));
     std::unique_ptr<Primitive> root_prim(new TransformPrimitive(
             identity()
           * rotate_y(PI * 0.1f)

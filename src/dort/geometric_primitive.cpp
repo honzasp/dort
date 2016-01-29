@@ -21,7 +21,7 @@ namespace dort {
     return true;
   }
 
-  Box GeometricPrimitive::bound() const
+  Box GeometricPrimitive::bounds() const
   {
     return this->shape->bound();
   }

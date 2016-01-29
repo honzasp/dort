@@ -14,7 +14,7 @@ namespace dort {
     Primitive() { };
     virtual ~Primitive() { };
     virtual bool intersect(Ray& ray, Intersection& out_isect) const = 0;
-    virtual Box bound() const = 0;
+    virtual Box bounds() const = 0;
     virtual Spectrum get_color(const DiffGeom& diff_geom) const = 0;
   };
 }
