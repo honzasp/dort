@@ -12,23 +12,23 @@
 
 namespace dort {
   int main() {
-    uint32_t img_width = 200;
-    uint32_t img_height = 600;
-    float zoom = 0.05f;
+    uint32_t img_width = 800;
+    uint32_t img_height = 800;
+    float zoom = 1.f;
 
-    auto red = Spectrum(1.f, 0.2f, 0.1f);
+    auto gray = Spectrum(0.8f, 0.8f, 0.8f);
 
     TriangleMesh mesh;
     std::vector<Triangle> triangles;
-    if(!read_ply(std::fopen("data/ketchup.ply", "r"), mesh, triangles)) {
-      std::fprintf(stderr, "Could not open ketchup\n");
+    if(!read_ply(std::fopen("data/dragon_vrip.ply", "r"), mesh, triangles)) {
+      std::fprintf(stderr, "Could not open ply\n");
       return 1;
     }
 
     std::vector<std::unique_ptr<Primitive>> prims;
     for(auto& triangle: triangles) {
       prims.push_back(std::unique_ptr<Primitive>(
-            new GeometricPrimitive(std::make_shared<Triangle>(triangle), red)));
+            new GeometricPrimitive(std::make_shared<Triangle>(triangle), gray)));
     }
 
     std::printf("%lu primitives\n", prims.size());
@@ -36,11 +36,8 @@ namespace dort {
     std::unique_ptr<Primitive> mesh_prim(new BvhPrimitive(
           std::move(prims), 4, BvhSplitMethod::Middle));
     std::unique_ptr<Primitive> root_prim(new TransformPrimitive(
-            identity()
-          * rotate_y(PI * 0.1f)
-          * rotate_x(PI * 0.6f) 
-          * scale(3.f, 3.f, 3.f)
-          * translate(0.f, 0.f, -4.f),
+          rotate_x(0.1f * PI) * rotate_y(0.2f * PI) *
+          translate(0.f, 300.f, 0.f) * scale(2.5e3f, -2.5e3f, 2.5e3f),
           std::move(mesh_prim)));
 
     std::vector<RgbSpectrum> image(img_width * img_height);
@@ -59,7 +56,7 @@ namespace dort {
           Normal ray_nn = Normal(normalize(ray.dir));
           pixel = abs_dot(ray_nn, isect.diff_geom.nn) * color;
         } else {
-          pixel = Spectrum::from_rgb(0.f, 0.f, 1.f);
+          pixel = Spectrum::from_rgb(1.f, 1.f, 1.f);
         }
 
         image.at(y * img_width + x) = pixel;

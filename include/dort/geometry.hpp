@@ -120,6 +120,14 @@ namespace dort {
       p_max(-INFINITY, -INFINITY, -INFINITY) { }
     Box(const Point& p_min, const Point& p_max):
       p_min(p_min), p_max(p_max) { }
+
+    const Point& operator[](uint32_t i) const {
+      if(i == 0) {
+        return this->p_min;
+      } else {
+        return this->p_max;
+      }
+    }
   };
 
   Box union_box(const Box& b1, const Box& b2);
