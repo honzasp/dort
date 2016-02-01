@@ -28,4 +28,10 @@ namespace dort {
     assert("TransformPrimitive::get_color called");
     return Spectrum();
   }
+
+  float TransformPrimitive::get_reflection(const DiffGeom&) const
+  {
+    assert("TransformPrimitive::get_reflection called");
+    return 0.f;
+  }
 }

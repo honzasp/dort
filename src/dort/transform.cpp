@@ -44,14 +44,12 @@ namespace dort {
     Vector new_radius;
     for(uint32_t i = 0; i < 3; ++i) {
       Vector axis;
-      axis.v[i] = 1.f;
-      Vector new_axis(this->apply(axis));
-      new_radius.v.x = max(new_radius.v.x, abs(new_axis.v.x));
-      new_radius.v.y = max(new_radius.v.y, abs(new_axis.v.y));
-      new_radius.v.z = max(new_radius.v.z, abs(new_axis.v.z));
+      axis.v[i] = radius.v[i];
+      new_radius = new_radius + abs(this->apply(axis));
     }
 
-    return Box(mid - new_radius, mid + new_radius);
+    Point new_mid = this->apply(mid);
+    return Box(new_mid - new_radius, new_mid + new_radius);
   }
 
   Ray Transform::apply(const Ray& ray) const

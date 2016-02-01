@@ -2,9 +2,10 @@
 
 namespace dort {
   GeometricPrimitive::GeometricPrimitive(
-      std::shared_ptr<Shape> shape, Spectrum color):
+      std::shared_ptr<Shape> shape, Spectrum color, float reflection):
     shape(std::move(shape)),
-    color(color)
+    color(color),
+    reflection(reflection)
   { }
 
   bool GeometricPrimitive::intersect(Ray& ray, Intersection& out_isect) const
@@ -34,5 +35,10 @@ namespace dort {
   Spectrum GeometricPrimitive::get_color(const DiffGeom&) const
   {
     return this->color;
+  }
+
+  float GeometricPrimitive::get_reflection(const DiffGeom&) const
+  {
+    return this->reflection;
   }
 }

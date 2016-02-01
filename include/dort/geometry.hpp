@@ -41,6 +41,12 @@ namespace dort {
   inline Vector operator+(const Vector& vec1, const Vector& vec2) {
     return Vector(vec1.v + vec2.v);
   }
+  inline Vector operator-(const Vector& vec1, const Vector& vec2) {
+    return Vector(vec1.v - vec2.v);
+  }
+  inline Normal operator+(const Normal& n1, const Normal& n2) {
+    return Normal(n1.v + n2.v);
+  }
   inline Point operator-(const Point& pt, const Vector& vec) {
     return Point(pt.v - vec.v);
   }
@@ -59,6 +65,9 @@ namespace dort {
   inline Vector operator/(const Vector& vec, float a) {
     return Vector(vec.v / a);
   }
+  inline Normal operator/(const Normal& norm, float a) {
+    return Normal(norm.v / a);
+  }
   inline Point operator*(const Point& pt, float a) {
     return Point(pt.v * a);
   }
@@ -76,15 +85,14 @@ namespace dort {
     return Vector(cross(vec1.v, vec2.v));
   }
 
-  inline Normal operator+(const Normal& n1, const Normal& n2) {
-    return Normal(n1.v + n2.v);
-  }
-
   inline Normal normalize(const Normal& norm) {
     return Normal(normalize(norm.v));
   }
   inline float dot(const Normal& n1, const Normal& n2) {
     return dot(n1.v, n2.v);
+  }
+  inline float dot(const Vector& vec, const Normal& norm) {
+    return dot(vec.v, norm.v);
   }
 
   inline float abs_dot(const Vector& vec1, const Vector& vec2) {
@@ -111,6 +119,10 @@ namespace dort {
     return is_finite(norm.v);
   }
 
+  inline Vector abs(const Vector& vec) {
+    return Vector(abs(vec.v));
+  }
+
   struct Ray {
     Point orig;
     Vector dir;
@@ -121,7 +133,7 @@ namespace dort {
       orig(orig), dir(dir), t_min(t_min), t_max(t_max)
     { }
 
-    Point operator()(float t) const {
+    Point point_t(float t) const {
       return this->orig + this->dir * t;
     }
   };

@@ -7,7 +7,10 @@ namespace dort {
       for(uint32_t x = 0; x < film.width; ++x) {
         float world_x = float(x) - 0.5f * float(film.width);
         float world_y = float(y) - 0.5f * float(film.height);
-        Ray ray(Point(world_x, world_y, -1.f), Vector(0.f, 0.f, 1.f));
+        Ray ray(
+            Point(world_x, world_y, 0.f),
+            Vector(0.f, 0.f, 1.f),
+            -INFINITY, INFINITY);
         Spectrum radiance = this->get_radiance(scene, ray);
         assert(is_finite(radiance));
         assert(is_nonnegative(radiance));

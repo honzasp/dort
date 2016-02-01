@@ -10,8 +10,10 @@ namespace dort {
   public:
     ListPrimitive(std::vector<std::unique_ptr<Primitive>> prims);
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
+    virtual bool intersect_p(const Ray& ray) const override final;
     virtual Box bounds() const override final;
     virtual Spectrum get_color(const DiffGeom& diff_geom) const override final;
+    virtual float get_reflection(const DiffGeom& diff_geom) const override final;
   };
 }
 

@@ -20,7 +20,7 @@ namespace dort {
     auto root_node = this->build_node(build_infos, prims,
         0, prims.size(), max_leaf_size, split_method, node_count);
     this->linear_nodes.reserve(node_count);
-    // TODO: assure that the linear nodes are aligned
+    // TODO: ensure that the linear nodes are aligned
     this->linearize_node(*root_node, 0);
   }
 
@@ -35,6 +35,7 @@ namespace dort {
     uint32_t todo_index = 0;
     for(;;) {
       const LinearNode& linear_node = this->linear_nodes.at(todo_index);
+
       if(fast_box_hit_p(linear_node.bounds, ray, inv_dir, dir_is_neg)) {
         if(linear_node.prim_count == 0) {
           if(dir_is_neg[linear_node.axis]) {
@@ -102,6 +103,12 @@ namespace dort {
     return Spectrum();
   }
 
+  float BvhPrimitive::get_reflection(const DiffGeom&) const
+  {
+    assert("BvhPrimitive::get_reflection called");
+    return 0.f;
+  }
+
   std::unique_ptr<BvhPrimitive::BuildNode> BvhPrimitive::build_node(
       std::vector<PrimitiveInfo>& build_infos,
       std::vector<std::unique_ptr<Primitive>>& prims,
@@ -126,10 +133,13 @@ namespace dort {
         uint32_t prim_idx = build_infos.at(i).prim_index;
         this->ordered_prims.push_back(std::move(prims.at(prim_idx)));
       }
-      return std::unique_ptr<BuildNode>(new BuildNode {
-        bounds, { nullptr, nullptr },
-        prims_begin, end - begin, axis,
-      });
+
+      BuildNode node;
+      node.bounds = bounds;
+      node.prims_begin = prims_begin;
+      node.prims_length = end - begin;
+      node.axis = axis;
+      return std::make_unique<BuildNode>(std::move(node));
     }
 
     // make a branch
@@ -149,14 +159,16 @@ namespace dort {
       mid = begin + (end - begin) / 2;
     }
 
-    auto left = this->build_node(build_infos, prims,
+    BuildNode node;
+    node.bounds = bounds;
+    node.children[0] = this->build_node(build_infos, prims,
         begin, mid, max_leaf_size, split_method, out_node_count);
-    auto right = this->build_node(build_infos, prims,
+    node.children[1] = this->build_node(build_infos, prims,
         mid, end, max_leaf_size, split_method, out_node_count);
-    return std::unique_ptr<BuildNode>(new BuildNode {
-      bounds, { std::move(left), std::move(right) },
-      prims_begin, end - begin, axis,
-    });
+    node.prims_begin = prims_begin;
+    node.prims_length = end - begin;
+    node.axis = axis;
+    return std::make_unique<BuildNode>(std::move(node));
   }
 
   uint32_t BvhPrimitive::split_middle(
@@ -170,7 +182,6 @@ namespace dort {
         [&](const PrimitiveInfo& prim_info) {
           return prim_info.centroid.v[axis] < center;
         });
-    assert(mid > build_infos.begin());
     return mid - build_infos.begin();
   }
 
@@ -223,14 +234,14 @@ namespace dort {
 
     float ty_min = (bounds[  dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
     float ty_max = (bounds[1-dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
-    if(t_min > ty_max || t_max < ty_min) {
+    if(t_min > ty_max || ty_min > t_max) {
       return false;
     }
 
     if(ty_min > t_min) {
       t_min = ty_min;
     }
-    if(t_max > ty_max) {
+    if(ty_max < t_max) {
       t_max = ty_max;
     }
 
@@ -247,6 +258,6 @@ namespace dort {
       t_max = tz_max;
     }
 
-    return (t_min >= ray.t_min) && (t_max <= ray.t_max);
+    return (t_min < ray.t_max) && (t_max > ray.t_min);
   }
 }

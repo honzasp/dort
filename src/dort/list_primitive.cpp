@@ -18,6 +18,16 @@ namespace dort {
     return any_hit;
   }
 
+  bool ListPrimitive::intersect_p(const Ray& ray) const
+  {
+    for(auto& prim: this->primitives) {
+      if(prim->intersect_p(ray)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Box ListPrimitive::bounds() const
   {
     return this->total_bounds;
@@ -27,5 +37,11 @@ namespace dort {
   {
     assert("ListPrimitive::get_color called");
     return Spectrum();
+  }
+
+  float ListPrimitive::get_reflection(const DiffGeom&) const
+  {
+    assert("ListPrimitive::get_reflection called");
+    return 0.f;
   }
 }

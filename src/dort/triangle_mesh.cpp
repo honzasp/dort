@@ -34,7 +34,7 @@ namespace dort {
     }
 
     out_t_hit = t;
-    out_ray_epsilon = 1e-3f * t;
+    out_ray_epsilon = abs(1e-3f * t);
     out_diff_geom.p = (1.f - b1 - b2) * p0 + b1 * p1 + b2 * p2;
     out_diff_geom.nn = normalize(Normal(cross(e1, e2)));
     return true;

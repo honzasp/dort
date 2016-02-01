@@ -90,4 +90,8 @@ namespace dort {
   inline bool is_nonnegative(const Vec3& v) {
     return v.x >= 0.f && v.y >= 0.f && v.z >= 0.f;
   }
+
+  inline Vec3 abs(const Vec3& v) {
+    return Vec3(abs(v.x), abs(v.y), abs(v.z));
+  }
 }

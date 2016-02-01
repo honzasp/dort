@@ -17,5 +17,6 @@ namespace dort {
     virtual bool intersect_p(const Ray& ray) const = 0;
     virtual Box bounds() const = 0;
     virtual Spectrum get_color(const DiffGeom& diff_geom) const = 0;
+    virtual float get_reflection(const DiffGeom& diff_geom) const = 0;
   };
 }

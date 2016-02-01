@@ -29,11 +29,11 @@ namespace dort {
       return false;
     }
 
-    Point p_hit = ray(t_hit);
+    Point p_hit = ray.point_t(t_hit);
     out_diff_geom.p = p_hit;
-    out_diff_geom.nn = normalize(Normal(p_hit - Point(0.f, 0.f, 0.f)));
+    out_diff_geom.nn = Normal(p_hit - Point(0.f, 0.f, 0.f)) / this->radius;
     out_t_hit = t_hit;
-    out_ray_epsilon = 5e-4f * t_hit;
+    out_ray_epsilon = 5e-4f * abs(t_hit);
     return true;
   }
 

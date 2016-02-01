@@ -20,6 +20,8 @@ namespace dort {
     Normal n = isect.diff_geom.nn;
 
     Spectrum color = isect.primitive->get_color(isect.diff_geom);
+    float reflection = isect.primitive->get_reflection(isect.diff_geom);
+
     for(const auto& light: scene.lights) {
       Vector wi;
       float pdf;
@@ -31,13 +33,22 @@ namespace dort {
       }
 
       if(shadow.visible(scene)) {
-        radiance = radiance + color * incident_radiance * abs_dot(wi, n) / pdf;
+        radiance = radiance + (1.f - reflection) * color * incident_radiance 
+          * abs_dot(wi, n) / pdf;
       }
     }
 
-    // TODO: reflect and refract
-    (void)depth;
-    (void)this->max_depth;
+    if(depth < this->max_depth) {
+      if(reflection != 0.f) {
+        Vector wo = normalize(-ray.dir);
+        Vector wi = 2.f * Vector(n.v) * dot(wo, n) - wo;
+        Ray refl_ray(pt, wi, isect.ray_epsilon, INFINITY);
+        Spectrum refl_radiance = this->get_radiance(scene, refl_ray, depth + 1);
+        radiance = radiance + refl_radiance * reflection * color;
+      }
+
+      // TODO: refract
+    }
 
     return radiance;
   }
