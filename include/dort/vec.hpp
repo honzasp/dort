@@ -41,6 +41,9 @@ namespace dort {
   inline Vec3 operator-(const Vec3& v1, const Vec3& v2) {
     return Vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
   }
+  inline Vec3 operator-(const Vec3& v) {
+    return Vec3(-v.x, -v.y, -v.z);
+  }
   inline Vec3 operator*(const Vec3& v, float a) {
     return Vec3(v.x * a, v.y * a, v.z * a);
   }
@@ -49,6 +52,16 @@ namespace dort {
   }
   inline Vec3 operator/(const Vec3& v, float a) {
     return v * (1.f / a);
+  }
+  inline Vec3 operator*(const Vec3& v1, const Vec3& v2) {
+    return Vec3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+  }
+
+  inline bool operator==(const Vec3& v1, const Vec3& v2) {
+    return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
+  }
+  inline bool operator!=(const Vec3& v1, const Vec3& v2) {
+    return !(v1 == v2);
   }
 
   inline float dot(const Vec3& v1, const Vec3& v2) {
@@ -60,18 +73,21 @@ namespace dort {
         v1.z * v2.x - v1.x * v2.z,
         v1.x * v2.y - v1.y * v2.x);
   }
+
   inline float length_squared(const Vec3& v) {
     return dot(v, v);
   }
   inline float length(const Vec3& v) {
     return sqrt(length_squared(v));
   }
-
   inline Vec3 normalize(const Vec3& v) {
     return v / length(v);
   }
 
   inline bool is_finite(const Vec3& v) {
     return is_finite(v.x) && is_finite(v.y) && is_finite(v.z);
+  }
+  inline bool is_nonnegative(const Vec3& v) {
+    return v.x >= 0.f && v.y >= 0.f && v.z >= 0.f;
   }
 }

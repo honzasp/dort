@@ -40,6 +40,39 @@ namespace dort {
     return true;
   }
 
+  bool Triangle::hit_p(const Ray& ray) const
+  {
+    Point p0, p1, p2;
+    this->get_points(p0, p1, p2);
+
+    Vector e1 = p1 - p0;
+    Vector e2 = p2 - p0;
+    Vector s1 = cross(ray.dir, e2);
+    float det = dot(s1, e1);
+    if(det == 0.f) {
+      return false;
+    }
+    float inv_det = 1.f / det;
+
+    Vector s = ray.orig - p0;
+    float b1 = inv_det * dot(s1, s);
+    if(b1 < 0.f || b1 > 1.f) {
+      return false;
+    }
+
+    Vector s2 = cross(s, e1);
+    float b2 = inv_det * dot(s2, ray.dir);
+    if(b2 < 0.f || b1 + b2 > 1.f) {
+      return false;
+    }
+
+    float t = inv_det * dot(s2, e2);
+    if(t < ray.t_min || t > ray.t_max) {
+      return false;
+    }
+    return true;
+  }
+
   Box Triangle::bound() const
   {
     Point p0, p1, p2;

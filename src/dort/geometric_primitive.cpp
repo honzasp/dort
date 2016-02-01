@@ -21,6 +21,11 @@ namespace dort {
     return true;
   }
 
+  bool GeometricPrimitive::intersect_p(const Ray& ray) const
+  {
+    return this->shape->hit_p(ray);
+  }
+
   Box GeometricPrimitive::bounds() const
   {
     return this->shape->bound();

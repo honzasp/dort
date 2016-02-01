@@ -10,7 +10,11 @@ namespace dort {
 
   struct RgbSpectrum;
 
+  struct Scene;
   struct Intersection;
   class Primitive;
   class Shape;
+  struct ShadowTest;
+  class Light;
+  class Renderer;
 }

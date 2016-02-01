@@ -5,19 +5,15 @@
 #include "dort/bvh_primitive.hpp"
 #include "dort/geometric_primitive.hpp"
 #include "dort/list_primitive.hpp"
+#include "dort/point_light.hpp"
 #include "dort/read_ply.hpp"
 #include "dort/transform_primitive.hpp"
 #include "dort/triangle_mesh.hpp"
 #include "dort/sphere.hpp"
+#include "dort/whitted_renderer.hpp"
 
 namespace dort {
   int main() {
-    uint32_t img_width = 800;
-    uint32_t img_height = 800;
-    float zoom = 1.f;
-
-    auto gray = Spectrum(0.8f, 0.8f, 0.8f);
-
     TriangleMesh mesh;
     std::vector<Triangle> triangles;
     if(!read_ply(std::fopen("data/dragon_vrip.ply", "r"), mesh, triangles)) {
@@ -28,7 +24,8 @@ namespace dort {
     std::vector<std::unique_ptr<Primitive>> prims;
     for(auto& triangle: triangles) {
       prims.push_back(std::unique_ptr<Primitive>(
-            new GeometricPrimitive(std::make_shared<Triangle>(triangle), gray)));
+            new GeometricPrimitive(std::make_shared<Triangle>(triangle),
+              Spectrum(0.8f, 0.8f, 0.8f))));
     }
 
     std::printf("%lu primitives\n", prims.size());
@@ -36,45 +33,28 @@ namespace dort {
     std::unique_ptr<Primitive> mesh_prim(new BvhPrimitive(
           std::move(prims), 4, BvhSplitMethod::Middle));
     std::unique_ptr<Primitive> root_prim(new TransformPrimitive(
-          rotate_x(0.1f * PI) * rotate_y(0.2f * PI) *
+          rotate_x(0.1f * PI) * rotate_y(0.9f * PI) *
           translate(0.f, 300.f, 0.f) * scale(2.5e3f, -2.5e3f, 2.5e3f),
           std::move(mesh_prim)));
 
-    std::vector<RgbSpectrum> image(img_width * img_height);
-    for(uint32_t y = 0; y < img_height; ++y) {
-      for(uint32_t x = 0; x < img_width; ++x) {
-        float world_x = float(x) * zoom - float(img_width) * 0.5f * zoom;
-        float world_y = float(y) * zoom - float(img_height) * 0.5f * zoom;
+    Scene scene;
+    scene.primitive = std::move(root_prim);
+    scene.lights.push_back(std::unique_ptr<Light>(
+          new PointLight(Point(0.f, 0.f, -400.f), 
+          50000.f * Spectrum(1.f, 0.2f, 0.2f))));
+    scene.lights.push_back(std::unique_ptr<Light>(
+          new PointLight(Point(400.f, 0.f, 0.f),
+          80000.f * Spectrum(1.f, 1.f, 0.f))));
+    scene.lights.push_back(std::unique_ptr<Light>(
+          new PointLight(Point(-400.f, -300.f, -200.f),
+          150000.f * Spectrum(0.5f, 0.5f, 1.f))));
 
-        Ray ray(Point(world_x, world_y, -10.f), Vector(0.f, 0.f, 1.f));
-        Intersection isect;
-        Spectrum pixel;
-        if(root_prim->intersect(ray, isect)) {
-          assert(is_finite(ray.dir));
-          assert(is_finite(isect.diff_geom.nn));
-          Spectrum color = isect.primitive->get_color(isect.diff_geom);
-          Normal ray_nn = Normal(normalize(ray.dir));
-          pixel = abs_dot(ray_nn, isect.diff_geom.nn) * color;
-        } else {
-          pixel = Spectrum::from_rgb(1.f, 1.f, 1.f);
-        }
-
-        image.at(y * img_width + x) = pixel;
-      }
-      std::printf(".");
-      std::fflush(stdout);
-    }
-    std::printf("\n");
+    Film film(800, 800);
+    WhittedRenderer renderer(0);
+    renderer.render(scene, film);
 
     FILE* output = std::fopen("output.ppm", "w");
-    std::fprintf(output, "P6 %u %u 255\n", img_width, img_height);
-    for(Spectrum pixel: image) {
-      uint8_t r_level = clamp(floor_int32(256.f * pixel.red()), 0, 255);
-      uint8_t g_level = clamp(floor_int32(256.f * pixel.green()), 0, 255);
-      uint8_t b_level = clamp(floor_int32(256.f * pixel.blue()), 0, 255);
-      uint8_t rgb[3] = { r_level, g_level, b_level };
-      std::fwrite(rgb, 3, 1, output);
-    }
+    film.write_ppm(output);
     std::fclose(output);
 
     return 0;

@@ -47,11 +47,17 @@ namespace dort {
   inline Vector operator-(const Point& pt1, const Point& pt2) {
     return Vector(pt1.v - pt2.v);
   }
+  inline Vector operator-(const Vector& vec) {
+    return Vector(-vec.v);
+  }
   inline Vector operator*(const Vector& vec, float a) {
     return Vector(vec.v * a);
   }
   inline Vector operator*(float a, const Vector& vec) {
     return Vector(a * vec.v);
+  }
+  inline Vector operator/(const Vector& vec, float a) {
+    return Vector(vec.v / a);
   }
   inline Point operator*(const Point& pt, float a) {
     return Point(pt.v * a);
@@ -81,9 +87,18 @@ namespace dort {
     return dot(n1.v, n2.v);
   }
 
-  template<class T>
-  float abs_dot(const T& v1, const T& v2) {
-    return abs(dot(v1, v2));
+  inline float abs_dot(const Vector& vec1, const Vector& vec2) {
+    return abs(dot(vec1.v, vec2.v));
+  }
+  inline float abs_dot(const Vector& vec, const Normal& norm) {
+    return abs(dot(vec.v, norm.v));
+  }
+
+  inline float length_squared(const Vector& vec) {
+    return length_squared(vec.v);
+  }
+  inline float length(const Vector& vec) {
+    return length(vec.v);
   }
 
   inline bool is_finite(const Vector& vec) {

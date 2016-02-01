@@ -12,6 +12,12 @@ namespace dort {
     return true;
   }
 
+  bool TransformPrimitive::intersect_p(const Ray& ray) const
+  {
+    Ray new_ray(this->obj_to_world.apply_inv(ray));
+    return this->inside->intersect_p(new_ray);
+  }
+
   Box TransformPrimitive::bounds() const
   {
     return this->obj_to_world.apply(this->inside->bounds());

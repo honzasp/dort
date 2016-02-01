@@ -24,9 +24,9 @@ namespace dort {
     this->linearize_node(*root_node, 0);
   }
 
-  bool BvhPrimitive::intersect(Ray& ray, Intersection& out_isect) const
+  template<class F>
+  void BvhPrimitive::traverse_primitives(const Ray& ray, F callback) const
   {
-    bool found = false;
     Vector inv_dir(1.f / ray.dir.v.x, 1.f / ray.dir.v.y, 1.f / ray.dir.v.z);
     bool dir_is_neg[] = { ray.dir.v.x < 0.f, ray.dir.v.y < 0.f, ray.dir.v.z < 0.f };
 
@@ -49,8 +49,8 @@ namespace dort {
 
         for(uint32_t i = 0; i < linear_node.prim_count; ++i) {
           auto& prim = this->ordered_prims.at(linear_node.offset + i);
-          if(prim->intersect(ray, out_isect)) {
-            found = true;
+          if(!callback(*prim)) {
+            return;
           }
         }
       }
@@ -60,7 +60,31 @@ namespace dort {
       }
       todo_index = todo_stack[--todo_top];
     }
+  }
 
+  bool BvhPrimitive::intersect(Ray& ray, Intersection& out_isect) const
+  {
+    bool found = false;
+    this->traverse_primitives(ray, [&](const Primitive& prim) {
+      if(prim.intersect(ray, out_isect)) {
+        found = true;
+      }
+      return true;
+    });
+    return found;
+  }
+
+  bool BvhPrimitive::intersect_p(const Ray& ray) const
+  {
+    bool found = false;
+    this->traverse_primitives(ray, [&](const Primitive& prim) {
+      if(prim.intersect_p(ray)) {
+        found = true;
+        return false;
+      } else {
+        return true;
+      }
+    });
     return found;
   }
 

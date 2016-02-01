@@ -38,6 +38,7 @@ namespace dort {
     BvhPrimitive(std::vector<std::unique_ptr<Primitive>> prims,
         uint32_t max_leaf_size, BvhSplitMethod split_method);
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
+    virtual bool intersect_p(const Ray& ray) const final override;
     virtual Box bounds() const override final;
     virtual Spectrum get_color(const DiffGeom& diff_geom) const override final;
   private:
@@ -52,6 +53,9 @@ namespace dort {
     uint32_t split_equal_counts(std::vector<PrimitiveInfo>& build_infos,
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
     void linearize_node(const BuildNode& node, uint32_t depth);
+
+    template<class F>
+    void traverse_primitives(const Ray& ray, F callback) const;
 
     static bool fast_box_hit_p(const Box& bounds, const Ray& ray,
         const Vector& inv_dir, bool dir_is_neg[3]);

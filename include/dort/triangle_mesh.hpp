@@ -16,8 +16,9 @@ namespace dort {
     Triangle(const TriangleMesh* mesh, uint32_t id):
       mesh(mesh), index(id * 3) { }
     virtual bool hit(const Ray& ray, float& out_t_hit,
-        float& out_ray_epsilon, DiffGeom& out_diff_geom) const final override;
-    virtual Box bound() const final override;
+        float& out_ray_epsilon, DiffGeom& out_diff_geom) const override final;
+    virtual bool hit_p(const Ray& ray) const override final;
+    virtual Box bound() const override final;
   private:
     void get_points(Point& p0, Point& p1, Point& p2) const;
   };
