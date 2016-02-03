@@ -3,7 +3,7 @@
 
 namespace dort {
   Sphere::Sphere(float radius):
-    radius(radius)
+    radius(radius), inv_radius(1.f / radius)
   { }
 
   bool Sphere::hit(const Ray& ray, float& out_t_hit,
@@ -30,8 +30,25 @@ namespace dort {
     }
 
     Point p_hit = ray.point_t(t_hit);
+    float x = p_hit.v.x, y = p_hit.v.y, z = p_hit.v.z;
+    float phi = atan(y, z);
+    if(phi < 0.f) {
+      phi = phi + TWO_PI;
+    }
+    float theta = acos(z * this->inv_radius);
+
+    float r_sin_theta = sqrt(x*x + y*y);
+    float inv_r_sin_theta = 1.f / r_sin_theta;
+
     out_diff_geom.p = p_hit;
-    out_diff_geom.nn = Normal(p_hit - Point(0.f, 0.f, 0.f)) / this->radius;
+    out_diff_geom.nn = Normal(p_hit - Point(0.f, 0.f, 0.f)) * this->inv_radius;
+    out_diff_geom.u = phi * INV_TWO_PI;
+    out_diff_geom.v = theta * INV_PI;
+    out_diff_geom.dpdu = Vector(-TWO_PI * y, TWO_PI * x, 0.f);
+    out_diff_geom.dpdv = Vector(
+        PI * z * x * inv_r_sin_theta,
+        PI * z * y * inv_r_sin_theta,
+        -r_sin_theta);
     out_t_hit = t_hit;
     out_ray_epsilon = 5e-4f * abs(t_hit);
     return true;
@@ -54,7 +71,6 @@ namespace dort {
     } else {
       return false;
     }
-
   }
 
   Box Sphere::bound() const

@@ -8,6 +8,7 @@ namespace dort {
     Mat4x4 mat;
     Mat4x4 mat_inv;
   public:
+    Transform(): mat(1.f), mat_inv(1.f) { }
     explicit Transform(const Mat4x4& mat, const Mat4x4& mat_inv):
       mat(mat), mat_inv(mat_inv) { }
 
@@ -32,6 +33,8 @@ namespace dort {
   Transform translate(const Vector& delta);
   Transform translate(float x, float y, float z);
   Transform scale(float x, float y, float z);
+  Transform scale(float x);
   Transform rotate_x(float angle);
   Transform rotate_y(float angle);
+  Transform rotate_z(float angle);
 }

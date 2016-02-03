@@ -17,6 +17,9 @@ namespace dort {
     float red() const { return this->rgb.x; }
     float green() const { return this->rgb.y; }
     float blue() const { return this->rgb.z; }
+    float average() const {
+      return ONE_THIRD * (this->rgb.x + this->rgb.y + this->rgb.z); 
+    }
     bool is_black() const { return this->rgb == Vec3(0.f, 0.f, 0.f); }
   };
 

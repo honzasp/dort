@@ -131,6 +131,11 @@ namespace dort {
     return Transform(mat, mat_inv);
   }
 
+  Transform scale(float x)
+  {
+    return scale(x, x, x);
+  }
+
   Transform rotate_x(float angle)
   {
     float sin_th = sin(angle);
@@ -154,6 +159,19 @@ namespace dort {
     mat.cols[0][2] = sin_th;
     mat.cols[2][0] = -sin_th;
     mat.cols[2][2] = cos_th;
+    return Transform(mat, transpose(mat));
+  }
+
+  Transform rotate_z(float angle)
+  {
+    float sin_th = sin(angle);
+    float cos_th = cos(angle);
+
+    Mat4x4 mat(1.f);
+    mat.cols[0][0] = cos_th;
+    mat.cols[0][1] = sin_th;
+    mat.cols[1][0] = -sin_th;
+    mat.cols[1][1] = cos_th;
     return Transform(mat, transpose(mat));
   }
 }

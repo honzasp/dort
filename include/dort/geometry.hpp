@@ -62,6 +62,9 @@ namespace dort {
   inline Vector operator*(float a, const Vector& vec) {
     return Vector(a * vec.v);
   }
+  inline Normal operator*(const Normal& norm, float a) {
+    return Normal(norm.v * a);
+  }
   inline Vector operator/(const Vector& vec, float a) {
     return Vector(vec.v / a);
   }
@@ -101,6 +104,9 @@ namespace dort {
   inline float abs_dot(const Vector& vec, const Normal& norm) {
     return abs(dot(vec.v, norm.v));
   }
+  inline float abs_dot(const Normal& norm1, const Normal& norm2) {
+    return abs(dot(norm1.v, norm2.v));
+  }
 
   inline float length_squared(const Vector& vec) {
     return length_squared(vec.v);
@@ -122,6 +128,8 @@ namespace dort {
   inline Vector abs(const Vector& vec) {
     return Vector(abs(vec.v));
   }
+
+  void coordinate_system(const Vector& vec0, Vector& vec1, Vector& vec2);
 
   struct Ray {
     Point orig;

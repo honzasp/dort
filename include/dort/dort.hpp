@@ -5,19 +5,25 @@
 #include <memory>
 
 namespace dort {
-  struct Point;
-  struct Vector;
-  struct Ray;
-
-  struct RgbSpectrum;
-
-  struct Scene;
-  struct Intersection;
-  class Primitive;
-  class Shape;
-  struct ShadowTest;
+  class AreaLight;
+  class Bsdf;
+  class GeometricPrimitive;
   class Light;
+  class Material;
+  class Primitive;
   class Renderer;
+  class Rng;
+  class Shape;
+
+  struct Bxdf;
+  struct DiffGeom;
+  struct Intersection;
+  struct Point;
+  struct Ray;
+  struct RgbSpectrum;
+  struct Scene;
+  struct ShadowTest;
+  struct Vector;
 }
 
 #ifndef __cpp_lib_make_unique

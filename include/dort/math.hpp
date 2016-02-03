@@ -14,8 +14,11 @@
 
 namespace dort {
   constexpr float INFINITY = std::numeric_limits<float>::infinity();
-  constexpr float PI = 3.141592653589793;
-  constexpr float INV_PI = 0.3183098861837907;
+  constexpr float PI = 3.141592653589793f;
+  constexpr float TWO_PI = 6.283185307179586f;
+  constexpr float INV_PI = 0.318309886183790f;
+  constexpr float INV_TWO_PI = 0.159154943091895f;
+  constexpr float ONE_THIRD = 0.333333333333333f;
 
   template<class T>
   T clamp(T val, T min, T max) {
@@ -38,13 +41,16 @@ namespace dort {
   inline float abs(float a) { return std::abs(a); }
   inline float sin(float a) { return std::sin(a); }
   inline float cos(float a) { return std::cos(a); }
+  inline float asin(float y) { return std::asin(y); }
+  inline float acos(float x) { return std::acos(x); }
+  inline float atan(float y, float x) { return std::atan2(y, x); }
+
   inline bool is_finite(float a) { return std::isfinite(a); }
   template<class T> T min(T a, T b) { return (b < a) ? b : a; }
   template<class T> T max(T a, T b) { return (a < b) ? b : a; }
 
-  inline int32_t floor_int32(float a) {
-    return int32_t(floor(a));
-  }
+  inline int32_t floor_int32(float a) { return int32_t(floor(a)); }
+  inline float square(float a) { return a * a; }
 
   bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2);
 }

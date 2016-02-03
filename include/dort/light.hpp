@@ -1,5 +1,6 @@
 #pragma once
 #include "dort/geometry.hpp"
+#include "dort/rng.hpp"
 #include "dort/scene.hpp"
 #include "dort/spectrum.hpp"
 
@@ -17,9 +18,20 @@ namespace dort {
 
   class Light {
   public:
+    uint32_t num_samples;
+
+    Light(uint32_t num_samples = 1): num_samples(num_samples) { }
     virtual ~Light() {}
+
     virtual Spectrum sample_radiance(const Point& pt, float pt_epsilon,
-        Vector& out_wi, float& out_pdf, ShadowTest& out_shadow) const = 0;
-    virtual Spectrum background_radiance(const Ray& ray) const;
+        Vector& out_wi, float& out_pdf, ShadowTest& out_shadow, Rng& rng) const = 0;
+    virtual float radiance_pdf(const Point& pt, const Vector& wi) const = 0;
+    virtual Spectrum background_radiance(const Ray& ray) const = 0;
+    virtual bool is_delta() const = 0;
+  };
+
+  class AreaLight: public Light {
+  public:
+    virtual Spectrum emitted_radiance(const Point& pt, const Vector& wo) const = 0;
   };
 }

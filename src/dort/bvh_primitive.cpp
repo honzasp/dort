@@ -21,6 +21,7 @@ namespace dort {
         0, prims.size(), max_leaf_size, split_method, node_count);
     this->linear_nodes.reserve(node_count);
     // TODO: ensure that the linear nodes are aligned
+    this->max_depth = 0;
     this->linearize_node(*root_node, 0);
   }
 
@@ -95,18 +96,6 @@ namespace dort {
       return Box();
     }
     return this->linear_nodes.at(0).bounds;
-  }
-
-  Spectrum BvhPrimitive::get_color(const DiffGeom&) const 
-  {
-    assert("BvhPrimitive::get_color called");
-    return Spectrum();
-  }
-
-  float BvhPrimitive::get_reflection(const DiffGeom&) const
-  {
-    assert("BvhPrimitive::get_reflection called");
-    return 0.f;
   }
 
   std::unique_ptr<BvhPrimitive::BuildNode> BvhPrimitive::build_node(

@@ -20,6 +20,7 @@ namespace dort {
     virtual bool hit_p(const Ray& ray) const override final;
     virtual Box bound() const override final;
   private:
-    void get_points(Point& p0, Point& p1, Point& p2) const;
+    void get_points(Point p[3]) const;
+    void get_uvs(float uv[3][2]) const;
   };
 }

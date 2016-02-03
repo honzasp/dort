@@ -40,8 +40,6 @@ namespace dort {
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const final override;
     virtual Box bounds() const override final;
-    virtual Spectrum get_color(const DiffGeom& diff_geom) const override final;
-    virtual float get_reflection(const DiffGeom& diff_geom) const override final;
   private:
     std::unique_ptr<BuildNode> build_node(
         std::vector<PrimitiveInfo>& build_infos,

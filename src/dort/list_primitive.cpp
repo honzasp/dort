@@ -32,16 +32,4 @@ namespace dort {
   {
     return this->total_bounds;
   }
-
-  Spectrum ListPrimitive::get_color(const DiffGeom&) const
-  {
-    assert("ListPrimitive::get_color called");
-    return Spectrum();
-  }
-
-  float ListPrimitive::get_reflection(const DiffGeom&) const
-  {
-    assert("ListPrimitive::get_reflection called");
-    return 0.f;
-  }
 }
