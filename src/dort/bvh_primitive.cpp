@@ -26,8 +26,7 @@ namespace dort {
   }
 
   template<class F>
-  void BvhPrimitive::traverse_primitives(const Ray& ray, F callback) const
-  {
+  void BvhPrimitive::traverse_primitives(const Ray& ray, F callback) const {
     Vector inv_dir(1.f / ray.dir.v.x, 1.f / ray.dir.v.y, 1.f / ray.dir.v.z);
     bool dir_is_neg[] = { ray.dir.v.x < 0.f, ray.dir.v.y < 0.f, ray.dir.v.z < 0.f };
 
@@ -64,8 +63,7 @@ namespace dort {
     }
   }
 
-  bool BvhPrimitive::intersect(Ray& ray, Intersection& out_isect) const
-  {
+  bool BvhPrimitive::intersect(Ray& ray, Intersection& out_isect) const {
     bool found = false;
     this->traverse_primitives(ray, [&](const Primitive& prim) {
       if(prim.intersect(ray, out_isect)) {
@@ -76,8 +74,7 @@ namespace dort {
     return found;
   }
 
-  bool BvhPrimitive::intersect_p(const Ray& ray) const
-  {
+  bool BvhPrimitive::intersect_p(const Ray& ray) const {
     bool found = false;
     this->traverse_primitives(ray, [&](const Primitive& prim) {
       if(prim.intersect_p(ray)) {
@@ -90,8 +87,7 @@ namespace dort {
     return found;
   }
 
-  Box BvhPrimitive::bounds() const 
-  {
+  Box BvhPrimitive::bounds() const {
     if(this->linear_nodes.empty()) {
       return Box();
     }
@@ -190,8 +186,7 @@ namespace dort {
     return mid;
   }
 
-  void BvhPrimitive::linearize_node(const BuildNode& node, uint32_t depth)
-  {
+  void BvhPrimitive::linearize_node(const BuildNode& node, uint32_t depth) {
     uint32_t linear_index = this->linear_nodes.size();
     LinearNode linear_node;
     linear_node.bounds = node.bounds;

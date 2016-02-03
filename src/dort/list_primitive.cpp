@@ -9,8 +9,7 @@ namespace dort {
     }
   }
 
-  bool ListPrimitive::intersect(Ray& ray, Intersection& out_isect) const
-  {
+  bool ListPrimitive::intersect(Ray& ray, Intersection& out_isect) const {
     bool any_hit = false;
     for(auto& prim: this->primitives) {
       any_hit |= prim->intersect(ray, out_isect);
@@ -18,8 +17,7 @@ namespace dort {
     return any_hit;
   }
 
-  bool ListPrimitive::intersect_p(const Ray& ray) const
-  {
+  bool ListPrimitive::intersect_p(const Ray& ray) const {
     for(auto& prim: this->primitives) {
       if(prim->intersect_p(ray)) {
         return true;
@@ -28,8 +26,7 @@ namespace dort {
     return false;
   }
 
-  Box ListPrimitive::bounds() const
-  {
+  Box ListPrimitive::bounds() const {
     return this->total_bounds;
   }
 }

@@ -1,8 +1,7 @@
 #include "dort/math.hpp"
 
 namespace dort {
-  bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2) 
-  {
+  bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2) {
     float discrim = B * B - 4.f * A * C;
     if(discrim <= 0.f) {
       return false;

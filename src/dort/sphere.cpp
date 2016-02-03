@@ -54,8 +54,7 @@ namespace dort {
     return true;
   }
 
-  bool Sphere::hit_p(const Ray& ray) const
-  {
+  bool Sphere::hit_p(const Ray& ray) const {
     float A = dot(ray.dir.v, ray.dir.v);
     float B = 2.f * dot(ray.orig.v, ray.dir.v);
     float C = dot(ray.orig.v, ray.orig.v) - this->radius * this->radius;
@@ -73,8 +72,7 @@ namespace dort {
     }
   }
 
-  Box Sphere::bound() const
-  {
+  Box Sphere::bound() const {
     float r = this->radius;
     return Box(Point(-r, -r, -r), Point(r, r, r));
   }

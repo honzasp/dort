@@ -21,13 +21,11 @@ namespace dort {
     this->ray.t_max = INFINITY;
   }
 
-  bool ShadowTest::visible(const Scene& scene) const
-  {
+  bool ShadowTest::visible(const Scene& scene) const {
     return !scene.primitive->intersect_p(this->ray);
   }
   
-  Spectrum Light::background_radiance(const Ray&) const
-  {
+  Spectrum Light::background_radiance(const Ray&) const {
     return Spectrum();
   }
 }

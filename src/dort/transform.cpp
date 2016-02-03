@@ -1,43 +1,36 @@
 #include "dort/transform.hpp"
 
 namespace dort {
-  Transform Transform::inverse() const
-  {
+  Transform Transform::inverse() const {
     return Transform(this->mat_inv, this->mat);
   }
 
-  Transform Transform::operator*(const Transform& trans) const
-  {
+  Transform Transform::operator*(const Transform& trans) const {
     return Transform(
         mul_mats(this->mat, trans.mat),
         mul_mats(trans.mat_inv, this->mat_inv));
   }
 
-  Vector Transform::apply(const Vector& vec) const
-  {
+  Vector Transform::apply(const Vector& vec) const {
     return Vector(mul_mat_0(this->mat, vec.v));
   }
 
-  Point Transform::apply(const Point& pt) const
-  {
+  Point Transform::apply(const Point& pt) const {
     return Point(mul_mat_1(this->mat, pt.v));
   }
 
-  Normal Transform::apply(const Normal& norm) const
-  {
+  Normal Transform::apply(const Normal& norm) const {
     return Normal(mul_mat_transpose_0(this->mat_inv, norm.v));
   }
   
-  DiffGeom Transform::apply(const DiffGeom& dg) const
-  {
+  DiffGeom Transform::apply(const DiffGeom& dg) const {
     DiffGeom ret = dg;
     ret.p = this->apply(dg.p);
     ret.nn = normalize(this->apply(dg.nn));
     return ret;
   }
 
-  Box Transform::apply(const Box& box) const
-  {
+  Box Transform::apply(const Box& box) const {
     Vector radius = (box.p_max - box.p_min) * 0.5f;
     Point mid = box.p_min + radius;
 
@@ -52,52 +45,44 @@ namespace dort {
     return Box(new_mid - new_radius, new_mid + new_radius);
   }
 
-  Ray Transform::apply(const Ray& ray) const
-  {
+  Ray Transform::apply(const Ray& ray) const {
     Ray ret(ray);
     ret.orig = this->apply(ray.orig);
     ret.dir = this->apply(ray.dir);
     return ret;
   }
 
-  Vector Transform::apply_inv(const Vector& vec) const 
-  {
+  Vector Transform::apply_inv(const Vector& vec) const {
     return Vector(mul_mat_0(this->mat_inv, vec.v));
   }
 
-  Point Transform::apply_inv(const Point& pt) const
-  {
+  Point Transform::apply_inv(const Point& pt) const {
     return Point(mul_mat_1(this->mat_inv, pt.v));
   }
 
-  Normal Transform::apply_inv(const Normal& norm) const
-  {
+  Normal Transform::apply_inv(const Normal& norm) const {
     return Normal(mul_mat_transpose_0(this->mat_inv, norm.v));
   }
 
-  DiffGeom Transform::apply_inv(const DiffGeom& dg) const
-  {
+  DiffGeom Transform::apply_inv(const DiffGeom& dg) const {
     DiffGeom ret = dg;
     ret.p = this->apply_inv(dg.p);
     ret.nn = normalize(this->apply_inv(dg.nn));
     return ret;
   }
 
-  Ray Transform::apply_inv(const Ray& ray) const
-  {
+  Ray Transform::apply_inv(const Ray& ray) const {
     Ray ret(ray);
     ret.orig = this->apply_inv(ray.orig);
     ret.dir = this->apply_inv(ray.dir);
     return ret;
   }
 
-  Transform identity()
-  {
+  Transform identity() {
     return Transform(Mat4x4(1.f), Mat4x4(1.f));
   }
 
-  Transform translate(const Vector& delta)
-  {
+  Transform translate(const Vector& delta) {
     Mat4x4 mat(1.f);
     mat.cols[3][0] = delta.v.x;
     mat.cols[3][1] = delta.v.y;
@@ -111,13 +96,11 @@ namespace dort {
     return Transform(mat, mat_inv);
   }
 
-  Transform translate(float x, float y, float z)
-  {
+  Transform translate(float x, float y, float z) {
     return translate(Vector(x, y, z));
   }
 
-  Transform scale(float x, float y, float z)
-  {
+  Transform scale(float x, float y, float z) {
     Mat4x4 mat(1.f);
     mat.cols[0][0] = x;
     mat.cols[1][1] = y;
@@ -131,13 +114,11 @@ namespace dort {
     return Transform(mat, mat_inv);
   }
 
-  Transform scale(float x)
-  {
+  Transform scale(float x) {
     return scale(x, x, x);
   }
 
-  Transform rotate_x(float angle)
-  {
+  Transform rotate_x(float angle) {
     float sin_th = sin(angle);
     float cos_th = cos(angle);
 
@@ -149,8 +130,7 @@ namespace dort {
     return Transform(mat, transpose(mat));
   }
 
-  Transform rotate_y(float angle)
-  {
+  Transform rotate_y(float angle) {
     float sin_th = sin(angle);
     float cos_th = cos(angle);
 
@@ -162,8 +142,7 @@ namespace dort {
     return Transform(mat, transpose(mat));
   }
 
-  Transform rotate_z(float angle)
-  {
+  Transform rotate_z(float angle) {
     float sin_th = sin(angle);
     float cos_th = cos(angle);
 

@@ -1,8 +1,7 @@
 #include "dort/renderer.hpp"
 
 namespace dort {
-  void Renderer::render(const Scene& scene, Film& film, Rng& rng)
-  {
+  void Renderer::render(const Scene& scene, Film& film, Rng& rng) {
     for(uint32_t y = 0; y < film.height; ++y) {
       for(uint32_t x = 0; x < film.width; ++x) {
         float world_x = float(x) - 0.5f * float(film.width);

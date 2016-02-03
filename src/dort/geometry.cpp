@@ -11,8 +11,7 @@ namespace dort {
     vec2 = cross(vec0, vec1);
   }
 
-  Box union_box(const Box& b1, const Box& b2) 
-  {
+  Box union_box(const Box& b1, const Box& b2) {
     return Box(
         Point(
           min(b1.p_min.v.x, b2.p_min.v.x),
@@ -24,8 +23,7 @@ namespace dort {
           max(b1.p_max.v.z, b2.p_max.v.z)));
   }
 
-  Box union_box(const Box& box, const Point& pt) 
-  {
+  Box union_box(const Box& box, const Point& pt) {
     return Box(
         Point(
           min(box.p_min.v.x, pt.v.x),
@@ -37,8 +35,7 @@ namespace dort {
           max(box.p_max.v.z, pt.v.z)));
   }
 
-  bool box_hit_p(const Box& box, const Ray& ray)
-  {
+  bool box_hit_p(const Box& box, const Ray& ray) {
     float t0 = ray.t_min;
     float t1 = ray.t_max;
     for(uint32_t i = 0; i < 3; ++i) {

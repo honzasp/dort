@@ -11,18 +11,15 @@ namespace dort {
     return this->intensity / length_squared(this->pt - pt);
   }
 
-  float PointLight::radiance_pdf(const Point&, const Vector&) const
-  {
+  float PointLight::radiance_pdf(const Point&, const Vector&) const {
     return 0.f;
   }
 
-  Spectrum PointLight::background_radiance(const Ray&) const
-  {
+  Spectrum PointLight::background_radiance(const Ray&) const {
     return Spectrum(0.f);
   }
 
-  bool PointLight::is_delta() const
-  {
+  bool PointLight::is_delta() const {
     return true;
   }
 }

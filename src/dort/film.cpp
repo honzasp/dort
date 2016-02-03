@@ -5,8 +5,7 @@ namespace dort {
     width(width), height(height), pixels(width * height)
   { }
 
-  void Film::add_sample(float x, float y, const Spectrum& radiance)
-  {
+  void Film::add_sample(float x, float y, const Spectrum& radiance) {
     int32_t pixel_x = floor_int32(x);
     int32_t pixel_y = floor_int32(y);
     Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pixel_x, pixel_y));
@@ -14,8 +13,7 @@ namespace dort {
     pixel.weight = pixel.weight + 1.f;
   }
 
-  void Film::write_ppm(FILE* output) const
-  {
+  void Film::write_ppm(FILE* output) const {
     std::fprintf(output, "P6 %u %u 255\n", this->width, this->height);
     for(uint32_t y = 0; y < height; ++y) {
       for(uint32_t x = 0; x < width; ++x) {

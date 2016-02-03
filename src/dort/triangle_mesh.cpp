@@ -61,8 +61,7 @@ namespace dort {
     return true;
   }
 
-  bool Triangle::hit_p(const Ray& ray) const
-  {
+  bool Triangle::hit_p(const Ray& ray) const {
     Point p[3];
     this->get_points(p);
 
@@ -94,8 +93,7 @@ namespace dort {
     return true;
   }
 
-  Box Triangle::bound() const
-  {
+  Box Triangle::bound() const {
     Point p[3];
     this->get_points(p);
 
@@ -106,8 +104,7 @@ namespace dort {
     return bound;
   }
 
-  void Triangle::get_points(Point p[3]) const
-  {
+  void Triangle::get_points(Point p[3]) const {
     auto& pts = this->mesh->points;
     auto& verts = this->mesh->vertices;
     p[0] = pts.at(verts.at(this->index));
@@ -115,8 +112,7 @@ namespace dort {
     p[2] = pts.at(verts.at(this->index + 2));
   }
 
-  void Triangle::get_uvs(float uv[3][2]) const
-  {
+  void Triangle::get_uvs(float uv[3][2]) const {
     uv[0][0] = 0.f;
     uv[0][1] = 0.f;
     uv[1][0] = 1.f;
