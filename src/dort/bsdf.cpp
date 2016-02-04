@@ -4,10 +4,16 @@
 
 namespace dort {
   Bsdf::Bsdf(const DiffGeom& diff_geom):
-    nn(diff_geom.nn.v),
-    sn(normalize(diff_geom.dpdu)),
-    tn(cross(this->nn, this->sn))
-  { }
+    nn(diff_geom.nn.v)
+  {
+    float len = length(diff_geom.dpdu);
+    if(len < 1e-9) {
+      coordinate_system(this->nn, this->sn, this->tn);
+    } else {
+      this->sn = this->sn / len;
+      this->tn = cross(this->nn, this->sn);
+    }
+  }
 
   void Bsdf::add(std::unique_ptr<Bxdf> bxdf) {
     this->bxdfs.push_back(std::move(bxdf));

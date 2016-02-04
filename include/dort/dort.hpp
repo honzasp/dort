@@ -14,6 +14,7 @@ namespace dort {
   class Renderer;
   class Rng;
   class Shape;
+  class Transform;
 
   struct Bxdf;
   struct DiffGeom;

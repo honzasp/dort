@@ -19,6 +19,10 @@ namespace dort {
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const override final;
     virtual bool hit_p(const Ray& ray) const override final;
     virtual Box bound() const override final;
+
+    virtual float area() const override final;
+    virtual Point sample_point(float u1, float u2, Normal& out_n) const override final;
+    virtual float point_pdf(const Point& pt) const override final;
   private:
     void get_points(Point p[3]) const;
     void get_uvs(float uv[3][2]) const;

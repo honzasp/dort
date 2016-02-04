@@ -16,8 +16,10 @@ namespace dort {
   constexpr float INFINITY = std::numeric_limits<float>::infinity();
   constexpr float PI = 3.141592653589793f;
   constexpr float TWO_PI = 6.283185307179586f;
+  constexpr float FOUR_PI = 12.56637061435917f;
   constexpr float INV_PI = 0.318309886183790f;
   constexpr float INV_TWO_PI = 0.159154943091895f;
+  constexpr float INV_FOUR_PI = 0.079577471545947f;
   constexpr float ONE_THIRD = 0.333333333333333f;
 
   template<class T>

@@ -19,7 +19,8 @@ namespace dort {
 
     const AreaLight* area_light = isect.primitive->get_area_light(isect.diff_geom);
     if(area_light) {
-      radiance = radiance + area_light->emitted_radiance(isect.diff_geom.p, -ray.dir);
+      radiance = radiance + area_light->emitted_radiance(
+          isect.diff_geom.p, isect.diff_geom.nn, -ray.dir);
     }
 
     std::unique_ptr<Bsdf> bsdf = isect.primitive->get_bsdf(isect.diff_geom);
@@ -41,11 +42,12 @@ namespace dort {
 
     for(const auto& light: scene.lights) {
       Spectrum light_radiance(0.f);
-      for(uint32_t i = 0; i < light->num_samples; ++i) {
+      uint32_t num_samples = max(1u, light->num_samples);
+      for(uint32_t i = 0; i < num_samples; ++i) {
         light_radiance = light_radiance + estimate_direct(scene, ray, isect, 
             bsdf, *light, BxdfFlags(BSDF_ALL & ~(BSDF_SPECULAR)), rng);
       }
-      radiance = radiance + light_radiance / float(light->num_samples);
+      radiance = radiance + light_radiance / float(num_samples);
     }
 
     return radiance;
@@ -61,7 +63,8 @@ namespace dort {
     Vector wo = normalize(-ray.dir);
     Normal n = isect.diff_geom.nn;
 
-    { // sample from light
+    {
+      // sample from light
       Vector wi;
       float light_pdf;
       ShadowTest shadow;
@@ -77,6 +80,14 @@ namespace dort {
           }
           light_contrib = bsdf_f * light_radiance * abs_dot(wi, n) 
             * (weight / light_pdf);
+
+          /*
+          std::printf("contrib %f\n", light_contrib.average());
+          std::printf("  pdf %f, L %f, dot %f\n", light_pdf, 
+              light_radiance.average(), abs_dot(wi, n));
+          std::printf("  wi %f,%f,%f\n", wi.v.x, wi.v.y, wi.v.z);
+          std::printf("  n  %f,%f,%f\n", n.v.x, n.v.y, n.v.z);
+          */
         }
       }
     }
@@ -102,7 +113,8 @@ namespace dort {
           const AreaLight* area_light =
             light_isect.primitive->get_area_light(light_isect.diff_geom);
           if(area_light == &light) {
-            light_radiance = area_light->emitted_radiance(light_isect.diff_geom.p, -wi);
+            light_radiance = area_light->emitted_radiance(
+                light_isect.diff_geom.p, light_isect.diff_geom.nn, -wi);
           }
         } else {
           light_radiance = light.background_radiance(light_ray);

@@ -104,6 +104,32 @@ namespace dort {
     return bound;
   }
 
+  float Triangle::area() const {
+    Point p[3];
+    this->get_points(p);
+    Vector e1 = p[1] - p[0];
+    Vector e2 = p[2] - p[0];
+    return 0.5f * length(cross(e1, e2));
+  }
+
+  Point Triangle::sample_point(float u1, float u2, Normal& out_n) const {
+    Point p[3];
+    this->get_points(p);
+    Vector e1 = p[1] - p[0];
+    Vector e2 = p[2] - p[0];
+
+    float s = sqrt(u1);
+    float b1 = 1.f - s;
+    float b2 = u2 * s;
+
+    out_n = Normal(normalize(cross(e2, e1)));
+    return p[0] + b1 * e1 + b2 * e2;
+  }
+
+  float Triangle::point_pdf(const Point&) const {
+    return 1.f / this->area();
+  }
+
   void Triangle::get_points(Point p[3]) const {
     auto& pts = this->mesh->points;
     auto& verts = this->mesh->vertices;
