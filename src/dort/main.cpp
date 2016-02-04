@@ -4,6 +4,7 @@
 #include "dort/bvh_primitive.hpp"
 #include "dort/diffuse_light.hpp"
 #include "dort/direct_renderer.hpp"
+#include "dort/disk.hpp"
 #include "dort/lambertian_brdf.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/main.hpp"
@@ -35,8 +36,14 @@ namespace dort {
     auto ply_prim = std::make_unique<BvhPrimitive>(
           std::move(mesh_prims), 4, BvhSplitMethod::Middle);
 
-    auto light_ball = std::make_shared<Sphere>(40.f);
-    auto light_ball_transform = translate(-500.f, -100.f, -300.f);
+    TriangleMesh light_mesh;
+    light_mesh.points.push_back(Point(-260.f, -50.f, -120.f));
+    light_mesh.points.push_back(Point(-255.f, +50.f, -80.f));
+    light_mesh.points.push_back(Point(-250.f, -50.f, -60.f));
+    light_mesh.vertices = { 2, 1, 0 };
+
+    auto light_ball = std::make_shared<Triangle>(&light_mesh, 0);
+    auto light_ball_transform = identity();
     auto ball_light = std::make_shared<DiffuseLight>(light_ball,
         light_ball_transform, 150.f * Spectrum(1.f, 1.f, 1.f), 5);
 
@@ -55,6 +62,14 @@ namespace dort {
       std::make_unique<GeometricPrimitive>(
           std::make_shared<Sphere>(300.f), ball_material)));
     prims.push_back(std::make_unique<TransformPrimitive>(
+      translate(0.f, 0.f, 200.f),
+      std::make_unique<GeometricPrimitive>(
+          std::make_shared<Disk>(600.f), ball_material)));
+    prims.push_back(std::make_unique<TransformPrimitive>(
+      translate(-100.f, 300.f, 0.f) * rotate_x(0.65f * PI),
+      std::make_unique<GeometricPrimitive>(
+          std::make_shared<Disk>(8000.f), ball_material)));
+    prims.push_back(std::make_unique<TransformPrimitive>(
       light_ball_transform, std::make_unique<GeometricPrimitive>(
         light_ball, ball_material, ball_light)));
 
@@ -66,8 +81,8 @@ namespace dort {
           Point(-600.f, 0.f, -600.f), 4000000.f * Spectrum(0.f, 0.f, 1.f)));
     scene.lights.push_back(std::make_shared<PointLight>(
           Point(0.f, 0.f, -800.f), 1000000.f * Spectrum(0.f, 1.f, 0.f)));*/
-    /*scene.lights.push_back(std::make_shared<PointLight>(
-          Point(0.f, 200.f, -600.f), 1000000.f * Spectrum(1.f, 0.f, 0.f)));*/
+    scene.lights.push_back(std::make_shared<PointLight>(
+          Point(0.f, 200.f, -600.f), 1000000.f * Spectrum(1.f, 0.f, 0.f)));
     scene.lights.push_back(ball_light);
 
     Film film(800, 800);
