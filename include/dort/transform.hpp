@@ -15,18 +15,34 @@ namespace dort {
     Transform inverse() const;
     Transform operator*(const Transform& trans) const;
 
-    Vector apply(const Vector& vec) const;
-    Point apply(const Point& pt) const;
-    Normal apply(const Normal& pt) const;
-    DiffGeom apply(const DiffGeom& dg) const;
-    Box apply(const Box& box) const;
-    Ray apply(const Ray& ray) const;
+    Vector apply(bool inv, const Vector& vec) const {
+      return Vector(mul_mat_0(this->get_mat(inv), vec.v));
+    }
+    Point apply(bool inv, const Point& pt) const {
+      return Point(mul_mat_1(this->get_mat(inv), pt.v));
+    }
+    Normal apply(bool inv, const Normal& norm) const {
+      return Normal(mul_mat_transpose_0(this->get_mat(!inv), norm.v));
+    }
 
-    Vector apply_inv(const Vector& vec) const;
-    Point apply_inv(const Point& pt) const;
-    Normal apply_inv(const Normal& pt) const;
-    DiffGeom apply_inv(const DiffGeom& dg) const;
-    Ray apply_inv(const Ray& ray) const;
+    DiffGeom apply(bool inv, const DiffGeom& dg) const;
+    Box apply(bool inv, const Box& box) const;
+    Ray apply(bool inv, const Ray& ray) const;
+
+    template<class T>
+    T apply(const T& obj) const {
+      return this->apply(false, obj);
+    }
+
+    template<class T>
+    T apply_inv(const T& obj) const {
+      return this->apply(true, obj);
+    }
+
+  private:
+    const Mat4x4& get_mat(bool inv) const {
+      return inv ? this->mat_inv : this->mat;
+    }
   };
 
   Transform identity();

@@ -11,28 +11,16 @@ namespace dort {
         mul_mats(trans.mat_inv, this->mat_inv));
   }
 
-  Vector Transform::apply(const Vector& vec) const {
-    return Vector(mul_mat_0(this->mat, vec.v));
-  }
-
-  Point Transform::apply(const Point& pt) const {
-    return Point(mul_mat_1(this->mat, pt.v));
-  }
-
-  Normal Transform::apply(const Normal& norm) const {
-    return Normal(mul_mat_transpose_0(this->mat_inv, norm.v));
-  }
-  
-  DiffGeom Transform::apply(const DiffGeom& dg) const {
+  DiffGeom Transform::apply(bool inv, const DiffGeom& dg) const {
     DiffGeom ret = dg;
-    ret.p = this->apply(dg.p);
-    ret.nn = normalize(this->apply(dg.nn));
-    ret.dpdu = this->apply(dg.dpdu);
-    ret.dpdv = this->apply(dg.dpdv);
+    ret.p = this->apply(inv, dg.p);
+    ret.nn = normalize(this->apply(inv, dg.nn));
+    ret.dpdu = this->apply(inv, dg.dpdu);
+    ret.dpdv = this->apply(inv, dg.dpdv);
     return ret;
   }
 
-  Box Transform::apply(const Box& box) const {
+  Box Transform::apply(bool inv, const Box& box) const {
     Vector radius = (box.p_max - box.p_min) * 0.5f;
     Point mid = box.p_min + radius;
 
@@ -40,45 +28,17 @@ namespace dort {
     for(uint32_t i = 0; i < 3; ++i) {
       Vector axis;
       axis.v[i] = radius.v[i];
-      new_radius = new_radius + abs(this->apply(axis));
+      new_radius = new_radius + abs(this->apply(inv, axis));
     }
 
-    Point new_mid = this->apply(mid);
+    Point new_mid = this->apply(inv, mid);
     return Box(new_mid - new_radius, new_mid + new_radius);
   }
 
-  Ray Transform::apply(const Ray& ray) const {
+  Ray Transform::apply(bool inv, const Ray& ray) const {
     Ray ret(ray);
-    ret.orig = this->apply(ray.orig);
-    ret.dir = this->apply(ray.dir);
-    return ret;
-  }
-
-  Vector Transform::apply_inv(const Vector& vec) const {
-    return Vector(mul_mat_0(this->mat_inv, vec.v));
-  }
-
-  Point Transform::apply_inv(const Point& pt) const {
-    return Point(mul_mat_1(this->mat_inv, pt.v));
-  }
-
-  Normal Transform::apply_inv(const Normal& norm) const {
-    return Normal(mul_mat_transpose_0(this->mat, norm.v));
-  }
-
-  DiffGeom Transform::apply_inv(const DiffGeom& dg) const {
-    DiffGeom ret = dg;
-    ret.p = this->apply_inv(dg.p);
-    ret.nn = normalize(this->apply_inv(dg.nn));
-    ret.dpdu = this->apply_inv(dg.dpdu);
-    ret.dpdv = this->apply_inv(dg.dpdv);
-    return ret;
-  }
-
-  Ray Transform::apply_inv(const Ray& ray) const {
-    Ray ret(ray);
-    ret.orig = this->apply_inv(ray.orig);
-    ret.dir = this->apply_inv(ray.dir);
+    ret.orig = this->apply(inv, ray.orig);
+    ret.dir = this->apply(inv, ray.dir);
     return ret;
   }
 
