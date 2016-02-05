@@ -17,8 +17,8 @@ namespace dort {
     static Spectrum estimate_direct(const Scene& scene,
         const Ray& ray, const Intersection& isect, const Bsdf& bsdf,
         const Light& light, BxdfFlags bxdf_flags, Rng& rng);
-    static Spectrum specular_reflect(const Scene& scene,
+    static Spectrum trace_specular(const Scene& scene,
         const Renderer& renderer, const Ray& ray, const Intersection& isect,
-        const Bsdf& bsdf, uint32_t depth, Rng& rng);
+        const Bsdf& bsdf, BxdfFlags flags, uint32_t depth, Rng& rng);
   };
 }

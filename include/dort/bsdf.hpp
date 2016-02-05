@@ -59,5 +59,18 @@ namespace dort {
     static bool same_hemisphere(const Vector& w1, const Vector& w2) {
       return w1.v.z * w2.v.z > 0.f;
     }
+
+    static float cos_theta(const Vector& w) {
+      return w.v.z;
+    }
+    static float abs_cos_theta(const Vector& w) {
+      return abs(w.v.z);
+    }
+    static float sin_theta_square(const Vector& w) {
+      return 1.f - square(w.v.z);
+    }
+    static float sin_theta(const Vector& w) {
+      return sqrt(max(0.f, 1.f - square(w.v.z)));
+    }
   };
 }

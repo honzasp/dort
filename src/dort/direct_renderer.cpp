@@ -19,16 +19,23 @@ namespace dort {
 
     const AreaLight* area_light = isect.primitive->get_area_light(isect.diff_geom);
     if(area_light) {
-      radiance = radiance + area_light->emitted_radiance(
+      Spectrum emitted = area_light->emitted_radiance(
           isect.diff_geom.p, isect.diff_geom.nn, -ray.dir);
+      assert(is_finite(emitted));
+      radiance = radiance + emitted;
     }
 
     std::unique_ptr<Bsdf> bsdf = isect.primitive->get_bsdf(isect.diff_geom);
     radiance = radiance + uniform_sample_all_lights(scene, ray, isect, *bsdf, rng);
 
     if(depth < this->max_depth) {
-      radiance = radiance + specular_reflect(scene, *this, ray, isect, *bsdf, depth, rng);
-      // TODO: refract
+      Spectrum reflection = trace_specular(scene, *this, ray,
+          isect, *bsdf, BSDF_REFLECTION, depth, rng);
+      Spectrum refraction = trace_specular(scene, *this, ray,
+          isect, *bsdf, BSDF_TRANSMISSION, depth, rng);
+      assert(is_finite(reflection));
+      assert(is_finite(refraction));
+      radiance = radiance + reflection + refraction;
     }
 
     return radiance;
@@ -47,6 +54,7 @@ namespace dort {
         light_radiance = light_radiance + estimate_direct(scene, ray, isect, 
             bsdf, *light, BxdfFlags(BSDF_ALL & ~(BSDF_SPECULAR)), rng);
       }
+      assert(is_finite(light_radiance));
       radiance = radiance + light_radiance / float(num_samples);
     }
 
@@ -80,6 +88,7 @@ namespace dort {
           }
           light_contrib = bsdf_f * light_radiance * abs_dot(wi, n) 
             * (weight / light_pdf);
+          assert(is_finite(light_contrib));
         }
       }
     }
@@ -114,15 +123,16 @@ namespace dort {
 
         bsdf_contrib = bsdf_f * light_radiance * abs_dot(wi, n)
           * (weight / bsdf_pdf);
+        assert(is_finite(bsdf_contrib));
       }
     }
 
     return light_contrib + bsdf_contrib;
   }
 
-  Spectrum DirectRenderer::specular_reflect(const Scene& scene,
+  Spectrum DirectRenderer::trace_specular(const Scene& scene,
       const Renderer& renderer, const Ray& ray, const Intersection& isect,
-      const Bsdf& bsdf, uint32_t depth, Rng& rng)
+      const Bsdf& bsdf, BxdfFlags flags, uint32_t depth, Rng& rng)
   {
     Normal n = isect.diff_geom.nn;
     Vector wo = -ray.dir;
@@ -130,11 +140,12 @@ namespace dort {
     float pdf;
     BxdfFlags sampled_flags;
     Spectrum bsdf_f = bsdf.sample_f(wo, wi, pdf,
-        BxdfFlags(BSDF_SPECULAR | BSDF_REFLECTION), sampled_flags, rng);
+        BxdfFlags(BSDF_SPECULAR | flags), sampled_flags, rng);
     if(!bsdf_f.is_black() && pdf > 0) {
-      Ray refl_ray(isect.diff_geom.p, wi, isect.ray_epsilon, INFINITY);
-      Spectrum refl_radiance = renderer.get_radiance(scene, refl_ray, depth + 1, rng);
-      return bsdf_f * refl_radiance * abs_dot(wi, n) / pdf;
+      Ray ray(isect.diff_geom.p, wi, isect.ray_epsilon, INFINITY);
+      Spectrum radiance = renderer.get_radiance(scene, ray, depth + 1, rng);
+      assert(is_finite(bsdf_f));
+      return bsdf_f * radiance * abs_dot(wi, n) / pdf;
     } else {
       return Spectrum(0.f);
     }
