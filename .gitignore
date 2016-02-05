@@ -5,3 +5,4 @@ build/
 *.ppm
 Session.vim
 data/*.ply
+!images/*.ppm
