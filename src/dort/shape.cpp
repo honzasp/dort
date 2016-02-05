@@ -13,6 +13,7 @@ namespace dort {
     float t_hit;
     float ray_epsilon;
     Ray ray(eye, w, 0.f);
+
     if(!this->hit(ray, t_hit, ray_epsilon, diff_geom)) {
       return 0.f;
     }

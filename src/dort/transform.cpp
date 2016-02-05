@@ -27,6 +27,8 @@ namespace dort {
     DiffGeom ret = dg;
     ret.p = this->apply(dg.p);
     ret.nn = normalize(this->apply(dg.nn));
+    ret.dpdu = this->apply(dg.dpdu);
+    ret.dpdv = this->apply(dg.dpdv);
     return ret;
   }
 
@@ -61,13 +63,15 @@ namespace dort {
   }
 
   Normal Transform::apply_inv(const Normal& norm) const {
-    return Normal(mul_mat_transpose_0(this->mat_inv, norm.v));
+    return Normal(mul_mat_transpose_0(this->mat, norm.v));
   }
 
   DiffGeom Transform::apply_inv(const DiffGeom& dg) const {
     DiffGeom ret = dg;
     ret.p = this->apply_inv(dg.p);
     ret.nn = normalize(this->apply_inv(dg.nn));
+    ret.dpdu = this->apply_inv(dg.dpdu);
+    ret.dpdv = this->apply_inv(dg.dpdv);
     return ret;
   }
 
@@ -136,8 +140,8 @@ namespace dort {
 
     Mat4x4 mat(1.f);
     mat.cols[0][0] = cos_th;
-    mat.cols[0][2] = sin_th;
-    mat.cols[2][0] = -sin_th;
+    mat.cols[0][2] = -sin_th;
+    mat.cols[2][0] = sin_th;
     mat.cols[2][2] = cos_th;
     return Transform(mat, transpose(mat));
   }

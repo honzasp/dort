@@ -10,7 +10,7 @@ namespace dort {
     if(len < 1e-9) {
       coordinate_system(this->nn, this->sn, this->tn);
     } else {
-      this->sn = this->sn / len;
+      this->sn = diff_geom.dpdu / len;
       this->tn = cross(this->nn, this->sn);
     }
   }

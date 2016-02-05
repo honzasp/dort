@@ -40,7 +40,7 @@ namespace dort {
 
   Vector cosine_hemisphere_sample(float u1, float u2) {
     Vector w = uniform_disk_sample(u1, u2);
-    w.v.z = sqrt(max(0.f, 1.f - w.v.x * w.v.x - w.v.y * w.v.y));
+    w.v.z = sqrt(max(0.f, 1.f - square(w.v.x) - square(w.v.y)));
     return w;
   }
 

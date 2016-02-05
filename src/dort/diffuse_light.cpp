@@ -28,18 +28,7 @@ namespace dort {
     out_pdf = this->shape->point_eye_pdf(shape_eye, shape_wi);
     out_shadow.init_point_point(eye, eye_epsilon, world_p, 1e-1f); // TODO: epsilon
 
-    /*
-    std::printf("sample from eye %f,%f,%f\n", eye.v.x, eye.v.y, eye.v.z);
-    std::printf("  shape_eye %f,%f,%f\n", shape_eye.v.x, shape_eye.v.y, shape_eye.v.z);
-    std::printf("  shape_p %f,%f,%f\n", shape_p.v.x, shape_p.v.y, shape_p.v.z);
-    std::printf("  world_p %f,%f,%f\n", world_p.v.x, world_p.v.y, world_p.v.z);
-    std::printf("  shape_wi %f,%f,%f\n", shape_wi.v.x, shape_wi.v.y, shape_wi.v.z);
-    std::printf("  out_wi %f,%f,%f\n", out_wi.v.x, out_wi.v.y, out_wi.v.z);
-    std::printf("  out_pdf %f\n", out_pdf);
-    std::printf("  dot %f\n", dot(out_wi, shape_n));
-    */
-
-    if(dot(out_wi, shape_n) < 0.f) {
+    if(dot(shape_wi, shape_n) < 0.f) {
       return this->radiance;
     } else {
       return Spectrum(0.f);
@@ -47,7 +36,9 @@ namespace dort {
   }
 
   float DiffuseLight::radiance_pdf(const Point& eye, const Vector& wi) const {
-    return this->shape->point_eye_pdf(eye, wi);
+    Point shape_eye = this->shape_to_world.apply_inv(eye);
+    Vector shape_wi = normalize(this->shape_to_world.apply_inv(wi));
+    return this->shape->point_eye_pdf(shape_eye, shape_wi);
   }
 
   Spectrum DiffuseLight::background_radiance(const Ray&) const {
@@ -63,6 +54,7 @@ namespace dort {
   {
     Normal shape_n = this->shape_to_world.apply_inv(n);
     Vector shape_wo = this->shape_to_world.apply_inv(wo);
+
     if(dot(shape_wo, shape_n) > 0.f) {
       return this->radiance;
     } else {

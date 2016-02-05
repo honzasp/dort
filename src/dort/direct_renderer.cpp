@@ -80,14 +80,6 @@ namespace dort {
           }
           light_contrib = bsdf_f * light_radiance * abs_dot(wi, n) 
             * (weight / light_pdf);
-
-          /*
-          std::printf("contrib %f\n", light_contrib.average());
-          std::printf("  pdf %f, L %f, dot %f\n", light_pdf, 
-              light_radiance.average(), abs_dot(wi, n));
-          std::printf("  wi %f,%f,%f\n", wi.v.x, wi.v.y, wi.v.z);
-          std::printf("  n  %f,%f,%f\n", n.v.x, n.v.y, n.v.z);
-          */
         }
       }
     }
