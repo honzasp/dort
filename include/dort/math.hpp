@@ -33,6 +33,10 @@ namespace dort {
     }
   }
 
+  inline float clamp(float val) {
+    return clamp(val, 0.f, 1.f);
+  }
+
   template<class T>
   T lerp(float t, T x0, T x1) {
     return t * x0 + (1.f - t) * x1;

@@ -14,6 +14,7 @@ namespace dort {
   class Renderer;
   class Rng;
   class Shape;
+  class TextureMap2d;
   class Transform;
 
   struct Bxdf;
@@ -24,7 +25,10 @@ namespace dort {
   struct RgbSpectrum;
   struct Scene;
   struct ShadowTest;
+  struct Tex2;
   struct Vector;
+
+  template<class T> class Texture;
 }
 
 #ifndef __cpp_lib_make_unique

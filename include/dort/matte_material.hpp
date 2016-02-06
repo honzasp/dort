@@ -3,10 +3,12 @@
 
 namespace dort {
   class MatteMaterial: public Material {
-    Spectrum reflectance;
-    float sigma;
+    std::shared_ptr<Texture<Spectrum>> reflectance;
+    std::shared_ptr<Texture<float>> sigma;
   public:
-    MatteMaterial(const Spectrum& reflectance, float sigma = 0.f):
+    MatteMaterial(
+        std::shared_ptr<Texture<Spectrum>> reflectance,
+        std::shared_ptr<Texture<float>> sigma):
       reflectance(reflectance), sigma(sigma)
     { }
     virtual std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& diff_geom)

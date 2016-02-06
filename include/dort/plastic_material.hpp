@@ -3,13 +3,16 @@
 
 namespace dort {
   class PlasticMaterial: public Material {
-    Spectrum diffuse;
-    Spectrum reflection;
-    float roughness;
-    float eta;
+    std::shared_ptr<Texture<Spectrum>> diffuse;
+    std::shared_ptr<Texture<Spectrum>> reflection;
+    std::shared_ptr<Texture<float>> roughness;
+    std::shared_ptr<Texture<float>> eta;
   public:
-    PlasticMaterial(const Spectrum& diffuse, const Spectrum& reflection,
-        float roughness, float eta = 1.5):
+    PlasticMaterial(
+        std::shared_ptr<Texture<Spectrum>> diffuse,
+        std::shared_ptr<Texture<Spectrum>> reflection,
+        std::shared_ptr<Texture<float>> roughness,
+        std::shared_ptr<Texture<float>> eta):
       diffuse(diffuse), reflection(reflection),
       roughness(roughness), eta(eta)
     { }
