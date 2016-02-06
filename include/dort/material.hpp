@@ -1,7 +1,6 @@
 #pragma once
 #include "dort/dort.hpp"
 
-
 namespace dort {
   class Material {
   public:

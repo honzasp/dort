@@ -8,9 +8,9 @@ namespace dort {
   }
 
   Spectrum LambertianBrdf::sample_f(const Vector& wo, Vector& out_wi,
-      float& out_pdf, Rng& rng) const
+      float& out_pdf, float u1, float u2) const
   {
-    out_wi = cosine_hemisphere_sample(rng.uniform_float(), rng.uniform_float());
+    out_wi = cosine_hemisphere_sample(u1, u2);
     if(wo.v.z < 0.f) {
       out_wi.v.z = -out_wi.v.z;
     }

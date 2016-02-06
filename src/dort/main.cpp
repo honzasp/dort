@@ -9,6 +9,7 @@
 #include "dort/list_primitive.hpp"
 #include "dort/main.hpp"
 #include "dort/matte_material.hpp"
+#include "dort/plastic_material.hpp"
 #include "dort/point_light.hpp"
 #include "dort/primitive.hpp"
 #include "dort/read_ply.hpp"
@@ -25,12 +26,16 @@ namespace dort {
       return 1;
     }
 
-    auto ply_material = std::make_shared<MatteMaterial>(
-        Spectrum(1.f, 0.9f, 0.5f), 0.0f * PI);
+    auto ply_material = std::make_shared<PlasticMaterial>(
+        Spectrum(1.f, 0.9f, 0.5f),
+        1.0f * Spectrum(1.f, 1.f, 1.f),
+        1.5f);
     auto curtain_material = std::make_shared<MatteMaterial>(
         Spectrum(1.f, 1.f, 1.f));
-    auto ball_material = std::make_shared<MatteMaterial>(
-        Spectrum(0.5f, 0.9f, 1.0f));
+    auto ball_material = std::make_shared<GlassMaterial>(
+        Spectrum(1.f, 1.f, 1.f),
+        Spectrum(1.f, 1.f, 1.f),
+        1.5f);
     auto light_material = std::make_shared<MatteMaterial>(
         Spectrum(1.f, 1.f, 1.f));
 
@@ -64,7 +69,7 @@ namespace dort {
         translate(-200.f, 200.f, -1200.f) *
         rotate_y(0.3f * PI);
     auto area_light = std::make_shared<DiffuseLight>(light_shape,
-        light_transform, 200.f * Spectrum(1.f), 1);
+        light_transform, 180.f * Spectrum(1.f), 1);
     auto light_prim = std::make_unique<GeometricPrimitive>(
         light_shape, light_material, area_light);
 
@@ -94,18 +99,15 @@ namespace dort {
       }
     }
 
-
     Scene scene;
     scene.primitive = std::make_unique<BvhPrimitive>(
         std::move(prims), 2, BvhSplitMethod::Middle);
-    /*
     scene.lights.push_back(std::make_shared<PointLight>(
-          Point(-1000.f, 0.f, 300.f), 7e5f * Spectrum(1.f, 1.f, 1.f)));
+          Point(-1000.f, 0.f, 300.f), 5e5f * Spectrum(1.f, 1.f, 1.f)));
     scene.lights.push_back(std::make_shared<PointLight>(
-          Point(1000.f, 0.f, 300.f), 7e5f * Spectrum(1.f, 1.f, 1.f)));
+          Point(1000.f, 0.f, 300.f), 5e5f * Spectrum(1.f, 1.f, 1.f)));
     scene.lights.push_back(std::make_shared<PointLight>(
-          Point(0.f, -400.f, -900.f), 14e5f * Spectrum(1.f, 1.f, 1.f)));
-          */
+          Point(0.f, -400.f, -900.f), 10e5f * Spectrum(1.f, 1.f, 1.f)));
     scene.lights.push_back(area_light);
 
     Film film(800, 800);

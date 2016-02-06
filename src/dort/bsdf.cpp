@@ -32,7 +32,7 @@ namespace dort {
     Spectrum f;
     for(const auto& bxdf: this->bxdfs) {
       if(bxdf->matches(flags)) {
-        f = f + bxdf->f(wo, wi);
+        f = f + bxdf->f(wo_local, wi_local);
       }
     }
     return f;
@@ -56,20 +56,25 @@ namespace dort {
       }
     }
 
+    float u1 = rng.uniform_float();
+    float u2 = rng.uniform_float();
     Vector wo_local = this->world_to_local(wo);
     Vector wi_local;
-    Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf, rng);
+    Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf, u1, u2);
     out_flags = sampled_bxdf->flags;
     out_wi = this->local_to_world(wi_local);
     return f;
   }
 
   float Bsdf::f_pdf(const Vector& wo, const Vector& wi, BxdfFlags flags) const {
+    Vector wo_local = this->world_to_local(wo);
+    Vector wi_local = this->world_to_local(wi);
+
     float sum_pdf = 0.f;
     uint32_t num_bxdfs = 0;
     for(const auto& bxdf: this->bxdfs) {
       if(bxdf->matches(flags)) {
-        sum_pdf = sum_pdf + bxdf->f_pdf(wo, wi);
+        sum_pdf = sum_pdf + bxdf->f_pdf(wo_local, wi_local);
         num_bxdfs = num_bxdfs + 1;
       }
     }

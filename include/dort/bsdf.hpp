@@ -28,7 +28,7 @@ namespace dort {
 
     virtual Spectrum f(const Vector& wo, const Vector& wi) const = 0;
     virtual Spectrum sample_f(const Vector& wo, Vector& out_wi,
-        float& out_pdf, Rng& rng) const = 0;
+        float& out_pdf, float u1, float u2) const = 0;
     virtual float f_pdf(const Vector& wo, const Vector& wi) const = 0;
   };
 

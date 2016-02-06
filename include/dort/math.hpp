@@ -39,6 +39,8 @@ namespace dort {
   }
 
   inline float sqrt(float a) { return std::sqrt(a); }
+  inline float exp(float a) { return std::exp(a); }
+  inline float pow(float b, float e) { return std::pow(b, e); }
   inline float floor(float a) { return std::floor(a); }
   inline float abs(float a) { return std::abs(a); }
   inline float sin(float a) { return std::sin(a); }
