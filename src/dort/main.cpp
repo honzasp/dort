@@ -8,10 +8,11 @@
 #include "dort/lambertian_brdf.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/main.hpp"
-#include "dort/material.hpp"
+#include "dort/matte_material.hpp"
 #include "dort/point_light.hpp"
 #include "dort/primitive.hpp"
 #include "dort/read_ply.hpp"
+#include "dort/specular_materials.hpp"
 #include "dort/sphere.hpp"
 #include "dort/triangle_mesh.hpp"
 
