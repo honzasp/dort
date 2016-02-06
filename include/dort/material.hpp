@@ -2,6 +2,7 @@
 #include "dort/dort.hpp"
 
 #include "dort/lambertian_brdf.hpp"
+#include "dort/oren_nayar_brdf.hpp"
 #include "dort/specular.hpp"
 
 namespace dort {
@@ -13,9 +14,10 @@ namespace dort {
 
   class MatteMaterial: public Material {
     Spectrum reflectance;
+    float roughness;
   public:
-    MatteMaterial(const Spectrum& reflectance):
-      reflectance(reflectance)
+    MatteMaterial(const Spectrum& reflectance, float roughness = 0.f):
+      reflectance(reflectance), roughness(roughness)
     { }
 
     virtual std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& diff_geom)

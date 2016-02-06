@@ -24,18 +24,12 @@ namespace dort {
       return 1;
     }
 
-    /*auto ply_material = std::make_shared<MatteMaterial>(
-        Spectrum(1.f, 1.f, 0.5f));*/
-    auto ply_material = std::make_shared<GlassMaterial>(
-        Spectrum(1.f, 1.f, 1.f),
-        Spectrum(1.f, 1.f, 1.f), 
-        1.5f);
+    auto ply_material = std::make_shared<MatteMaterial>(
+        Spectrum(1.f, 0.9f, 0.5f), 0.0f * PI);
     auto curtain_material = std::make_shared<MatteMaterial>(
         Spectrum(1.f, 1.f, 1.f));
-    auto ball_material = std::make_shared<GlassMaterial>(
-        Spectrum(1.f, 1.f, 1.f),
-        Spectrum(1.f, 1.f, 1.f), 
-        2.f);
+    auto ball_material = std::make_shared<MatteMaterial>(
+        Spectrum(0.5f, 0.9f, 1.0f));
     auto light_material = std::make_shared<MatteMaterial>(
         Spectrum(1.f, 1.f, 1.f));
 
@@ -50,7 +44,7 @@ namespace dort {
         std::move(ply_prims), 4, BvhSplitMethod::Middle);
     auto ply_transform = 
       translate(15.f, 400.f, 0.f) *
-      scale(2000.f) *
+      scale(3000.f) *
       rotate_x(1.1f * PI) *
       rotate_y(0.1f * PI);
 
@@ -64,12 +58,12 @@ namespace dort {
     auto curtain_transform =
       translate(0.f, 0.f, 500.f) * rotate_x(0.1f * PI);
 
-    auto light_shape = std::make_shared<Sphere>(30.f);
+    auto light_shape = std::make_shared<Sphere>(60.f);
     auto light_transform = 
-        translate(-200.f, 200.f, -500.f) *
+        translate(-200.f, 200.f, -1200.f) *
         rotate_y(0.3f * PI);
     auto area_light = std::make_shared<DiffuseLight>(light_shape,
-        light_transform, 300.f * Spectrum(1.f), 1);
+        light_transform, 200.f * Spectrum(1.f), 1);
     auto light_prim = std::make_unique<GeometricPrimitive>(
         light_shape, light_material, area_light);
 
@@ -80,8 +74,8 @@ namespace dort {
       curtain_transform, std::move(curtain_prim)));
     prims.push_back(std::make_unique<TransformPrimitive>(
       ball_transform, std::move(ball_prim)));
-    prims.push_back(std::make_unique<TransformPrimitive>(
-      light_transform, std::move(light_prim)));
+    /*prims.push_back(std::make_unique<TransformPrimitive>(
+      light_transform, std::move(light_prim)));*/
 
     for(uint32_t i = 0; i < 10; ++i) {
       for(uint32_t j = 0; j < 10; ++j) {
@@ -103,12 +97,14 @@ namespace dort {
     Scene scene;
     scene.primitive = std::make_unique<BvhPrimitive>(
         std::move(prims), 2, BvhSplitMethod::Middle);
+    /*
     scene.lights.push_back(std::make_shared<PointLight>(
-          Point(-1000.f, 0.f, 300.f), 1e6f * Spectrum(1.f, 1.f, 1.f)));
+          Point(-1000.f, 0.f, 300.f), 7e5f * Spectrum(1.f, 1.f, 1.f)));
     scene.lights.push_back(std::make_shared<PointLight>(
-          Point(1000.f, 0.f, 300.f), 1e6f * Spectrum(1.f, 1.f, 1.f)));
+          Point(1000.f, 0.f, 300.f), 7e5f * Spectrum(1.f, 1.f, 1.f)));
     scene.lights.push_back(std::make_shared<PointLight>(
-          Point(0.f, -400.f, -900.f), 2e6f * Spectrum(1.f, 1.f, 1.f)));
+          Point(0.f, -400.f, -900.f), 14e5f * Spectrum(1.f, 1.f, 1.f)));
+          */
     scene.lights.push_back(area_light);
 
     Film film(800, 800);

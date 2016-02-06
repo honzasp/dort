@@ -51,7 +51,6 @@ namespace dort {
     Vector local_to_world(const Vector& vec) const {
       return this->sn * vec.v.x + this->tn * vec.v.y + this->nn * vec.v.z;
     }
-
     Vector world_to_local(const Vector& vec) const {
       return Vector(dot(this->sn, vec), dot(this->tn, vec), dot(this->nn, vec));
     }
@@ -71,6 +70,19 @@ namespace dort {
     }
     static float sin_theta(const Vector& w) {
       return sqrt(max(0.f, 1.f - square(w.v.z)));
+    }
+
+    static float sin_phi_square(const Vector& w) {
+      return square(w.v.y) / sin_theta_square(w);
+    }
+    static float sin_phi(const Vector& w) {
+      return w.v.y / sin_theta(w);
+    }
+    static float cos_phi_square(const Vector& w) {
+      return square(w.v.x) / sin_theta_square(w);
+    }
+    static float cos_phi(const Vector& w) {
+      return w.v.x / sin_theta(w);
     }
   };
 }
