@@ -1,8 +1,8 @@
 .*.swp
 *~
 build/
+data/
 .tup/
 output.ppm
 output.png
 Session.vim
-data/*.ply

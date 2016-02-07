@@ -22,6 +22,7 @@ namespace dort {
   struct Intersection;
   struct Point;
   struct Ray;
+  struct RgbPixel8;
   struct RgbSpectrum;
   struct Scene;
   struct ShadowTest;

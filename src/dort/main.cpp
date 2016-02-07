@@ -7,6 +7,7 @@
 #include "dort/diffuse_light.hpp"
 #include "dort/direct_renderer.hpp"
 #include "dort/disk.hpp"
+#include "dort/image_texture.hpp"
 #include "dort/lambertian_brdf.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/main.hpp"
@@ -28,17 +29,23 @@ namespace dort {
       return 1;
     }
 
+    FILE* brick_file = std::fopen("data/brick.jpg", "r");
+    assert(brick_file);
+    auto brick_image = std::make_shared<Image<RgbPixel8>>(read_image(brick_file));
+    std::fclose(brick_file);
+
     auto ply_transform = 
       translate(15.f, 400.f, 0.f) *
       scale(3000.f) *
       rotate_x(1.1f * PI) *
       rotate_y(0.1f * PI);
     auto ply_material = std::make_shared<MatteMaterial>(
-        checkerboard_texture(
-          xy_texture_map_2d(translate(0.f, -200.f, 0.f) * ply_transform),
-          0.01f,
-          Spectrum(1.f, 0.9f, 0.1f),
-          Spectrum(1.f, 0.2f, 0.1f)),
+        image_texture(
+          xy_texture_map_2d(
+            translate(0.f, -200.f, 0.f) *
+            scale(1e-1f) *
+            ply_transform),
+          brick_image),
         const_texture(0.f));
     std::vector<std::unique_ptr<Primitive>> ply_prims;
     for(auto& triangle: triangles) {

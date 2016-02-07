@@ -65,7 +65,7 @@ namespace dort {
     }
     static RgbSpectrum to_rgb(RgbPixel8 pix) {
       auto map = [](uint8_t chan) {
-        return mul_power_of_two(float(chan), 8);
+        return mul_power_of_two(float(chan), -8);
       };
       return RgbSpectrum(map(pix.r), map(pix.g), map(pix.b));
     }
