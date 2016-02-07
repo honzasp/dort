@@ -1,4 +1,4 @@
-INCLUDES = -Iinclude -Iext/rply
+INCLUDES = -Iinclude -Iext/rply -Iext/stb
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
 CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
 CFLAGS   = -std=c11 $(INCLUDES) $(WARNINGS)

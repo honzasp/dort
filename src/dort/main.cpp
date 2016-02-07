@@ -78,8 +78,8 @@ namespace dort {
     Rng rng(42);
     renderer.render(scene, film, rng);
 
-    FILE* output = std::fopen("output.ppm", "w");
-    film.write_ppm(output);
+    FILE* output = std::fopen("output.png", "w");
+    write_image_png(output, film.to_image());
     std::fclose(output);
 
     return 0;

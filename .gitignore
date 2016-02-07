@@ -2,7 +2,7 @@
 *~
 build/
 .tup/
-*.ppm
+output.ppm
+output.png
 Session.vim
 data/*.ply
-!images/*.ppm

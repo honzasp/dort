@@ -29,6 +29,7 @@ namespace dort {
   struct Vector;
 
   template<class T> class Texture;
+  template<class Pixel> struct Image;
 }
 
 #ifndef __cpp_lib_make_unique

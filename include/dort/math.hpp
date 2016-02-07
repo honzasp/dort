@@ -58,6 +58,7 @@ namespace dort {
   template<class T> T max(T a, T b) { return (a < b) ? b : a; }
 
   inline int32_t floor_int32(float a) { return int32_t(floor(a)); }
+  inline float mul_power_of_two(float a, int32_t exp) { return std::ldexp(a, exp); }
   inline float square(float a) { return a * a; }
 
   bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2);
