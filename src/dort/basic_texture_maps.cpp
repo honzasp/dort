@@ -9,19 +9,44 @@ namespace dort {
     });
   }
 
+  std::shared_ptr<TextureMap2d> xy_texture_map_2d(
+      const Transform& texture_to_world)
+  {
+    return make_texture_map_2d([=](const DiffGeom& diff_geom) {
+      Vec3 tex_p = texture_to_world.apply_inv(diff_geom.p).v;
+      return Tex2(tex_p.x, tex_p.y);
+    });
+  }
+
   std::shared_ptr<TextureMap2d> spherical_texture_map_2d(
       const Transform& texture_to_world) 
   {
     return make_texture_map_2d([=](const DiffGeom& diff_geom) {
-      Point tex_p = texture_to_world.apply_inv(diff_geom.p);
-      float r = length(tex_p.v);
+      Vec3 tex_p = texture_to_world.apply_inv(diff_geom.p).v;
+      float r = length(tex_p);
       if(r == 0.f) {
         return Tex2(0.f, 0.f);
       }
 
-      float phi = atan(tex_p.v.y, tex_p.v.x);
-      float theta = acos(tex_p.v.z / r);
+      float phi = atan(tex_p.y, tex_p.x);
+      float theta = acos(tex_p.z / r);
       return Tex2(phi * INV_TWO_PI + 0.5f, theta * INV_PI);
+    });
+  }
+
+  std::shared_ptr<TextureMap2d> cylindrical_texture_map_2d(
+      const Transform& texture_to_world)
+  {
+    return make_texture_map_2d([=](const DiffGeom& diff_geom) {
+      Vec3 tex_p = texture_to_world.apply_inv(diff_geom.p).v;
+      float r = length(tex_p);
+      if(r == 0.f) {
+        return Tex2(0.f, 0.f);
+      }
+
+      float phi = atan(tex_p.y, tex_p.x);
+      float z = tex_p.z / r;
+      return Tex2(phi * INV_TWO_PI + 0.5f, z);
     });
   }
 }
