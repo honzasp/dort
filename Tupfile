@@ -1,16 +1,17 @@
-INCLUDES = -Iinclude -Iext/rply -Iext/stb
+INCLUDES = -Iinclude -Iext/rply -Iext/stb -Iext/lua
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
-CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
-CFLAGS   = -std=c11 $(INCLUDES) $(WARNINGS)
-DEBUG    = -g -O2
+CXXFLAGS = -x c++ -std=c++11 $(INCLUDES) $(WARNINGS)
+CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS)
+DEBUG    = -g -O0
 LDFLAGS  =
 CXX      = clang++
 CC       = clang
 
-!cxx_c_debug = |> ^ c++ %f^ $(CXX) $(CXXFLAGS) $(DEBUG) -c %f -o %o |>
-!cc_c_debug = |> ^ cc %f^ $(CC) $(CFLAGS) $(DEBUG) -c %f -o %o |>
+!cxx_c_debug = |> ^ c++ debug %f^ $(CXX) $(CXXFLAGS) $(DEBUG) -c %f -o %o |>
+!cc_c_debug = |> ^ cc debug %f^ $(CC) $(CFLAGS) $(DEBUG) -c %f -o %o |>
 !cxx_link = |> ^ link %f^ $(CXX) $(LDFLAGS) %f -o %o |>
 
 : foreach src/dort/*.cpp |> !cxx_c_debug |> build/d/%B.o {debug_objs}
 : foreach ext/rply/*.c |> !cc_c_debug |> build/d/rply/%B.o {debug_objs}
+: foreach ext/lua/*.c |> !cxx_c_debug |> build/d/lua/%B.o {debug_objs}
 : {debug_objs} |> !cxx_link |> build/d/dort
