@@ -1,21 +1,7 @@
+#include "dort/lua_helpers.hpp"
 #include "dort/lua_math.hpp"
 
 namespace dort {
-  template<float (*unary_fun)(float)>
-  int lua_wrap_unary_fun(lua_State* l) {
-    float a = luaL_checknumber(l, 1);
-    lua_pushnumber(l, unary_fun(a));
-    return 1;
-  }
-
-  template<float (*binary_fun)(float, float)>
-  int lua_wrap_binary_fun(lua_State* l) {
-    float a = luaL_checknumber(l, 1);
-    float b = luaL_checknumber(l, 2);
-    lua_pushnumber(l, binary_fun(a, b));
-    return 1;
-  }
-
   int lua_open_math(lua_State* l) {
     lua_register(l, "sqrt", lua_wrap_unary_fun<sqrt>);
     lua_register(l, "exp", lua_wrap_unary_fun<exp>);
@@ -35,14 +21,9 @@ namespace dort {
     lua_register(l, "min", lua_min);
     lua_register(l, "max", lua_max);
 
-    auto lua_setconst = [](lua_State* l, const char* name, float value) {
-      lua_pushnumber(l, value);
-      lua_setglobal(l, name);
-    };
-
-    lua_setconst(l, "infinity", INFINITY);
-    lua_setconst(l, "pi", PI);
-    lua_setconst(l, "two_pi", TWO_PI);
+    lua_register_const(l, "infinity", INFINITY);
+    lua_register_const(l, "pi", PI);
+    lua_register_const(l, "two_pi", TWO_PI);
 
     return 0;
   }

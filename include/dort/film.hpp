@@ -15,7 +15,7 @@ namespace dort {
 
     Film(uint32_t x_res, uint32_t y_res);
     void add_sample(float x, float y, const Spectrum& radiance);
-    Image<RgbPixel8> to_image() const;
+    Image<PixelRgb8> to_image() const;
 
     uint32_t pixel_idx(int32_t x, int32_t y) const {
       assert(x >= 0 && x < int32_t(this->x_res));

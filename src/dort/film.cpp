@@ -13,8 +13,8 @@ namespace dort {
     pixel.weight = pixel.weight + 1.f;
   }
 
-  Image<RgbPixel8> Film::to_image() const {
-    Image<RgbPixel8> img(this->x_res, this->y_res);
+  Image<PixelRgb8> Film::to_image() const {
+    Image<PixelRgb8> img(this->x_res, this->y_res);
     for(uint32_t y = 0; y < this->y_res; ++y) {
       for(uint32_t x = 0; x < this->x_res; ++x) {
         const Film::Pixel& pixel = this->pixels.at(this->pixel_idx(x, y));

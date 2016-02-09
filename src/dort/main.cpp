@@ -3,6 +3,7 @@
 #include <lauxlib.h>
 #include "dort/geometry.hpp"
 #include "dort/lua_geometry.hpp"
+#include "dort/lua_image.hpp"
 #include "dort/lua_math.hpp"
 
 namespace dort {
@@ -41,12 +42,17 @@ namespace dort {
       print(t1:inverse():apply(p1))
       print(t1:apply_inv(p1))
       print(t1:apply(true, p1))
+
+      print("image")
+      local img = read_image("lua.jpg")
+      write_png_image("lua_2.png", img)
     )";
 
     lua_State* l = luaL_newstate();
     luaL_requiref(l, "base", luaopen_base, true);
     luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
     luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
+    luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
 
     int error;
     if((error = luaL_loadbuffer(l, prog.data(), prog.size(), "hello"))) {

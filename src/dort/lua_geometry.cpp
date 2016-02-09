@@ -1,4 +1,5 @@
 #include "dort/lua_geometry.hpp"
+#include "dort/lua_helpers.hpp"
 #include "dort/geometry.hpp"
 
 namespace dort {
@@ -9,6 +10,7 @@ namespace dort {
       {"z", lua_vector_get_z},
       {"__tostring", lua_vector_tostring},
       {"__add", lua_vector_add},
+      {"__eq", lua_vector_eq},
       {0, 0},
     };
 
@@ -17,6 +19,7 @@ namespace dort {
       {"y", lua_point_get_y},
       {"z", lua_point_get_z},
       {"__tostring", lua_point_tostring},
+      {"__eq", lua_vector_eq},
       {0, 0},
     };
 
@@ -26,29 +29,13 @@ namespace dort {
       {"inverse", lua_transform_inverse},
       {"__call", lua_transform_apply},
       {"__mul", lua_transform_mul},
+      {"__eq", lua_transform_eq},
       {0, 0},
     };
 
-    luaL_newmetatable(l, VECTOR_TNAME);
-    lua_pushstring(l, "__index");
-    lua_pushvalue(l, -2);
-    lua_settable(l, -3);
-    luaL_setfuncs(l, vector_methods, 0);
-    lua_pop(l, 1);
-
-    luaL_newmetatable(l, POINT_TNAME);
-    lua_pushstring(l, "__index");
-    lua_pushvalue(l, -2);
-    lua_settable(l, -3);
-    luaL_setfuncs(l, point_methods, 0);
-    lua_pop(l, 1);
-
-    luaL_newmetatable(l, TRANSFORM_TNAME);
-    lua_pushstring(l, "__index");
-    lua_pushvalue(l, -2);
-    lua_settable(l, -3);
-    luaL_setfuncs(l, transform_methods, 0);
-    lua_pop(l, 1);
+    lua_register_type(l, VECTOR_TNAME, vector_methods);
+    lua_register_type(l, POINT_TNAME, point_methods);
+    lua_register_type(l, TRANSFORM_TNAME, transform_methods);
 
     lua_register(l, "vector", lua_vector_make);
     lua_register(l, "point", lua_point_make);
@@ -90,6 +77,14 @@ namespace dort {
     lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
     return 1;
   }
+  int lua_vector_eq(lua_State* l) {
+    if(!lua_test_vector(l, 2)) {
+      lua_pushboolean(l, false);
+    } else {
+      lua_pushboolean(l, lua_check_vector(l, 1) == lua_check_vector(l, 2));
+    }
+    return 1;
+  }
 
   int lua_point_make(lua_State* l) {
     float x = luaL_checknumber(l, 1);
@@ -113,6 +108,14 @@ namespace dort {
   int lua_point_tostring(lua_State* l) {
     const Point& pt = lua_check_point(l, 1);
     lua_pushfstring(l, "point(%f, %f, %f)", pt.v.x, pt.v.y, pt.v.z);
+    return 1;
+  }
+  int lua_point_eq(lua_State* l) {
+    if(!lua_test_point(l, 2)) {
+      lua_pushboolean(l, false);
+    } else {
+      lua_pushboolean(l, lua_check_point(l, 1) == lua_check_point(l, 2));
+    }
     return 1;
   }
 
@@ -189,46 +192,42 @@ namespace dort {
         lua_check_transform(l, 2));
     return 1;
   }
+  int lua_transform_eq(lua_State* l) {
+    if(!lua_test_transform(l, 2)) {
+      lua_pushboolean(l, false);
+    } else {
+      lua_pushboolean(l, lua_check_transform(l, 1) == lua_check_transform(l, 2));
+    }
+    return 1;
+  }
 
   const Vector& lua_check_vector(lua_State* l, int idx) {
-    return *((Vector*)luaL_checkudata(l, idx, VECTOR_TNAME));
+    return lua_check_managed_obj<Vector, VECTOR_TNAME>(l, idx);
   }
   bool lua_test_vector(lua_State* l, int idx) {
-    return !!luaL_testudata(l, idx, VECTOR_TNAME);
-    }
+    return lua_test_managed_obj<Vector, VECTOR_TNAME>(l, idx);
+  }
   void lua_push_vector(lua_State* l, const Vector& vec) {
-    static_assert(std::is_trivially_destructible<Vector>::value,
-        "Lua vectors need to define finalizers");
-    Vector* lua_vec = (Vector*)lua_newuserdata(l, sizeof(Vector));
-    new (lua_vec) Vector(vec);
-    luaL_getmetatable(l, VECTOR_TNAME);
-    lua_setmetatable(l, -2);
+    return lua_push_managed_obj<Vector, VECTOR_TNAME>(l, vec);
   }
 
   const Point& lua_check_point(lua_State* l, int idx) {
-    return *((Point*)luaL_checkudata(l, idx, POINT_TNAME));
+    return lua_check_managed_obj<Point, POINT_TNAME>(l, idx);
   }
   bool lua_test_point(lua_State* l, int idx) {
-    return !!luaL_testudata(l, idx, POINT_TNAME);
-    }
+    return lua_test_managed_obj<Point, POINT_TNAME>(l, idx);
+  }
   void lua_push_point(lua_State* l, const Point& pt) {
-    static_assert(std::is_trivially_destructible<Point>::value,
-        "Lua points need to define finalizers");
-    Point* lua_pt = (Point*)lua_newuserdata(l, sizeof(Point));
-    new (lua_pt) Point(pt);
-    luaL_getmetatable(l, POINT_TNAME);
-    lua_setmetatable(l, -2);
+    return lua_push_managed_obj<Point, POINT_TNAME>(l, pt);
   }
 
   const Transform& lua_check_transform(lua_State* l, int idx) {
-    return *((Transform*)luaL_checkudata(l, idx, TRANSFORM_TNAME));
+    return lua_check_managed_obj<Transform, TRANSFORM_TNAME>(l, idx);
+  }
+  bool lua_test_transform(lua_State* l, int idx) {
+    return lua_test_managed_obj<Transform, TRANSFORM_TNAME>(l, idx);
   }
   void lua_push_transform(lua_State* l, const Transform& trans) {
-    static_assert(std::is_trivially_destructible<Transform>::value,
-        "Lua transforms need to define finalizers");
-    Transform* lua_trans = (Transform*)lua_newuserdata(l, sizeof(Transform));
-    new (lua_trans) Transform(trans);
-    luaL_getmetatable(l, TRANSFORM_TNAME);
-    lua_setmetatable(l, -2);
+    return lua_push_managed_obj<Transform, TRANSFORM_TNAME>(l, trans);
   }
 }

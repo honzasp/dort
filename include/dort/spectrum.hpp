@@ -38,6 +38,9 @@ namespace dort {
   inline RgbSpectrum operator*(const RgbSpectrum& s1, const RgbSpectrum& s2) {
     return RgbSpectrum(s1.rgb * s2.rgb);
   }
+  inline bool operator==(const RgbSpectrum& s1, const RgbSpectrum& s2) {
+    return s1.rgb == s2.rgb;
+  }
 
   inline bool is_finite(const RgbSpectrum& s) {
     return is_finite(s.rgb);
@@ -45,6 +48,4 @@ namespace dort {
   inline bool is_nonnegative(const RgbSpectrum& s) {
     return is_nonnegative(s.rgb);
   }
-
-  using Spectrum = RgbSpectrum;
 }

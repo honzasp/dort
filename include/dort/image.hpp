@@ -40,30 +40,30 @@ namespace dort {
     }
   };
 
-  struct RgbPixel8 {
+  struct PixelRgb8 {
     uint8_t r;
     uint8_t g;
     uint8_t b;
 
-    RgbPixel8(): r(0), g(0), b(0) { }
-    RgbPixel8(uint8_t r, uint8_t g, uint8_t b): r(r), g(g), b(b) { }
+    PixelRgb8(): r(0), g(0), b(0) { }
+    PixelRgb8(uint8_t r, uint8_t g, uint8_t b): r(r), g(g), b(b) { }
 
     using StorageT = uint8_t;
     static constexpr uint32_t storage_size = 3;
-    static RgbPixel8 read_storage(const uint8_t* data) {
-      return RgbPixel8(data[0], data[1], data[2]);
+    static PixelRgb8 read_storage(const uint8_t* data) {
+      return PixelRgb8(data[0], data[1], data[2]);
     }
-    static void write_storage(uint8_t* data, RgbPixel8 pix) {
+    static void write_storage(uint8_t* data, PixelRgb8 pix) {
       data[0] = pix.r; data[1] = pix.g; data[2] = pix.b;
     }
 
-    static RgbPixel8 from_rgb(const RgbSpectrum& spectrum) {
+    static PixelRgb8 from_rgb(const RgbSpectrum& spectrum) {
       auto map = [](float chan) {
         return clamp(floor_int32(256.f * chan), 0, 255);
       };
-      return RgbPixel8(map(spectrum.rgb.x), map(spectrum.rgb.y), map(spectrum.rgb.z));
+      return PixelRgb8(map(spectrum.rgb.x), map(spectrum.rgb.y), map(spectrum.rgb.z));
     }
-    static RgbSpectrum to_rgb(RgbPixel8 pix) {
+    static RgbSpectrum to_rgb(PixelRgb8 pix) {
       auto map = [](uint8_t chan) {
         return mul_power_of_two(float(chan), -8);
       };
@@ -71,7 +71,7 @@ namespace dort {
     }
   };
 
-  Image<RgbPixel8> read_image(FILE* input);
-  void write_image_png(FILE* output, const Image<RgbPixel8>& img);
-  void write_image_ppm(FILE* output, const Image<RgbPixel8>& img);
+  Image<PixelRgb8> read_image(FILE* input);
+  void write_image_png(FILE* output, const Image<PixelRgb8>& img);
+  void write_image_ppm(FILE* output, const Image<PixelRgb8>& img);
 }

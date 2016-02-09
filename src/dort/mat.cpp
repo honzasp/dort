@@ -69,4 +69,17 @@ namespace dort {
       return ret / w;
     }
   }
+
+  bool operator==(const Mat4x4& mat1, const Mat4x4& mat2) {
+    auto& m1 = mat1.cols;
+    auto& m2 = mat2.cols;
+    for(uint32_t col = 0; col < 4; ++col) {
+      for(uint32_t row = 0; row < 4; ++row) {
+        if(m1[col][row] != m2[col][row]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 }

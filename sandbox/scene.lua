@@ -25,7 +25,7 @@ local scene = define_scene(function()
         map = xy_texture_map(),
         edge = 10,
         even_check = white * 0.2,
-        odd_check = white * 0.7,
+        odd_check = rgb(0.7, 0.7, 0.7),
       },
       sigma = 1,
     })

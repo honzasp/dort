@@ -14,6 +14,9 @@ namespace dort {
 
     Transform inverse() const;
     Transform operator*(const Transform& trans) const;
+    bool operator==(const Transform& trans) const {
+      return this->mat == trans.mat && this->mat_inv == trans.mat_inv;
+    }
 
     Vector apply(bool inv, const Vector& vec) const {
       return Vector(mul_mat_0(this->get_mat(inv), vec.v));

@@ -20,9 +20,9 @@ namespace dort {
   struct Bxdf;
   struct DiffGeom;
   struct Intersection;
+  struct PixelRgb8;
   struct Point;
   struct Ray;
-  struct RgbPixel8;
   struct RgbSpectrum;
   struct Scene;
   struct ShadowTest;
@@ -31,6 +31,8 @@ namespace dort {
 
   template<class T> class Texture;
   template<class Pixel> struct Image;
+
+  using Spectrum = RgbSpectrum;
 }
 
 #ifndef __cpp_lib_make_unique

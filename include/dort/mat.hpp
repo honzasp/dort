@@ -15,4 +15,5 @@ namespace dort {
   Vec3 mul_mat_0(const Mat4x4& mat, const Vec3& v);
   Vec3 mul_mat_transpose_0(const Mat4x4& mat, const Vec3& v);
   Vec3 mul_mat_1(const Mat4x4& mat, const Vec3& v);
+  bool operator==(const Mat4x4& mat1, const Mat4x4& mat2);
 }

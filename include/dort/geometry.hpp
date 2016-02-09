@@ -78,6 +78,16 @@ namespace dort {
     return Point(a * pt.v);
   }
 
+  inline bool operator==(const Vector& vec1, const Vector& vec2) {
+    return vec1.v == vec2.v;
+  }
+  inline bool operator==(const Point& pt1, const Point& pt2) {
+    return pt1.v == pt2.v;
+  }
+  inline bool operator==(const Normal& norm1, const Normal& norm2) {
+    return norm1.v == norm2.v;
+  }
+
   inline Vector normalize(const Vector& vec) {
     return Vector(normalize(vec.v));
   }
