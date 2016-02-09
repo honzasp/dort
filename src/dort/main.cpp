@@ -24,13 +24,23 @@ namespace dort {
       print("points")
       local p1 = point(1, 2, 3)
       print(p1)
-      print(point_x(p1))
       print(p1:y())
 
       print("math")
       print(sqrt(10))
       print(min(1, -10, infinity))
       print(pow(2, 3))
+
+      print("transforms")
+      local t1 = translate(1, 2, -3) * rotate_x(pi)
+      print(t1)
+      print(t1(p1))
+      print(t1(v2))
+      print(t1:apply(v1))
+      print(t1:apply(false, v1))
+      print(t1:inverse():apply(p1))
+      print(t1:apply_inv(p1))
+      print(t1:apply(true, p1))
     )";
 
     lua_State* l = luaL_newstate();
