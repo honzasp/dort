@@ -1,3 +1,5 @@
+#include "dort/geometry.hpp"
+#include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_texture.hpp"
@@ -12,6 +14,12 @@ namespace dort {
     float num = lua_tonumber(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return num;
+  }
+  Point lua_param_point(lua_State* l, int params_idx, const char* param_name) {
+    lua_getfield(l, params_idx, param_name);
+    Point pt = lua_check_point(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return pt;
   }
   Spectrum lua_param_spectrum(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);
@@ -60,6 +68,17 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return num;
   }
+  uint32_t lua_param_uint32_opt(lua_State* l, int params_idx,
+      const char* param_name, uint32_t def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    int32_t num = lua_isnil(l, -1) ? def : lua_tointeger(l, -1);
+    if(num < 0) {
+      luaL_error(l, "Expected an unsigned number");
+    }
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return uint32_t(num);
+  }
   Spectrum lua_param_spectrum_opt(lua_State* l, int params_idx,
       const char* param_name, const Spectrum& def)
   {
@@ -67,6 +86,22 @@ namespace dort {
     auto spec = lua_isnil(l, -1) ? def : lua_check_spectrum(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return spec;
+  }
+  std::shared_ptr<Texture<float>> lua_param_texture_float_opt(lua_State* l,
+      int params_idx, const char* param_name, std::shared_ptr<Texture<float>> def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto tex = lua_isnil(l, -1) ? def : lua_cast_texture_float(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return tex;
+  }
+  std::shared_ptr<Texture<Spectrum>> lua_param_texture_spectrum_opt(lua_State* l,
+      int params_idx, const char* param_name, std::shared_ptr<Texture<Spectrum>> def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto tex = lua_isnil(l, -1) ? def : lua_cast_texture_spectrum(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return tex;
   }
   std::shared_ptr<TextureMap2d> lua_param_texture_map_2d_opt(lua_State* l,
       int params_idx, const char* param_name, std::shared_ptr<TextureMap2d> def)

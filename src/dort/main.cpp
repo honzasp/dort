@@ -2,9 +2,13 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "dort/geometry.hpp"
+#include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
+#include "dort/lua_light.hpp"
+#include "dort/lua_material.hpp"
 #include "dort/lua_math.hpp"
+#include "dort/lua_shape.hpp"
 #include "dort/lua_texture.hpp"
 
 namespace dort {
@@ -74,9 +78,13 @@ namespace dort {
     luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
     luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
     luaL_requiref(l, TEXTURE_LIBNAME, lua_open_texture, true);
+    luaL_requiref(l, SHAPE_LIBNAME, lua_open_shape, true);
+    luaL_requiref(l, MATERIAL_LIBNAME, lua_open_material, true);
+    luaL_requiref(l, LIGHT_LIBNAME, lua_open_light, true);
+    luaL_requiref(l, BUILDER_LIBNAME, lua_open_builder, true);
 
     int error;
-    if((error = luaL_loadbuffer(l, prog.data(), prog.size(), "hello"))) {
+    if((error = luaL_loadfile(l, "examples/balls.lua"))) {
       std::fprintf(stderr, "Load error: %s\n", lua_tostring(l, -1));
       lua_pop(l, 1);
       lua_close(l);

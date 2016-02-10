@@ -46,6 +46,5 @@ end)
 write_png_image("output.png", render(scene, {
   x_res = 800,
   y_res = 800,
-  samples_per_pixel = 5,
   seed = 42
 }))

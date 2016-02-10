@@ -45,6 +45,23 @@ namespace dort {
   }
 
   template<class T, const char* tname>
+  void lua_push_managed_gc_obj(lua_State* l, T&& obj) {
+    T* lua_obj = (T*)lua_newuserdata(l, sizeof(T));
+    new (lua_obj) T(std::move(obj));
+    luaL_getmetatable(l, tname);
+    lua_setmetatable(l, -2);
+  }
+
+  template<class T, const char* tname>
+  int lua_gc_managed_obj(lua_State* l) {
+    auto lua_ptr = (T*)luaL_checkudata(l, 1, tname);
+    if(lua_ptr != 0) {
+      lua_ptr->~T();
+    }
+    return 0;
+  }
+
+  template<class T, const char* tname>
   bool lua_test_managed_obj(lua_State* l, int idx) {
     return luaL_testudata(l, idx, tname) != 0;
   }

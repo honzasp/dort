@@ -1,6 +1,7 @@
 #include "dort/basic_texture_maps.hpp"
 #include "dort/basic_textures.hpp"
 #include "dort/image_texture.hpp"
+#include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_image.hpp"
@@ -79,6 +80,7 @@ namespace dort {
       luaL_argerror(l, 1, 
           "Parameters tex_0 and tex_1 must be textures of the same type");
     }
+    lua_params_check_unused(l, p);
     return 1;
   }
 
@@ -103,6 +105,7 @@ namespace dort {
       luaL_argerror(l, 1,
           "Parameters odd_check and even_check must be both floats or spectra");
     }
+    lua_params_check_unused(l, p);
     return 1;
   }
 
@@ -121,6 +124,7 @@ namespace dort {
     lua_push_texture_spectrum(l, image_texture(
           lua_param_texture_map_2d_opt(l, p, "map", uv_texture_map_2d()),
           lua_param_image(l, p, "image")));
+    lua_params_check_unused(l, p);
     return 1;
   }
 
@@ -180,7 +184,8 @@ namespace dort {
     if(lua_gettop(l) != 0) {
       trans = lua_check_transform(l, 1);
     }
-    lua_push_texture_map_2d(l, xy_texture_map_2d(trans));
+    lua_push_texture_map_2d(l, xy_texture_map_2d(
+          lua_current_frame_transform(l) * trans));
     return 1;
   }
   int lua_texture_map_2d_make_spherical(lua_State* l) {
@@ -188,7 +193,8 @@ namespace dort {
     if(lua_gettop(l) != 0) {
       trans = lua_check_transform(l, 1);
     }
-    lua_push_texture_map_2d(l, spherical_texture_map_2d(trans));
+    lua_push_texture_map_2d(l, spherical_texture_map_2d(
+          lua_current_frame_transform(l) * trans));
     return 1;
   }
   int lua_texture_map_2d_make_cylindrical(lua_State* l) {
@@ -196,7 +202,8 @@ namespace dort {
     if(lua_gettop(l) != 0) {
       trans = lua_check_transform(l, 1);
     }
-    lua_push_texture_map_2d(l, cylindrical_texture_map_2d(trans));
+    lua_push_texture_map_2d(l, cylindrical_texture_map_2d(
+          lua_current_frame_transform(l) * trans));
     return 1;
   }
 
