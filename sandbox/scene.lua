@@ -2,7 +2,7 @@ local ply_mesh = read_ply("data/dragon_vrip.ply")
 local brick_image = read_image("data/brick.jpg")
 
 local scene = define_scene(function()
-  block(function()
+  local brick_dragon = instance(function()
     transform(translate(15, 400, 0) 
       * rotate_x(1.1 * pi) 
       * rotate_y(0.1 * pi))
@@ -16,6 +16,14 @@ local scene = define_scene(function()
     add_mesh(ply_mesh)
   end)
 
+  for i = 1, 10 do
+    block(function()
+      transform(rotate(2 * pi * i / 10))
+      transform(translate(-100, 0, 0))
+      add_primitive(brick_dragon)
+    end)
+  end
+
   block(function()
     transform(translate(200, -200, -300) 
       * rotate_x(-0.8 * pi) 
@@ -23,7 +31,7 @@ local scene = define_scene(function()
     material(matte_material {
       refl = checkerboard_texture {
         map = xy_texture_map(),
-        edge = 10,
+        check_size = 10,
         even_check = white * 0.2,
         odd_check = rgb(0.7, 0.7, 0.7),
       },

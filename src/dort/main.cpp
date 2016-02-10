@@ -5,6 +5,7 @@
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_math.hpp"
+#include "dort/lua_texture.hpp"
 
 namespace dort {
   int lua_answer(lua_State* l) {
@@ -43,9 +44,28 @@ namespace dort {
       print(t1:apply_inv(p1))
       print(t1:apply(true, p1))
 
-      print("image")
-      local img = read_image("lua.jpg")
-      write_png_image("lua_2.png", img)
+      --print("image")
+      --local img = read_image("lua.jpg")
+      --write_png_image("lua_2.png", img)
+
+      print("texture")
+      print(const_texture(0.1))
+      print(const_texture(0.1) * 10)
+      print(0.23 * const_texture(rgb(1, 0, 1)))
+      local tex1 = checkerboard_texture {
+        map = xy_texture_map(),
+        odd_check = 0.5,
+      }
+      local tex2 = checkerboard_texture {
+        map = cylindrical_texture_map(rotate_x(0.5 * pi)),
+        check_size = 0.5,
+        odd_check = rgb(1, 0, 0),
+        even_check = rgb(0, 0, 1),
+      };
+      local tex3 = lerp_texture {
+        t = tex1, tex_0 = tex2, tex_1 = rgb(1, 0, 1),
+      }
+      print(tex2 + tex3 * 0.5)
     )";
 
     lua_State* l = luaL_newstate();
@@ -53,6 +73,7 @@ namespace dort {
     luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
     luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
     luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
+    luaL_requiref(l, TEXTURE_LIBNAME, lua_open_texture, true);
 
     int error;
     if((error = luaL_loadbuffer(l, prog.data(), prog.size(), "hello"))) {

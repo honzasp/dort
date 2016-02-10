@@ -65,7 +65,11 @@ namespace dort {
     return 1;
   }
   int lua_spectrum_eq(lua_State* l) {
-    lua_pushboolean(l, lua_check_spectrum(l, 1) == lua_check_spectrum(l, 2));
+    if(lua_test_spectrum(l, 1) ^ lua_test_spectrum(l, 2)) {
+      lua_pushboolean(l, false);
+    } else {
+      lua_pushboolean(l, lua_check_spectrum(l, 1) == lua_check_spectrum(l, 2));
+    }
     return 1;
   }
 
@@ -98,7 +102,11 @@ namespace dort {
   }
 
   int lua_image_eq(lua_State* l) {
-    lua_pushboolean(l, lua_check_image(l, 1).get() == lua_check_image(l, 2).get());
+    if(lua_test_image(l, 1) ^ lua_test_image(l, 2)) {
+      lua_pushboolean(l, false);
+    } else {
+      lua_pushboolean(l, lua_check_image(l, 1).get() == lua_check_image(l, 2).get());
+    }
     return 1;
   }
 

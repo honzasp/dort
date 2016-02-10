@@ -19,7 +19,7 @@ namespace dort {
       {"y", lua_point_get_y},
       {"z", lua_point_get_z},
       {"__tostring", lua_point_tostring},
-      {"__eq", lua_vector_eq},
+      {"__eq", lua_point_eq},
       {0, 0},
     };
 
@@ -78,7 +78,7 @@ namespace dort {
     return 1;
   }
   int lua_vector_eq(lua_State* l) {
-    if(!lua_test_vector(l, 2)) {
+    if(lua_test_vector(l, 1) ^ lua_test_vector(l, 2)) {
       lua_pushboolean(l, false);
     } else {
       lua_pushboolean(l, lua_check_vector(l, 1) == lua_check_vector(l, 2));
@@ -111,7 +111,7 @@ namespace dort {
     return 1;
   }
   int lua_point_eq(lua_State* l) {
-    if(!lua_test_point(l, 2)) {
+    if(lua_test_point(l, 1) ^ lua_test_point(l, 2)) {
       lua_pushboolean(l, false);
     } else {
       lua_pushboolean(l, lua_check_point(l, 1) == lua_check_point(l, 2));
@@ -193,7 +193,7 @@ namespace dort {
     return 1;
   }
   int lua_transform_eq(lua_State* l) {
-    if(!lua_test_transform(l, 2)) {
+    if(lua_test_transform(l, 1) ^ lua_test_transform(l, 2)) {
       lua_pushboolean(l, false);
     } else {
       lua_pushboolean(l, lua_check_transform(l, 1) == lua_check_transform(l, 2));

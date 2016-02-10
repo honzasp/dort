@@ -12,6 +12,15 @@ namespace dort {
   }
 
   template<class T>
+  std::shared_ptr<Texture<T>> add_texture(
+      std::shared_ptr<Texture<T>> a, std::shared_ptr<Texture<T>> b)
+  {
+    return make_texture<T>([=](const DiffGeom& diff_geom) {
+        return a->evaluate(diff_geom) + b->evaluate(diff_geom);
+      });
+  }
+
+  template<class T>
   std::shared_ptr<Texture<T>> scale_texture(
       std::shared_ptr<Texture<float>> a, std::shared_ptr<Texture<T>> b)
   {
@@ -35,7 +44,7 @@ namespace dort {
   template<class T>
   std::shared_ptr<Texture<T>> checkerboard_texture(
       std::shared_ptr<TextureMap2d> texture_map,
-      float check_size, T even_value, T odd_value)
+      float check_size, T even_check, T odd_check)
   {
     float inv_check_size = 1.f / check_size;
     return make_texture<T>([=](const DiffGeom& diff_geom) {
@@ -43,7 +52,7 @@ namespace dort {
         int32_t check_s = floor_int32(inv_check_size * st.s);
         int32_t check_t = floor_int32(inv_check_size * st.t);
         int32_t check = check_s + check_t;
-        return (check % 2 == 0) ? even_value : odd_value;
+        return (check % 2 == 0) ? even_check : odd_check;
       });
   }
 
