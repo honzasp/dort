@@ -2,7 +2,7 @@
 #include "dort/dort.hpp"
 
 namespace dort {
-  int main();
+  int main(int argc, char** argv);
 }
 
-int main();
+int main(int argc, char** argv);
