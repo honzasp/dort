@@ -64,6 +64,7 @@ int main() {
 
   auto blackhole = [](const Vec4& v) { 
     volatile float x; x = v[0]; x = v[1]; x = v[2]; x = v[3];
+    (void)x;
   };
   using clock = std::chrono::high_resolution_clock;
 
