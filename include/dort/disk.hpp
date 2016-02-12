@@ -5,10 +5,10 @@ namespace dort {
   class Disk final: public Shape {
     float radius;
     float inv_radius;
-    float height;
+    float z_coord;
   public:
-    Disk(float radius, float height = 0.f):
-      radius(radius), inv_radius(1.f / radius), height(height) { }
+    Disk(float radius, float z_coord = 0.f):
+      radius(radius), inv_radius(1.f / radius), z_coord(z_coord) { }
 
     virtual bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const override final;

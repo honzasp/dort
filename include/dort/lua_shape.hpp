@@ -8,6 +8,7 @@ namespace dort {
 
   int lua_open_shape(lua_State* l);
   int lua_shape_make_sphere(lua_State* l);
+  int lua_shape_make_disk(lua_State* l);
 
   std::shared_ptr<Shape> lua_check_shape(lua_State* l, int idx);
   bool lua_test_shape(lua_State* l, int idx);

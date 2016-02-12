@@ -2,6 +2,7 @@
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
+#include "dort/lua_shape.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/spectrum.hpp"
 
@@ -58,6 +59,14 @@ namespace dort {
     auto image = lua_check_image(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return image;
+  }
+  std::shared_ptr<Shape> lua_param_shape(lua_State* l,
+      int params_idx, const char* param_name)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto shape = lua_check_shape(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return shape;
   }
 
   float lua_param_float_opt(lua_State* l, int params_idx,

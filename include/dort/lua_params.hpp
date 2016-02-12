@@ -14,6 +14,8 @@ namespace dort {
       int params_idx, const char* param_name);
   std::shared_ptr<Image<PixelRgb8>> lua_param_image(lua_State* l,
       int params_idx, const char* param_name);
+  std::shared_ptr<Shape> lua_param_shape(lua_State* l,
+      int params_idx, const char* param_name);
 
   float lua_param_float_opt(lua_State* l, int params_idx,
       const char* param_name, float def);

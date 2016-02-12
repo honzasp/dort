@@ -9,7 +9,7 @@ namespace dort {
       return false;
     }
 
-    float t_hit = (this->height - ray.orig.v.z) / ray.dir.v.z;
+    float t_hit = (this->z_coord - ray.orig.v.z) / ray.dir.v.z;
     if(!(ray.t_min <= t_hit && t_hit <= ray.t_max)) {
       return false;
     }
@@ -40,7 +40,7 @@ namespace dort {
       return false;
     }
 
-    float t_hit = (this->height - ray.orig.v.z) / ray.dir.v.z;
+    float t_hit = (this->z_coord - ray.orig.v.z) / ray.dir.v.z;
     if(!(ray.t_min <= t_hit && t_hit <= ray.t_max)) {
       return false;
     }
@@ -52,8 +52,8 @@ namespace dort {
 
   Box Disk::bounds() const {
     return Box(
-        Point(-this->radius, -this->radius, this->height),
-        Point(this->radius, this->radius, this->height));
+        Point(-this->radius, -this->radius, this->z_coord),
+        Point(this->radius, this->radius, this->z_coord));
   }
 
   float Disk::area() const {
@@ -63,7 +63,7 @@ namespace dort {
   Point Disk::sample_point(float u1, float u2, Normal& out_n) const {
     Vector w = uniform_disk_sample(u1, u2);
     out_n = Normal(0.f, 0.f, 1.f);
-    return Point(w.v.x * this->radius, w.v.y * this->radius, this->height);
+    return Point(w.v.x * this->radius, w.v.y * this->radius, this->z_coord);
   }
 
   float Disk::point_pdf(const Point&) const {

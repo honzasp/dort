@@ -1,3 +1,4 @@
+#include "dort/disk.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/lua_helpers.hpp"
@@ -12,6 +13,7 @@ namespace dort {
 
     lua_register_type(l, SHAPE_TNAME, shape_methods);
     lua_register(l, "sphere", lua_shape_make_sphere);
+    lua_register(l, "disk", lua_shape_make_disk);
     return 0;
   }
 
@@ -21,6 +23,16 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     lua_push_shape(l, std::make_shared<Sphere>(radius));
+    return 1;
+  }
+
+  int lua_shape_make_disk(lua_State* l) {
+    int p = 1;
+    float radius = lua_param_float(l, p, "radius");
+    float z = lua_param_float_opt(l, p, "z", 0.f);
+    lua_params_check_unused(l, p);
+
+    lua_push_shape(l, std::make_shared<Disk>(radius, z));
     return 1;
   }
 
