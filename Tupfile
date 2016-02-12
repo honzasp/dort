@@ -2,7 +2,7 @@ INCLUDES = -Iinclude -Iextern/rply -Iextern/stb -Iextern/lua
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
 CXXFLAGS = -x c++ -std=c++11 $(INCLUDES) $(WARNINGS)
 CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS)
-DEBUG    = -g -O0
+DEBUG    = -g -O2
 LDFLAGS  =
 CXX      = clang++
 CC       = clang

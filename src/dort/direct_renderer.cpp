@@ -82,7 +82,7 @@ namespace dort {
         geom.ray_epsilon, wi, light_pdf, shadow, rng);
       if(!light_radiance.is_black() && light_pdf > 0.f) {
         Spectrum bsdf_f = bsdf.f(geom.wo, wi, bxdf_flags);
-        if(!bsdf_f.is_black() && (true || shadow.visible(scene))) {
+        if(!bsdf_f.is_black() && shadow.visible(scene)) {
           float weight = 1.f;
           if(!light.is_delta()) {
             float bsdf_pdf = bsdf.f_pdf(geom.wo, wi, bxdf_flags);

@@ -77,9 +77,7 @@ namespace dort {
     const char* file_name = luaL_checkstring(l, 1);
     FILE* file = std::fopen(file_name, "r");
     if(!file) {
-      lua_pushfstring(l, "Could not open file for reading: %s", file_name);
-      lua_error(l);
-      return 0;
+      return luaL_error(l, "Could not open image file for reading: %s", file_name);
     }
     auto image = std::make_shared<Image<PixelRgb8>>(read_image(file));
     std::fclose(file);

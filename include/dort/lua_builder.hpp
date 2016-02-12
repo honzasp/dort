@@ -7,6 +7,7 @@ namespace dort {
   constexpr const char BUILDER_LIBNAME[] = "dort.builder";
   constexpr const char SCENE_TNAME[] = "dort.Scene";
   constexpr const char PRIMITIVE_TNAME[] = "dort.Primitive";
+  constexpr const char PLY_MESH_TNAME[] = "dort.PlyMesh";
   constexpr const char BUILDER_TNAME[] = "dort.Builder";
   constexpr const char BUILDER_REG_KEY[] = "dort.current_builder";
 
@@ -25,6 +26,7 @@ namespace dort {
     std::vector<BuilderState> state_stack;
     BuilderState state;
     std::vector<std::shared_ptr<Light>> lights;
+    std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes;
   };
 
   int lua_open_builder(lua_State* l);
@@ -37,10 +39,13 @@ namespace dort {
   int lua_build_add_shape(lua_State* l);
   int lua_build_add_primitive(lua_State* l);
   int lua_build_add_light(lua_State* l);
+  int lua_build_add_ply_mesh(lua_State* l);
 
   int lua_scene_render(lua_State* l);
   int lua_scene_eq(lua_State* l);
   int lua_primitive_eq(lua_State* l);
+
+  int lua_ply_mesh_read(lua_State* l);
 
   std::unique_ptr<Primitive> lua_make_aggregate(BuilderFrame frame);
 
@@ -56,4 +61,8 @@ namespace dort {
   std::shared_ptr<Primitive> lua_check_primitive(lua_State* l, int idx);
   bool lua_test_primitive(lua_State* l, int idx);
   void lua_push_primitive(lua_State* l, std::shared_ptr<Primitive> prim);
+
+  std::shared_ptr<PlyMesh> lua_check_ply_mesh(lua_State* l, int idx);
+  bool lua_test_ply_mesh(lua_State* l, int idx);
+  void lua_push_ply_mesh(lua_State* l, std::shared_ptr<PlyMesh> ply);
 }

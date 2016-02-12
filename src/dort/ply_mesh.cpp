@@ -1,12 +1,11 @@
 #include <cstdio>
 #include <rply.h>
 #include <rplyfile.h>
-#include "dort/read_ply.hpp"
+#include "dort/ply_mesh.hpp"
+#include "dort/triangle_mesh.hpp"
 
 namespace dort {
-  bool read_ply(FILE* file, TriangleMesh& out_mesh,
-      std::vector<Triangle>& out_triangles)
-  {
+  bool read_ply(FILE* file, PlyMesh& out_mesh) {
     p_ply ply = ply_open_from_file(file, nullptr, 0, 0);
     if(!ply) {
       return false;
@@ -16,16 +15,13 @@ namespace dort {
     }
 
     struct Ctx {
-      TriangleMesh& out_mesh;
-      std::vector<Triangle>& out_triangles;
+      PlyMesh& out_mesh;
       Point point;
       uint32_t face_first_idx;
       uint32_t face_last_idx;
-      uint32_t triangle_count;
     };
     Ctx ctx = {
-      out_mesh, out_triangles, Point(0.f, 0.f, 0.f),
-      -1u, -1u, 0,
+      out_mesh, Point(0.f, 0.f, 0.f), -1u, -1u,
     };
 
     auto point_cb = [](p_ply_argument arg) -> int {
@@ -57,8 +53,6 @@ namespace dort {
         ctx->out_mesh.vertices.push_back(ctx->face_first_idx);
         ctx->out_mesh.vertices.push_back(ctx->face_last_idx);
         ctx->out_mesh.vertices.push_back(index);
-        ctx->out_triangles.push_back(Triangle(&ctx->out_mesh, ctx->triangle_count));
-        ++ctx->triangle_count;
       }
 
       ctx->face_last_idx = index;
@@ -73,11 +67,37 @@ namespace dort {
     ply_set_read_cb(ply, "face", "vertex_indices", face_cb, &ctx, 0);
 
     ctx.out_mesh.points.reserve(ctx.out_mesh.points.size() + point_count);
-    ctx.out_triangles.reserve(ctx.out_triangles.size() + face_count);
+    ctx.out_mesh.vertices.reserve(ctx.out_mesh.vertices.size() + face_count * 3);
 
     if(!ply_read(ply) || !ply_close(ply)) {
       return false;
     }
     return true;
+  }
+
+  std::shared_ptr<TriangleMesh> ply_to_triangle_mesh(
+      const PlyMesh& ply_mesh,
+      std::shared_ptr<Material> material,
+      std::shared_ptr<AreaLight> area_light,
+      const Transform& mesh_to_frame,
+      std::vector<std::unique_ptr<Primitive>>& out_prims)
+  {
+    auto triangle_mesh = std::make_shared<TriangleMesh>();
+    triangle_mesh->material = material;
+    triangle_mesh->area_light = area_light;
+    triangle_mesh->vertices = ply_mesh.vertices;
+
+    triangle_mesh->points.reserve(ply_mesh.points.size());
+    for(const Point& point: ply_mesh.points) {
+      triangle_mesh->points.push_back(mesh_to_frame.apply(point));
+    }
+
+    out_prims.reserve(out_prims.size() + ply_mesh.vertices.size() / 3);
+    for(uint32_t i = 0; i * 3 < ply_mesh.vertices.size(); ++i) {
+      out_prims.push_back(std::make_unique<TrianglePrimitive>(
+            Triangle(triangle_mesh.get(), i)));
+    }
+
+    return triangle_mesh;
   }
 }

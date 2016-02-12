@@ -7,5 +7,6 @@ namespace dort {
   struct Scene {
     std::unique_ptr<Primitive> primitive;
     std::vector<std::shared_ptr<Light>> lights;
+    std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes;
   };
 }

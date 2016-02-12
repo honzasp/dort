@@ -8,6 +8,7 @@
 #include "dort/lua_material.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
+#include "dort/ply_mesh.hpp"
 #include "dort/scene.hpp"
 
 namespace dort {
@@ -24,6 +25,11 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg ply_mesh_methods[] = {
+      {"__gc", lua_gc_shared_obj<PlyMesh, PLY_MESH_TNAME>},
+      {0, 0},
+    };
+
     const luaL_Reg builder_methods[] = {
       {"__gc", lua_gc_managed_obj<Builder, BUILDER_TNAME>},
       {0, 0},
@@ -31,6 +37,7 @@ namespace dort {
 
     lua_register_type(l, SCENE_TNAME, scene_methods);
     lua_register_type(l, PRIMITIVE_TNAME, primitive_methods);
+    lua_register_type(l, PLY_MESH_TNAME, ply_mesh_methods);
     lua_register_type(l, BUILDER_TNAME, builder_methods);
 
     lua_register(l, "define_scene", lua_build_define_scene);
@@ -41,8 +48,10 @@ namespace dort {
     lua_register(l, "add_shape", lua_build_add_shape);
     lua_register(l, "add_primitive", lua_build_add_primitive);
     lua_register(l, "add_light", lua_build_add_light);
+    lua_register(l, "add_ply_mesh", lua_build_add_ply_mesh);
 
     lua_register(l, "render", lua_scene_render);
+    lua_register(l, "read_ply_mesh", lua_ply_mesh_read);
 
     return 0;
   }
@@ -65,6 +74,7 @@ namespace dort {
     auto scene = std::make_shared<Scene>();
     scene->primitive = lua_make_aggregate(std::move(builder.frame));
     scene->lights = std::move(builder.lights);
+    scene->triangle_meshes = std::move(builder.triangle_meshes);
     lua_push_scene(l, std::move(scene));
     return 1;
   }
@@ -172,6 +182,23 @@ namespace dort {
     return 0;
   }
 
+  int lua_build_add_ply_mesh(lua_State* l) {
+    Builder& builder = lua_get_current_builder(l);
+    auto ply_mesh = lua_check_ply_mesh(l, 1);
+    auto material = builder.state.material;
+    auto transform = builder.state.local_to_frame;
+
+    if(!material) {
+      luaL_error(l, "no material is set");
+      return 0;
+    }
+
+    auto triangle_mesh = ply_to_triangle_mesh(*ply_mesh,
+        material, nullptr, transform, builder.frame.prims);
+    builder.triangle_meshes.push_back(std::move(triangle_mesh));
+    return 0;
+  }
+
   int lua_scene_render(lua_State* l) {
     auto scene = lua_check_scene(l, 1);
 
@@ -208,6 +235,25 @@ namespace dort {
       lua_pushboolean(l, lua_check_primitive(l, 1).get() ==
           lua_check_primitive(l, 2).get());
     }
+    return 1;
+  }
+
+
+  int lua_ply_mesh_read(lua_State* l) {
+    const char* file_name = luaL_checkstring(l, 1);
+    FILE* file = std::fopen(file_name, "r");
+    if(!file) {
+      return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
+    }
+
+    auto ply_mesh = std::make_shared<PlyMesh>();
+    bool success = read_ply(file, *ply_mesh);
+    std::fclose(file);
+
+    if(!success) {
+      return luaL_error(l, "Could not read ply file: %s", file_name);
+    }
+    lua_push_ply_mesh(l, ply_mesh);
     return 1;
   }
 
@@ -259,5 +305,15 @@ namespace dort {
   }
   void lua_push_primitive(lua_State* l, std::shared_ptr<Primitive> prim) {
     lua_push_shared_obj<Primitive, PRIMITIVE_TNAME>(l, prim);
+  }
+
+  std::shared_ptr<PlyMesh> lua_check_ply_mesh(lua_State* l, int idx) {
+    return lua_check_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, idx);
+  }
+  bool lua_test_ply_mesh(lua_State* l, int idx) {
+    return lua_test_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, idx);
+  }
+  void lua_push_ply_mesh(lua_State* l, std::shared_ptr<PlyMesh> ply) {
+    lua_push_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, ply);
   }
 }
