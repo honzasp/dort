@@ -7,6 +7,7 @@
 namespace dort {
   class AreaLight;
   class Bsdf;
+  class FramePrimitive;
   class GeometricPrimitive;
   class Light;
   class Material;
@@ -14,6 +15,7 @@ namespace dort {
   class Renderer;
   class Rng;
   class Shape;
+  class ShapePrimitive;
   class TextureMap2d;
   class Transform;
 

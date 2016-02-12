@@ -50,7 +50,7 @@ namespace dort {
     return dist_square <= square(this->radius);
   }
 
-  Box Disk::bound() const {
+  Box Disk::bounds() const {
     return Box(
         Point(-this->radius, -this->radius, this->height),
         Point(this->radius, this->radius, this->height));

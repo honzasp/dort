@@ -11,7 +11,7 @@ namespace dort {
     virtual bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const final;
     virtual bool hit_p(const Ray& ray) const override final;
-    virtual Box bound() const final;
+    virtual Box bounds() const final;
 
     virtual float area() const override final;
     virtual Point sample_point(float u1, float u2,

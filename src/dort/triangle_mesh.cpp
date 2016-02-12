@@ -1,4 +1,6 @@
+#include "dort/bsdf.hpp"
 #include "dort/triangle_mesh.hpp"
+#include "dort/material.hpp"
 
 namespace dort {
   bool Triangle::hit(const Ray& ray, float& out_t_hit,
@@ -93,7 +95,7 @@ namespace dort {
     return true;
   }
 
-  Box Triangle::bound() const {
+  Box Triangle::bounds() const {
     Point p[3];
     this->get_points(p);
 
@@ -145,5 +147,35 @@ namespace dort {
     uv[1][1] = 0.f;
     uv[2][0] = 0.f;
     uv[2][1] = 1.f;
+  }
+
+  bool TrianglePrimitive::intersect(Ray& ray, Intersection& out_isect) const {
+    float t_hit;
+    if(!this->triangle.hit(ray, t_hit, out_isect.ray_epsilon,
+          out_isect.frame_diff_geom)) {
+      return false;
+    }
+    out_isect.world_diff_geom = out_isect.frame_diff_geom;
+    out_isect.primitive = this;
+    ray.t_max = t_hit;
+    return true;
+  }
+
+  bool TrianglePrimitive::intersect_p(const Ray& ray) const {
+    return this->triangle.hit_p(ray);
+  }
+
+  Box TrianglePrimitive::bounds() const {
+    return this->triangle.bounds();
+  }
+
+  std::unique_ptr<Bsdf> TrianglePrimitive::get_bsdf(
+      const DiffGeom& frame_diff_geom) const 
+  {
+    return this->triangle.mesh->material->get_bsdf(frame_diff_geom);
+  }
+
+  const AreaLight* TrianglePrimitive::get_area_light(const DiffGeom&) const {
+    return this->triangle.mesh->area_light.get();
   }
 }

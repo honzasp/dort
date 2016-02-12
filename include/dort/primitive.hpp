@@ -6,7 +6,8 @@
 namespace dort {
   struct Intersection {
     float ray_epsilon;
-    DiffGeom diff_geom;
+    DiffGeom frame_diff_geom;
+    DiffGeom world_diff_geom;
     const GeometricPrimitive* primitive;
   };
 
@@ -20,29 +21,43 @@ namespace dort {
   };
 
   class GeometricPrimitive: public Primitive {
+  public:
+    virtual std::unique_ptr<Bsdf> get_bsdf(
+        const DiffGeom& frame_diff_geom) const = 0;
+    virtual const AreaLight* get_area_light(
+        const DiffGeom& frame_diff_geom) const = 0;
+  };
+
+  class ShapePrimitive: public GeometricPrimitive {
     std::shared_ptr<Shape> shape;
     std::shared_ptr<Material> material;
     std::shared_ptr<AreaLight> area_light;
+    Transform shape_to_frame;
   public:
-    GeometricPrimitive(std::shared_ptr<Shape> shape,
+    ShapePrimitive(std::shared_ptr<Shape> shape,
         std::shared_ptr<Material> material,
-        std::shared_ptr<AreaLight> area_light = nullptr);
+        std::shared_ptr<AreaLight> area_light,
+        const Transform& shape_to_frame):
+      shape(shape), material(material),
+      area_light(area_light), shape_to_frame(shape_to_frame)
+    { }
 
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
-    virtual bool intersect_p(const Ray& ray) const final override;
+    virtual bool intersect_p(const Ray& ray) const override final;
     virtual Box bounds() const override final;
-
-    std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& diff_geom) const;
-    const AreaLight* get_area_light(const DiffGeom& diff_geom) const;
+    virtual std::unique_ptr<Bsdf> get_bsdf(
+        const DiffGeom& frame_diff_geom) const override final;
+    virtual const AreaLight* get_area_light(
+        const DiffGeom& frame_diff_geom) const override final;
   };
 
-  class TransformPrimitive: public Primitive {
-    Transform prim_to_world;
-    std::unique_ptr<Primitive> inside;
+  class FramePrimitive: public Primitive {
+    Transform in_to_out;
+    std::shared_ptr<Primitive> inside;
   public:
-    TransformPrimitive(const Transform& prim_to_world,
-        std::unique_ptr<Primitive> inside):
-      prim_to_world(prim_to_world), inside(std::move(inside)) { }
+    FramePrimitive(const Transform& in_to_out,
+        std::shared_ptr<Primitive> inside):
+      in_to_out(in_to_out), inside(std::move(inside)) { }
 
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const override final;

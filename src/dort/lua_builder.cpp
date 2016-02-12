@@ -141,20 +141,24 @@ namespace dort {
     Builder& builder = lua_get_current_builder(l);
     auto shape = lua_check_shape(l, 1);
     auto material = builder.state.material;
+    auto transform = builder.state.local_to_frame;
+
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
     }
 
-    auto prim = std::make_unique<TransformPrimitive>(
-        builder.state.local_to_frame,
-        std::make_unique<GeometricPrimitive>(shape, material));
+    auto prim = std::make_unique<ShapePrimitive>(shape, material, nullptr, transform);
     builder.frame.prims.push_back(std::move(prim));
     return 0;
   }
 
   int lua_build_add_primitive(lua_State* l) {
-    luaL_error(l, "function is not yet implemented");
+    Builder& builder = lua_get_current_builder(l);
+    auto primitive = lua_check_primitive(l, 1);
+    auto transform = builder.state.local_to_frame;
+    auto frame_prim = std::make_unique<FramePrimitive>(transform, primitive);
+    builder.frame.prims.push_back(std::move(frame_prim));
     return 0;
   }
 

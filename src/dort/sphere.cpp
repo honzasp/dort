@@ -48,7 +48,7 @@ namespace dort {
         PI * z * y * inv_r_sin_theta,
         -r_sin_theta);
     out_t_hit = t_hit;
-    out_ray_epsilon = 5e-4f * abs(t_hit);
+    out_ray_epsilon = 5e-3f * abs(t_hit);
     return true;
   }
 
@@ -67,7 +67,7 @@ namespace dort {
     }
   }
 
-  Box Sphere::bound() const {
+  Box Sphere::bounds() const {
     float r = this->radius;
     return Box(Point(-r, -r, -r), Point(r, r, r));
   }
