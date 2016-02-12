@@ -3,7 +3,7 @@
 #include "dort/transform.hpp"
 
 namespace dort {
-  class DiffuseLight: public AreaLight {
+  class DiffuseLight final: public AreaLight {
     std::shared_ptr<Shape> shape;
     Transform shape_to_world;
     Spectrum radiance;

@@ -12,7 +12,7 @@ namespace dort {
     std::shared_ptr<AreaLight> area_light;
   };
 
-  class Triangle: public Shape {
+  class Triangle final: public Shape {
     const TriangleMesh* mesh;
     uint32_t index;
   public:
@@ -33,7 +33,7 @@ namespace dort {
     friend class TrianglePrimitive;
   };
 
-  class TrianglePrimitive: public GeometricPrimitive {
+  class TrianglePrimitive final: public GeometricPrimitive {
     Triangle triangle;
   public:
     TrianglePrimitive(const Triangle& triangle):

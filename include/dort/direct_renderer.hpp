@@ -3,7 +3,7 @@
 #include "dort/renderer.hpp"
 
 namespace dort {
-  class DirectRenderer: public Renderer {
+  class DirectRenderer final: public Renderer {
     uint32_t max_depth;
   public:
     DirectRenderer(uint32_t max_depth):

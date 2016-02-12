@@ -2,7 +2,7 @@
 #include "dort/material.hpp"
 
 namespace dort {
-  class MirrorMaterial: public Material {
+  class MirrorMaterial final: public Material {
     Spectrum reflectance;
   public:
     MirrorMaterial(const Spectrum& reflectance):
@@ -13,7 +13,7 @@ namespace dort {
       const override final;
   };
 
-  class GlassMaterial: public Material {
+  class GlassMaterial final: public Material {
     Spectrum reflectance;
     Spectrum transmittance;
     float eta;

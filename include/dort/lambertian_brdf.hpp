@@ -2,7 +2,7 @@
 #include "dort/bsdf.hpp"
 
 namespace dort {
-  class LambertianBrdf: public Bxdf {
+  class LambertianBrdf final: public Bxdf {
     Spectrum reflectance;
   public:
     LambertianBrdf(const Spectrum& reflectance):

@@ -4,7 +4,7 @@
 #include "dort/primitive.hpp"
 
 namespace dort {
-  class ListPrimitive: public Primitive {
+  class ListPrimitive final: public Primitive {
     std::vector<std::unique_ptr<Primitive>> primitives;
     Box total_bounds;
   public:

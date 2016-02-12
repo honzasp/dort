@@ -2,7 +2,7 @@
 #include "dort/bsdf.hpp"
 
 namespace dort {
-  class OrenNayarBrdf: public Bxdf {
+  class OrenNayarBrdf final: public Bxdf {
     Spectrum reflectance;
     float a;
     float b;

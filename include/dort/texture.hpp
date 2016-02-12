@@ -9,7 +9,7 @@ namespace dort {
   };
 
   template<class T, class F>
-  class FunctionTexture: public Texture<T> {
+  class FunctionTexture final: public Texture<T> {
     F function;
   public:
     FunctionTexture(F function): function(std::move(function)) { }
@@ -36,7 +36,7 @@ namespace dort {
   };
 
   template<class F>
-  class FunctionTextureMap2d: public TextureMap2d {
+  class FunctionTextureMap2d final: public TextureMap2d {
     F function;
   public:
     FunctionTextureMap2d(F function): function(std::move(function)) { }

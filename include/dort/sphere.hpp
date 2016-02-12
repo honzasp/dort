@@ -3,7 +3,7 @@
 #include "dort/shape.hpp"
 
 namespace dort {
-  class Sphere: public Shape {
+  class Sphere final: public Shape {
     float radius;
     float inv_radius;
   public:

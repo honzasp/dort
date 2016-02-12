@@ -2,7 +2,7 @@
 #include "dort/material.hpp"
 
 namespace dort {
-  class MatteMaterial: public Material {
+  class MatteMaterial final: public Material {
     std::shared_ptr<Texture<Spectrum>> reflectance;
     std::shared_ptr<Texture<float>> sigma;
   public:

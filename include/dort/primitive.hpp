@@ -28,7 +28,7 @@ namespace dort {
         const DiffGeom& frame_diff_geom) const = 0;
   };
 
-  class ShapePrimitive: public GeometricPrimitive {
+  class ShapePrimitive final: public GeometricPrimitive {
     std::shared_ptr<Shape> shape;
     std::shared_ptr<Material> material;
     std::shared_ptr<AreaLight> area_light;
@@ -51,7 +51,7 @@ namespace dort {
         const DiffGeom& frame_diff_geom) const override final;
   };
 
-  class FramePrimitive: public Primitive {
+  class FramePrimitive final: public Primitive {
     Transform in_to_out;
     std::shared_ptr<Primitive> inside;
   public:

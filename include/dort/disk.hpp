@@ -2,7 +2,7 @@
 #include "dort/shape.hpp"
 
 namespace dort {
-  class Disk: public Shape {
+  class Disk final: public Shape {
     float radius;
     float inv_radius;
     float height;

@@ -2,7 +2,7 @@
 #include "dort/texture.hpp"
 
 namespace dort {
-  class ImageTexture: public Texture<Spectrum> {
+  class ImageTexture final: public Texture<Spectrum> {
     std::shared_ptr<TextureMap2d> texture_map;
     std::shared_ptr<Image<PixelRgb8>> image;
   public:

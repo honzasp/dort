@@ -9,7 +9,7 @@ namespace dort {
     EqualCounts,
   };
 
-  class BvhPrimitive: public Primitive {
+  class BvhPrimitive final: public Primitive {
     struct PrimitiveInfo {
       uint32_t prim_index;
       Box bounds;

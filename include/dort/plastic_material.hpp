@@ -2,7 +2,7 @@
 #include "dort/material.hpp"
 
 namespace dort {
-  class PlasticMaterial: public Material {
+  class PlasticMaterial final: public Material {
     std::shared_ptr<Texture<Spectrum>> diffuse;
     std::shared_ptr<Texture<Spectrum>> reflection;
     std::shared_ptr<Texture<float>> roughness;

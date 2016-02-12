@@ -3,7 +3,7 @@
 #include "dort/fresnel.hpp"
 
 namespace dort {
-  class SpecularBrdf: public Bxdf {
+  class SpecularBrdf final: public Bxdf {
     Spectrum reflectance;
     std::unique_ptr<Fresnel> fresnel;
   public:
@@ -17,7 +17,7 @@ namespace dort {
     virtual float f_pdf(const Vector& wo, const Vector& wi) const override final;
   };
 
-  class SpecularBtdf: public Bxdf {
+  class SpecularBtdf final: public Bxdf {
     Spectrum transmittance;
     FresnelDielectric fresnel;
   public:

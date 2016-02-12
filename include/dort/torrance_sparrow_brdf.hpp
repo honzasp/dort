@@ -10,7 +10,7 @@ namespace dort {
     virtual Vector sample_dir(float u1, float u2, float& out_pdf) const = 0;
   };
 
-  class TorranceSparrowBrdf: public Bxdf {
+  class TorranceSparrowBrdf final: public Bxdf {
     Spectrum reflectance;
     std::unique_ptr<MicrofacetDistribution> microfacet_dis;
     std::unique_ptr<Fresnel> fresnel;
@@ -34,7 +34,7 @@ namespace dort {
         const Vector& wh, const Vector& wi) const;
   };
 
-  class BlinnMicrofacetDistribution: public MicrofacetDistribution {
+  class BlinnMicrofacetDistribution final: public MicrofacetDistribution {
     float exponent;
   public:
     BlinnMicrofacetDistribution(float exponent): exponent(exponent) { }

@@ -2,7 +2,7 @@
 #include "dort/light.hpp"
 
 namespace dort {
-  class PointLight: public Light {
+  class PointLight final: public Light {
     Point pt;
     Spectrum intensity;
   public:
