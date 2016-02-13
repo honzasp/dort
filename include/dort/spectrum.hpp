@@ -1,5 +1,5 @@
 #pragma once
-#include "dort/vec.hpp"
+#include "dort/vec_3.hpp"
 
 namespace dort {
   struct RgbSpectrum {

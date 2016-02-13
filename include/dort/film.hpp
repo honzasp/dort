@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "dort/image.hpp"
+#include "dort/vec_2.hpp"
 
 namespace dort {
   struct Film {
@@ -14,7 +15,7 @@ namespace dort {
     std::vector<Pixel> pixels;
 
     Film(uint32_t x_res, uint32_t y_res);
-    void add_sample(float x, float y, const Spectrum& radiance);
+    void add_sample(Vec2 pos, const Spectrum& radiance);
     Image<PixelRgb8> to_image() const;
 
     uint32_t pixel_idx(int32_t x, int32_t y) const {

@@ -1,6 +1,9 @@
 #include "dort/bvh_primitive.hpp"
+#include "dort/camera.hpp"
 #include "dort/direct_renderer.hpp"
+#include "dort/film.hpp"
 #include "dort/lua_builder.hpp"
+#include "dort/lua_camera.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_image.hpp"
@@ -9,6 +12,7 @@
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/ply_mesh.hpp"
+#include "dort/rng.hpp"
 #include "dort/scene.hpp"
 
 namespace dort {
@@ -45,6 +49,7 @@ namespace dort {
     lua_register(l, "instance", lua_build_instance);
     lua_register(l, "transform", lua_build_set_transform);
     lua_register(l, "material", lua_build_set_material);
+    lua_register(l, "camera", lua_build_set_camera);
     lua_register(l, "add_shape", lua_build_add_shape);
     lua_register(l, "add_primitive", lua_build_add_primitive);
     lua_register(l, "add_light", lua_build_add_light);
@@ -72,11 +77,15 @@ namespace dort {
     if(!builder.state_stack.empty()) {
       luaL_error(l, "State stack is not empty");
     }
+    if(!builder.camera) {
+      luaL_error(l, "No camera is set in the scene");
+    }
 
     auto scene = std::make_shared<Scene>();
     scene->primitive = lua_make_aggregate(std::move(builder.frame));
     scene->lights = std::move(builder.lights);
     scene->triangle_meshes = std::move(builder.triangle_meshes);
+    scene->camera = std::move(builder.camera);
     lua_push_scene(l, std::move(scene));
     return 1;
   }
@@ -146,6 +155,13 @@ namespace dort {
     Builder& builder = lua_get_current_builder(l);
     auto material = lua_check_material(l, 1);
     builder.state.material = material;
+    return 0;
+  }
+
+  int lua_build_set_camera(lua_State* l) {
+    Builder& builder = lua_get_current_builder(l);
+    auto camera = lua_check_camera(l, 1);
+    builder.camera = camera;
     return 0;
   }
 

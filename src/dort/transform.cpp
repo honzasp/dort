@@ -117,4 +117,21 @@ namespace dort {
     mat.cols[1][1] = cos_th;
     return Transform(mat, transpose(mat));
   }
+
+  Transform perspective(float fov, float z_near, float z_far) {
+    Mat4x4 mat(1.f);
+    mat.cols[2][2] = z_far / (z_far - z_near);
+    mat.cols[2][3] = 1.f;
+    mat.cols[3][2] = -(z_far * z_near) / (z_far - z_near);
+    mat.cols[3][3] = 0.f;
+
+    Mat4x4 inv_mat(1.f);
+    inv_mat.cols[2][2] = 0.f;
+    inv_mat.cols[2][3] = -(z_far - z_near) / (z_far * z_near);
+    inv_mat.cols[3][2] = 1.f;
+    inv_mat.cols[3][3] = 1.f / z_near;
+
+    float inv_tan = 1.f / tan(fov / 2);
+    return scale(inv_tan, inv_tan, 1.f) * Transform(mat, inv_mat);
+  }
 }

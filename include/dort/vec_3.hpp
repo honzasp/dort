@@ -53,8 +53,14 @@ namespace dort {
   inline Vec3 operator/(const Vec3& v, float a) {
     return v * (1.f / a);
   }
+  inline Vec3 operator/(float a, const Vec3& v) {
+    return Vec3(a / v.x, a / v.y, a / v.z);
+  }
   inline Vec3 operator*(const Vec3& v1, const Vec3& v2) {
     return Vec3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+  }
+  inline Vec3 operator/(const Vec3& v1, const Vec3& v2) {
+    return Vec3(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
   }
 
   inline bool operator==(const Vec3& v1, const Vec3& v2) {

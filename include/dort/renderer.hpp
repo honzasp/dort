@@ -1,8 +1,5 @@
 #pragma once
-#include "dort/film.hpp"
-#include "dort/geometry.hpp"
-#include "dort/rng.hpp"
-#include "dort/scene.hpp"
+#include "dort/dort.hpp"
 
 namespace dort {
   class Renderer {

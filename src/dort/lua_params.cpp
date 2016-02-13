@@ -28,6 +28,12 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return spec;
   }
+  Transform lua_param_transform(lua_State* l, int params_idx, const char* param_name) {
+    lua_getfield(l, params_idx, param_name);
+    Transform trans = lua_check_transform(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return trans;
+  }
   std::shared_ptr<Texture<float>> lua_param_texture_float(lua_State* l,
       int params_idx, const char* param_name)
   {
@@ -95,6 +101,14 @@ namespace dort {
     auto spec = lua_isnil(l, -1) ? def : lua_check_spectrum(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return spec;
+  }
+  Transform lua_param_transform_opt(lua_State* l, int params_idx,
+      const char* param_name, const Transform& def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto trans = lua_isnil(l, -1) ? def : lua_check_transform(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return trans;
   }
   std::shared_ptr<Texture<float>> lua_param_texture_float_opt(lua_State* l,
       int params_idx, const char* param_name, std::shared_ptr<Texture<float>> def)

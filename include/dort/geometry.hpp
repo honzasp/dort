@@ -1,6 +1,6 @@
 #pragma once
 #include "dort/math.hpp"
-#include "dort/vec.hpp"
+#include "dort/vec_3.hpp"
 
 namespace dort {
   struct Point;

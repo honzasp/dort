@@ -7,6 +7,7 @@
 namespace dort {
   class AreaLight;
   class Bsdf;
+  class Camera;
   class FramePrimitive;
   class GeometricPrimitive;
   class Light;
@@ -21,6 +22,7 @@ namespace dort {
 
   struct Bxdf;
   struct DiffGeom;
+  struct Film;
   struct Intersection;
   struct PixelRgb8;
   struct PlyMesh;

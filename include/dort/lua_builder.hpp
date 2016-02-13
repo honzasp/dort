@@ -27,6 +27,7 @@ namespace dort {
     BuilderState state;
     std::vector<std::shared_ptr<Light>> lights;
     std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes;
+    std::shared_ptr<Camera> camera;
   };
 
   int lua_open_builder(lua_State* l);
@@ -36,6 +37,7 @@ namespace dort {
   int lua_build_instance(lua_State* l);
   int lua_build_set_transform(lua_State* l);
   int lua_build_set_material(lua_State* l);
+  int lua_build_set_camera(lua_State* l);
   int lua_build_add_shape(lua_State* l);
   int lua_build_add_primitive(lua_State* l);
   int lua_build_add_light(lua_State* l);

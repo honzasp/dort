@@ -5,9 +5,9 @@ namespace dort {
     x_res(x_res), y_res(y_res), pixels(x_res * y_res)
   { }
 
-  void Film::add_sample(float x, float y, const Spectrum& radiance) {
-    int32_t pixel_x = floor_int32(x);
-    int32_t pixel_y = floor_int32(y);
+  void Film::add_sample(Vec2 pos, const Spectrum& radiance) {
+    int32_t pixel_x = floor_int32(pos.x);
+    int32_t pixel_y = floor_int32(pos.y);
     Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pixel_x, pixel_y));
     pixel.color = pixel.color + radiance;
     pixel.weight = pixel.weight + 1.f;

@@ -1,6 +1,7 @@
 #include "dort/geometry.hpp"
 #include "dort/lua.hpp"
 #include "dort/lua_builder.hpp"
+#include "dort/lua_camera.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_light.hpp"
@@ -22,6 +23,7 @@ namespace dort {
       luaL_requiref(l, SHAPE_LIBNAME, lua_open_shape, true);
       luaL_requiref(l, MATERIAL_LIBNAME, lua_open_material, true);
       luaL_requiref(l, LIGHT_LIBNAME, lua_open_light, true);
+      luaL_requiref(l, CAMERA_LIBNAME, lua_open_camera, true);
       luaL_requiref(l, BUILDER_LIBNAME, lua_open_builder, true);
 
       const char* input_file = argc == 1 ? 0 : argv[1];

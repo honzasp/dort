@@ -56,4 +56,5 @@ namespace dort {
   Transform rotate_x(float angle);
   Transform rotate_y(float angle);
   Transform rotate_z(float angle);
+  Transform perspective(float fov, float z_near, float z_far);
 }
