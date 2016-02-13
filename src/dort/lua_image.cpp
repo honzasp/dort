@@ -12,7 +12,9 @@ namespace dort {
       {"green", lua_spectrum_green},
       {"blue", lua_spectrum_blue},
       {"__add", lua_spectrum_add},
+      {"__sub", lua_spectrum_sub},
       {"__mul", lua_spectrum_mul},
+      {"__div", lua_spectrum_div},
       {"__eq", lua_spectrum_eq},
       {0, 0},
     };
@@ -56,11 +58,27 @@ namespace dort {
     lua_push_spectrum(l, lua_check_spectrum(l, 1) + lua_check_spectrum(l, 2));
     return 1;
   }
+  int lua_spectrum_sub(lua_State* l) {
+    lua_push_spectrum(l, lua_check_spectrum(l, 1) - lua_check_spectrum(l, 2));
+    return 1;
+  }
   int lua_spectrum_mul(lua_State* l) {
-    if(lua_isnumber(l, 2)) {
+    if(lua_isnumber(l, 2) && lua_test_spectrum(l, 1)) {
       lua_push_spectrum(l, lua_check_spectrum(l, 1) * luaL_checknumber(l, 2));
-    } else if(lua_test_spectrum(l, 2)) {
+    } else if(lua_isnumber(l, 1) && lua_test_spectrum(l, 2)) {
+      lua_push_spectrum(l, luaL_checknumber(l, 1) * lua_check_spectrum(l, 2));
+    } else {
       lua_push_spectrum(l, lua_check_spectrum(l, 1) * lua_check_spectrum(l, 2));
+    }
+    return 1;
+  }
+  int lua_spectrum_div(lua_State* l) {
+    if(lua_isnumber(l, 2) && lua_test_spectrum(l, 1)) {
+      lua_push_spectrum(l, lua_check_spectrum(l, 1) / luaL_checknumber(l, 2));
+    } else if(lua_isnumber(l, 1) && lua_test_spectrum(l, 2)) {
+      lua_push_spectrum(l, luaL_checknumber(l, 1) / lua_check_spectrum(l, 2));
+    } else {
+      lua_push_spectrum(l, lua_check_spectrum(l, 1) / lua_check_spectrum(l, 2));
     }
     return 1;
   }

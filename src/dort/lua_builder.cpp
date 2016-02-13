@@ -61,6 +61,8 @@ namespace dort {
     lua_pushvalue(l, 1);
     lua_call(l, 0, 0);
 
+    lua_gc(l, LUA_GCCOLLECT, 0);
+
     Builder builder = std::move(lua_get_current_builder(l));
     lua_unset_current_builder(l);
 
