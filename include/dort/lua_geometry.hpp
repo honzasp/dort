@@ -32,6 +32,7 @@ namespace dort {
   int lua_transform_rotate_x(lua_State* l);
   int lua_transform_rotate_y(lua_State* l);
   int lua_transform_rotate_z(lua_State* l);
+  int lua_transform_look_at(lua_State* l);
 
   int lua_transform_apply(lua_State* l);
   int lua_transform_apply_inv(lua_State* l);

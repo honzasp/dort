@@ -7,8 +7,11 @@
 
 namespace dort {
   void Renderer::render(const Scene& scene, Film& film, Rng& rng) {
-    Vec2 ndc_scale = 2.f / Vec2(float(film.x_res), -float(film.y_res));
-    Vec2 ndc_shift = Vec2(-1.f, 1.f);
+    float x_res = float(film.x_res);
+    float y_res = float(film.y_res);
+    float res = max(x_res, y_res);
+    Vec2 ndc_scale = 2.f / Vec2(res, -res);
+    Vec2 ndc_shift = Vec2(-x_res / res, y_res / res);
 
     for(uint32_t y = 0; y < film.y_res; ++y) {
       for(uint32_t x = 0; x < film.x_res; ++x) {

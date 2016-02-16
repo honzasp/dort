@@ -57,4 +57,5 @@ namespace dort {
   Transform rotate_y(float angle);
   Transform rotate_z(float angle);
   Transform perspective(float fov, float z_near, float z_far);
+  Transform look_at(const Point& eye, const Point& look, const Vector& up);
 }

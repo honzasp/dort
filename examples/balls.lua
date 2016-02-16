@@ -22,17 +22,13 @@ local scene = define_scene(function()
     })
   end
 
-  transform(translate(0, 0, 600))
-  camera(perspective_camera {
-    transform = identity(),
-    fov = pi * 0.2,
-  })
-  --[[camera(ortho_camera {
-    transform = identity(),
-    screen_x = 800,
-    screen_y = 800,
-  })
-  --]]
+  block(function()
+    transform(look_at(point(0, 0, -600), point(-100, 100, 0), vector(0, 1, 0)))
+    camera(perspective_camera {
+      transform = identity(),
+      fov = pi * 0.2,
+    })
+  end)
 end)
 
 write_png_image("balls.png", render(scene, {

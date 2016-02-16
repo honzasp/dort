@@ -45,6 +45,7 @@ namespace dort {
     lua_register(l, "rotate_x", lua_transform_rotate_x);
     lua_register(l, "rotate_y", lua_transform_rotate_y);
     lua_register(l, "rotate_z", lua_transform_rotate_z);
+    lua_register(l, "look_at", lua_transform_look_at);
 
     return 0;
   }
@@ -156,6 +157,13 @@ namespace dort {
   }
   int lua_transform_rotate_z(lua_State* l) {
     lua_push_transform(l, rotate_z(luaL_checknumber(l, 1)));
+    return 1;
+  }
+  int lua_transform_look_at(lua_State* l) {
+    Point eye = lua_check_point(l, 1);
+    Point look = lua_check_point(l, 2);
+    Vector up = lua_check_vector(l, 3);
+    lua_push_transform(l, look_at(eye, look, up));
     return 1;
   }
 

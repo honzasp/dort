@@ -1,14 +1,14 @@
 #include "dort/transform.hpp"
 
 namespace dort {
-  Transform Transform::inverse() const {
-    return Transform(this->mat_inv, this->mat);
-  }
-
   Transform Transform::operator*(const Transform& trans) const {
     return Transform(
         mul_mats(this->mat, trans.mat),
         mul_mats(trans.mat_inv, this->mat_inv));
+  }
+
+  Transform Transform::inverse() const {
+    return Transform(this->mat_inv, this->mat);
   }
 
   DiffGeom Transform::apply(bool inv, const DiffGeom& dg) const {
@@ -133,5 +133,26 @@ namespace dort {
 
     float inv_tan = 1.f / tan(fov / 2);
     return scale(inv_tan, inv_tan, 1.f) * Transform(mat, inv_mat);
+  }
+
+  Transform look_at(const Point& eye, const Point& look, const Vector& up) {
+    Vector ortho_dir = normalize(look - eye);
+    Vector ortho_left = normalize(cross(normalize(up), ortho_dir));
+    Vector ortho_up = cross(ortho_dir, ortho_left);
+
+    Mat4x4 mat(1.f);
+    Mat4x4 mat_inv(1.f);
+    for(uint32_t row = 0; row < 3; ++row) {
+      mat.cols[row][0] = mat_inv.cols[0][row] = ortho_left.v[row];
+      mat.cols[row][1] = mat_inv.cols[1][row] = ortho_up.v[row];
+      mat.cols[row][2] = mat_inv.cols[2][row] = ortho_dir.v[row];
+      mat_inv.cols[3][row] = eye.v[row];
+    }
+
+    mat.cols[3][0] = -dot(ortho_left.v, eye.v);
+    mat.cols[3][1] = -dot(ortho_up.v, eye.v);
+    mat.cols[3][2] = -dot(ortho_dir.v, eye.v);
+
+    return Transform(mat, mat_inv);
   }
 }
