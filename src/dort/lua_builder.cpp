@@ -2,6 +2,7 @@
 #include "dort/camera.hpp"
 #include "dort/direct_renderer.hpp"
 #include "dort/film.hpp"
+#include "dort/filter.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
 #include "dort/lua_geometry.hpp"
@@ -225,10 +226,12 @@ namespace dort {
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
     uint32_t seed = lua_param_uint32_opt(l, p, "seed", 42);
     uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+    auto filter = lua_param_filter_opt(l, p, "filter", 
+        std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     lua_params_check_unused(l, p);
 
     Rng rng(seed);
-    Film film(x_res, y_res);
+    Film film(x_res, y_res, filter);
     DirectRenderer renderer(max_depth);
     renderer.render(*scene, film, rng);
 

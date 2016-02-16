@@ -36,8 +36,8 @@ namespace dort {
     float screen_x = lua_param_float_opt(l, p, "screen_x", 2.f);
     float screen_y = lua_param_float_opt(l, p, "screen_y", 2.f);
     float fov = lua_param_float_opt(l, p, "fov", PI * 0.5f);
-    float z_near = lua_param_float_opt(l, p, "z_near", 1e-2f);
-    float z_far = lua_param_float_opt(l, p, "z_far", 1e2f);
+    float z_near = lua_param_float_opt(l, p, "z_near", 1e0f);
+    float z_far = lua_param_float_opt(l, p, "z_far", 1e3f);
     lua_params_check_unused(l, p);
 
     lua_push_camera(l, std::make_shared<PerspectiveCamera>(

@@ -13,8 +13,9 @@ namespace dort {
     uint32_t x_res;
     uint32_t y_res;
     std::vector<Pixel> pixels;
+    std::shared_ptr<Filter> filter;
 
-    Film(uint32_t x_res, uint32_t y_res);
+    Film(uint32_t x_res, uint32_t y_res, std::shared_ptr<Filter> filter);
     void add_sample(Vec2 pos, const Spectrum& radiance);
     Image<PixelRgb8> to_image() const;
 

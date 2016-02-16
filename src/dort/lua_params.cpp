@@ -134,6 +134,14 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return map;
   }
+  std::shared_ptr<Filter> lua_param_filter_opt(lua_State* l,
+      int params_idx, const char* param_name, std::shared_ptr<Filter> def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto filter = lua_isnil(l, -1) ? def : lua_check_filter(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return filter;
+  }
 
   bool lua_param_is_set(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);

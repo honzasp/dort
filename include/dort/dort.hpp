@@ -8,6 +8,7 @@ namespace dort {
   class AreaLight;
   class Bsdf;
   class Camera;
+  class Filter;
   class FramePrimitive;
   class GeometricPrimitive;
   class Light;

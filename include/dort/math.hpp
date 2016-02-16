@@ -20,7 +20,6 @@ namespace dort {
   constexpr float INV_PI = 0.318309886183790f;
   constexpr float INV_TWO_PI = 0.159154943091895f;
   constexpr float INV_FOUR_PI = 0.079577471545947f;
-  constexpr float ONE_THIRD = 0.333333333333333f;
 
   template<class T>
   T clamp(T val, T min, T max) {
@@ -60,8 +59,15 @@ namespace dort {
   template<class T> T max(T a, T b) { return (a < b) ? b : a; }
 
   inline int32_t floor_int32(float a) { return int32_t(floor(a)); }
+  inline int32_t ceil_int32(float a) { return int32_t(ceil(a)); }
   inline float mul_power_of_two(float a, int32_t exp) { return std::ldexp(a, exp); }
   inline float square(float a) { return a * a; }
+  inline float cube(float a) { return a * a * a; }
+
+  inline float sinc(float x) {
+    float t = abs(x) * PI;
+    return t < 1e-5 ? 1.f : sin(t) / t;
+  }
 
   bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2);
 }

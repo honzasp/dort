@@ -64,6 +64,16 @@ namespace dort {
     return !(v1 == v2);
   }
 
+  inline float dot(const Vec2& v1, const Vec2& v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+  }
+  inline float length_squared(const Vec2& v) {
+    return dot(v, v);
+  }
+  inline float length(const Vec2& v) {
+    return sqrt(length_squared(v));
+  }
+
   inline bool is_finite(const Vec2& v) {
     return is_finite(v.x) && is_finite(v.y);
   }

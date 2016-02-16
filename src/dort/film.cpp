@@ -1,16 +1,31 @@
 #include "dort/film.hpp"
+#include "dort/filter.hpp"
 
 namespace dort {
-  Film::Film(uint32_t x_res, uint32_t y_res):
-    x_res(x_res), y_res(y_res), pixels(x_res * y_res)
+  Film::Film(uint32_t x_res, uint32_t y_res, std::shared_ptr<Filter> filter):
+    x_res(x_res), y_res(y_res), pixels(x_res * y_res), filter(std::move(filter))
   { }
 
   void Film::add_sample(Vec2 pos, const Spectrum& radiance) {
-    int32_t pixel_x = floor_int32(pos.x);
-    int32_t pixel_y = floor_int32(pos.y);
-    Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pixel_x, pixel_y));
-    pixel.color = pixel.color + radiance;
-    pixel.weight = pixel.weight + 1.f;
+    int32_t x0 = ceil_int32(pos.x - 0.5f - this->filter->radius.x);
+    int32_t x1 = floor_int32(pos.x - 0.5f + this->filter->radius.x);
+    int32_t y0 = ceil_int32(pos.y - 0.5f - this->filter->radius.y);
+    int32_t y1 = floor_int32(pos.y - 0.5f + this->filter->radius.y);
+
+    int32_t pix_x0 = max(0, x0);
+    int32_t pix_y0 = max(0, y0);
+    int32_t pix_x1 = min(int32_t(this->x_res) - 1, x1);
+    int32_t pix_y1 = min(int32_t(this->y_res) - 1, y1);
+
+    for(int32_t pix_y = pix_y0; pix_y <= pix_y1; ++pix_y) {
+      for(int32_t pix_x = pix_x0; pix_x <= pix_x1; ++pix_x) {
+        Vec2 filter_p(float(pix_x) + 0.5f - pos.x, float(pix_y) + 0.5f - pos.y);
+        float filter_w = this->filter->evaluate(filter_p);
+        Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pix_x, pix_y));
+        pixel.color = pixel.color + radiance * filter_w;
+        pixel.weight = pixel.weight + filter_w;
+      }
+    }
   }
 
   Image<PixelRgb8> Film::to_image() const {
