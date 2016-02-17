@@ -8,7 +8,7 @@
 namespace dort {
   void Renderer::preprocess() {
     this->pixel_pos_idx = this->sampler->request_sample_2d();
-    this->preprocess_();
+    this->preprocess_(*this->scene, *this->sampler);
   }
 
   void Renderer::render() {
@@ -28,14 +28,13 @@ namespace dort {
           Vec2 ndc_pos = film_pos * ndc_scale + ndc_shift;
 
           Ray ray(this->scene->camera->generate_ray(ndc_pos));
-          Spectrum radiance = this->get_radiance(ray, 0);
+          Spectrum radiance = this->get_radiance(*this->scene, ray, 0, *this->sampler);
 
           assert(is_finite(radiance));
           assert(is_nonnegative(radiance));
           if(is_finite(radiance) && is_nonnegative(radiance)) {
             this->film->add_sample(film_pos, radiance);
           }
-          
         }
       }
     }
