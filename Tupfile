@@ -1,17 +1,37 @@
+CXX_DEBUG = clang++
+CXX_PROFILE = g++
+
 INCLUDES = -Iinclude -Iextern/rply -Iextern/stb -Iextern/lua
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
 CXXFLAGS = -x c++ -std=c++11 $(INCLUDES) $(WARNINGS) -pthread
 CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
-DEBUG    = -g -O2
 LDFLAGS  = -pthread
-CXX      = clang++
-CC       = clang
+DEBUG    = -g -O2
+PROFILE  = -g -pg -O2
 
-!cxx_c_debug = |> ^ c++ debug %f^ $(CXX) $(CXXFLAGS) $(DEBUG) -c %f -o %o |>
-!cc_c_debug = |> ^ cc debug %f^ $(CC) $(CFLAGS) $(DEBUG) -c %f -o %o |>
-!cxx_link = |> ^ link %f^ $(CXX) $(LDFLAGS) %f -o %o |>
+CXXFLAGS_DEBUG   = $(CXXFLAGS) $(DEBUG)
+CFLAGS_DEBUG     = $(CFLAGS) $(DEBUG)
+LDFLAGS_DEBUG    = $(LDFLAGS)
+CXXFLAGS_PROFILE = $(CXXFLAGS) $(PROFILE)
+CFLAGS_PROFILE   = $(CFLAGS) $(PROFILE)
+LDFLAGS_PROFILE  = $(LDFLAGS) -pg
+
+!cxx_c_debug = |> ^ c++ debug %f^ $(CXX_DEBUG) $(CXXFLAGS_DEBUG) -c %f -o %o |>
+!cc_c_debug = |> ^ cc debug %f^ $(CXX_DEBUG) $(CFLAGS_DEBUG) -c %f -o %o |>
+!link_debug = |> ^ link %f^ $(CXX_DEBUG) $(LDFLAGS_DEBUG) %f -o %o |>
+
+!cxx_c_profile = |> ^ c++ profile %f^ $(CXX_PROFILE) $(CXXFLAGS_PROFILE) -c %f -o %o |>
+!cc_c_profile = |> ^ cc profile %f^ $(CXX_PROFILE) $(CFLAGS_PROFILE) -c %f -o %o |>
+!link_profile = |> ^ link %f^ $(CXX_PROFILE) $(LDFLAGS_PROFILE) %f -o %o |>
 
 : foreach src/dort/*.cpp |> !cxx_c_debug |> build/d/%B.o {debug_objs}
 : foreach extern/rply/*.c |> !cc_c_debug |> build/d/rply/%B.o {debug_objs}
 : foreach extern/lua/*.c |> !cxx_c_debug |> build/d/lua/%B.o {debug_objs}
-: {debug_objs} |> !cxx_link |> build/d/dort
+: {debug_objs} |> !link_debug |> build/d/dort
+
+ifdef CONFIG_PROFILE
+  : foreach src/dort/*.cpp |> !cxx_c_profile |> build/p/%B.o {profile_objs}
+  : foreach extern/rply/*.c |> !cc_c_profile |> build/p/rply/%B.o {profile_objs}
+  : foreach extern/lua/*.c |> !cxx_c_profile |> build/p/lua/%B.o {profile_objs}
+  : {profile_objs} |> !link_profile |> build/p/dort
+endif

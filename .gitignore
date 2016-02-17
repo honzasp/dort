@@ -7,3 +7,4 @@ output.ppm
 output.png
 Session.vim
 /*.png
+gmon.out
