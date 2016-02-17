@@ -20,9 +20,11 @@ namespace dort {
   class Shape;
   class ShapePrimitive;
   class TextureMap2d;
+  class ThreadPool;
   class Transform;
 
   struct Bxdf;
+  struct CtxG;
   struct DiffGeom;
   struct Film;
   struct Intersection;

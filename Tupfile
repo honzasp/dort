@@ -1,9 +1,9 @@
 INCLUDES = -Iinclude -Iextern/rply -Iextern/stb -Iextern/lua
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
-CXXFLAGS = -x c++ -std=c++11 $(INCLUDES) $(WARNINGS)
-CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS)
+CXXFLAGS = -x c++ -std=c++11 $(INCLUDES) $(WARNINGS) -pthread
+CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
 DEBUG    = -g -O2
-LDFLAGS  =
+LDFLAGS  = -pthread
 CXX      = clang++
 CC       = clang
 

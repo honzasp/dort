@@ -17,6 +17,7 @@
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
 #include "dort/stratified_sampler.hpp"
+#include "dort/thread_pool.hpp"
 
 namespace dort {
   int lua_open_builder(lua_State* l) {
@@ -235,16 +236,22 @@ namespace dort {
     uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", 800);
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
     uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+    uint32_t num_threads = lua_param_uint32_opt(l, p, "num_threads",
+        std::thread::hardware_concurrency());
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
         std::make_shared<RandomSampler>(1, 42));
     lua_params_check_unused(l, p);
 
+    auto pool = std::make_shared<ThreadPool>(max(1u, num_threads));
+    CtxG ctx(pool);
+
     auto film = std::make_shared<Film>(x_res, y_res, filter);
     DirectRenderer renderer(scene, film, sampler, max_depth);
-    renderer.preprocess();
-    renderer.render();
+    renderer.preprocess(ctx);
+    renderer.render(ctx);
+    ctx.pool->stop();
 
     auto image = std::make_shared<Image<PixelRgb8>>(film->to_image());
     lua_push_image(l, image);

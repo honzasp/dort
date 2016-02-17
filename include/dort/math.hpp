@@ -71,5 +71,15 @@ namespace dort {
     return t < 1e-5 ? 1.f : sin(t) / t;
   }
 
+  inline uint32_t round_up_power_of_two(uint32_t x) {
+    x = x - 1;
+    x = x | (x >> 1);
+    x = x | (x >> 2);
+    x = x | (x >> 4);
+    x = x | (x >> 8);
+    x = x | (x >> 16);
+    return x + 1;
+  }
+
   bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2);
 }

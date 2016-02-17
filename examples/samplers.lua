@@ -62,12 +62,12 @@ local scene = define_scene(function()
 end)
 
 samplers = {
-  random_1 = random_sampler { samples_per_pixel = 1 },
+  --random_1 = random_sampler { samples_per_pixel = 1 },
   random_4 = random_sampler { samples_per_pixel = 4 },
-  random_16 = random_sampler { samples_per_pixel = 16 },
-  stratified_1 = stratified_sampler { samples_per_x = 1, samples_per_y = 1 },
-  stratified_4 = stratified_sampler { samples_per_x = 2, samples_per_y = 2 },
-  stratified_16 = stratified_sampler { samples_per_x = 4, samples_per_y = 4 },
+  --random_16 = random_sampler { samples_per_pixel = 16 },
+  --stratified_1 = stratified_sampler { samples_per_x = 1, samples_per_y = 1 },
+  --stratified_4 = stratified_sampler { samples_per_x = 2, samples_per_y = 2 },
+  --stratified_16 = stratified_sampler { samples_per_x = 4, samples_per_y = 4 },
 }
 
 for sampler in pairs(samplers) do
@@ -75,6 +75,7 @@ for sampler in pairs(samplers) do
     x_res = 400, y_res = 400,
     filter = mitchell_filter { radius = 1.8 },
     sampler = samplers[sampler],
+    num_threads = 1,
   }))
 end
 

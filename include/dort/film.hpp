@@ -2,6 +2,7 @@
 #include <vector>
 #include "dort/image.hpp"
 #include "dort/vec_2.hpp"
+#include "dort/vec_2i.hpp"
 
 namespace dort {
   struct Film {
@@ -17,6 +18,7 @@ namespace dort {
 
     Film(uint32_t x_res, uint32_t y_res, std::shared_ptr<Filter> filter);
     void add_sample(Vec2 pos, const Spectrum& radiance);
+    void add_tile(Vec2i pos, const Film& tile);
     Image<PixelRgb8> to_image() const;
 
     uint32_t pixel_idx(int32_t x, int32_t y) const {

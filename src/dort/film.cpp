@@ -22,8 +22,26 @@ namespace dort {
         Vec2 filter_p(float(pix_x) + 0.5f - pos.x, float(pix_y) + 0.5f - pos.y);
         float filter_w = this->filter->evaluate(filter_p);
         Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pix_x, pix_y));
-        pixel.color = pixel.color + radiance * filter_w;
-        pixel.weight = pixel.weight + filter_w;
+        pixel.color += radiance * filter_w;
+        pixel.weight += filter_w;
+      }
+    }
+  }
+
+  void Film::add_tile(Vec2i pos, const Film& tile) {
+    uint32_t y_min = max(0, -pos.y);
+    uint32_t x_min = max(0, -pos.x);
+    uint32_t y_max = min(tile.y_res, this->y_res - pos.y);
+    uint32_t x_max = min(tile.x_res, this->x_res - pos.x);
+
+    for(uint32_t y = y_min; y < y_max; ++y) {
+      for(uint32_t x = x_min; x < x_max; ++x) {
+        uint32_t this_idx = this->pixel_idx(pos.x + x, pos.y + y);
+        Film::Pixel& this_pixel = this->pixels.at(this_idx);
+        uint32_t tile_idx = tile.pixel_idx(x, y);
+        const Film::Pixel& tile_pixel = tile.pixels.at(tile_idx);
+        this_pixel.color += tile_pixel.color;
+        this_pixel.weight += tile_pixel.weight;
       }
     }
   }
