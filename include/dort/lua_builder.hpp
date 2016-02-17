@@ -6,6 +6,7 @@
 namespace dort {
   constexpr const char BUILDER_LIBNAME[] = "dort.builder";
   constexpr const char SCENE_TNAME[] = "dort.Scene";
+  constexpr const char SAMPLER_TNAME[] = "dort.Sampler";
   constexpr const char PRIMITIVE_TNAME[] = "dort.Primitive";
   constexpr const char PLY_MESH_TNAME[] = "dort.PlyMesh";
   constexpr const char BUILDER_TNAME[] = "dort.Builder";
@@ -47,6 +48,9 @@ namespace dort {
   int lua_scene_eq(lua_State* l);
   int lua_primitive_eq(lua_State* l);
 
+  int lua_sampler_make_random(lua_State* l);
+  int lua_sampler_make_stratified(lua_State* l);
+
   int lua_ply_mesh_read(lua_State* l);
 
   std::unique_ptr<Primitive> lua_make_aggregate(BuilderFrame frame);
@@ -59,6 +63,10 @@ namespace dort {
   std::shared_ptr<Scene> lua_check_scene(lua_State* l, int idx);
   bool lua_test_scene(lua_State* l, int idx);
   void lua_push_scene(lua_State* l, std::shared_ptr<Scene> scene);
+
+  std::shared_ptr<Sampler> lua_check_sampler(lua_State* l, int idx);
+  bool lua_test_sampler(lua_State* l, int idx);
+  void lua_push_sampler(lua_State* l, std::shared_ptr<Sampler> sampler);
 
   std::shared_ptr<Primitive> lua_check_primitive(lua_State* l, int idx);
   bool lua_test_primitive(lua_State* l, int idx);

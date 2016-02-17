@@ -16,6 +16,7 @@ namespace dort {
   class Primitive;
   class Renderer;
   class Rng;
+  class Sampler;
   class Shape;
   class ShapePrimitive;
   class TextureMap2d;

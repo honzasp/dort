@@ -16,12 +16,18 @@
 #include "dort/random_sampler.hpp"
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
+#include "dort/stratified_sampler.hpp"
 
 namespace dort {
   int lua_open_builder(lua_State* l) {
     const luaL_Reg scene_methods[] = {
       {"__eq", lua_scene_eq},
       {"__gc", lua_gc_shared_obj<Scene, SCENE_TNAME>},
+      {0, 0},
+    };
+
+    const luaL_Reg sampler_methods[] = {
+      {"__gc", lua_gc_shared_obj<Sampler, SAMPLER_TNAME>},
       {0, 0},
     };
 
@@ -42,6 +48,7 @@ namespace dort {
     };
 
     lua_register_type(l, SCENE_TNAME, scene_methods);
+    lua_register_type(l, SAMPLER_TNAME, sampler_methods);
     lua_register_type(l, PRIMITIVE_TNAME, primitive_methods);
     lua_register_type(l, PLY_MESH_TNAME, ply_mesh_methods);
     lua_register_type(l, BUILDER_TNAME, builder_methods);
@@ -58,6 +65,8 @@ namespace dort {
     lua_register(l, "add_ply_mesh", lua_build_add_ply_mesh);
 
     lua_register(l, "render", lua_scene_render);
+    lua_register(l, "random_sampler", lua_sampler_make_random);
+    lua_register(l, "stratified_sampler", lua_sampler_make_stratified);
     lua_register(l, "read_ply_mesh", lua_ply_mesh_read);
 
     return 0;
@@ -225,16 +234,14 @@ namespace dort {
     int p = 2;
     uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", 800);
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
-    uint32_t seed = lua_param_uint32_opt(l, p, "seed", 42);
     uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-    uint32_t samples_per_pixel = lua_param_uint32_opt(l, p, "samples_per_pixel", 1);
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
+    auto sampler = lua_param_sampler_opt(l, p, "sampler",
+        std::make_shared<RandomSampler>(1, 42));
     lua_params_check_unused(l, p);
 
-    auto sampler = std::make_shared<RandomSampler>(samples_per_pixel, Rng(seed));
     auto film = std::make_shared<Film>(x_res, y_res, filter);
-
     DirectRenderer renderer(scene, film, sampler, max_depth);
     renderer.preprocess();
     renderer.render();
@@ -263,6 +270,30 @@ namespace dort {
     return 1;
   }
 
+
+  int lua_sampler_make_random(lua_State* l) {
+    int p = 1;
+    uint32_t samples_per_pixel = lua_param_uint32_opt(l, p, "samples_per_pixel", 1);
+    uint32_t seed = lua_param_uint32_opt(l, p, "seed", 1);
+    lua_params_check_unused(l, p);
+    
+    lua_push_sampler(l, std::make_shared<RandomSampler>(
+          samples_per_pixel, Rng(seed)));
+    return 1;
+  }
+
+  int lua_sampler_make_stratified(lua_State* l) {
+    int p = 1;
+
+    uint32_t samples_per_x = lua_param_uint32_opt(l, p, "samples_per_x", 1);
+    uint32_t samples_per_y = lua_param_uint32_opt(l, p, "samples_per_y", 1);
+    uint32_t seed = lua_param_uint32_opt(l, p, "seed", 1);
+    lua_params_check_unused(l, p);
+
+    lua_push_sampler(l, std::make_shared<StratifiedSampler>(
+          samples_per_x, samples_per_y, Rng(seed)));
+    return 1;
+  }
 
   int lua_ply_mesh_read(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
@@ -320,6 +351,16 @@ namespace dort {
   }
   void lua_push_scene(lua_State* l, std::shared_ptr<Scene> scene) {
     lua_push_shared_obj<Scene, SCENE_TNAME>(l, scene);
+  }
+
+  std::shared_ptr<Sampler> lua_check_sampler(lua_State* l, int idx) {
+    return lua_check_shared_obj<Sampler, SAMPLER_TNAME>(l, idx);
+  }
+  bool lua_test_sampler(lua_State* l, int idx) {
+    return lua_test_shared_obj<Sampler, SAMPLER_TNAME>(l, idx);
+  }
+  void lua_push_sampler(lua_State* l, std::shared_ptr<Sampler> sampler) {
+    lua_push_shared_obj<Sampler, SAMPLER_TNAME>(l, sampler);
   }
 
   std::shared_ptr<Primitive> lua_check_primitive(lua_State* l, int idx) {

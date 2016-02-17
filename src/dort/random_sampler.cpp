@@ -5,11 +5,10 @@ namespace dort {
     Sampler(parent, std::move(rng))
   { }
 
-  void RandomSampler::next_pixel() {
-    this->next_pixel_sample();
+  void RandomSampler::start_pixel() {
   }
 
-  void RandomSampler::next_pixel_sample() {
+  void RandomSampler::start_pixel_sample() {
     for(float& x: this->samples_1d) {
       x = this->random_1d();
     }

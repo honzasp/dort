@@ -15,10 +15,6 @@ namespace dort {
   };
 
   class Sampler {
-    uint32_t requests_1d;
-    uint32_t requests_2d;
-    std::vector<uint32_t> requests_array_1d;
-    std::vector<uint32_t> requests_array_2d;
   protected:
     Rng rng;
     std::vector<float> samples_1d;
@@ -29,14 +25,13 @@ namespace dort {
     uint32_t samples_per_pixel;
   protected:
     Sampler(uint32_t samples_per_pixel, Rng rng):
-      requests_1d(0), requests_2d(0),
       rng(std::move(rng)),
       samples_per_pixel(samples_per_pixel) { }
     Sampler(const Sampler& parent, Rng rng);
   public:
     virtual ~Sampler() { }
-    virtual void next_pixel() = 0;
-    virtual void next_pixel_sample() = 0;
+    virtual void start_pixel() = 0;
+    virtual void start_pixel_sample() = 0;
     virtual std::shared_ptr<Sampler> split() = 0;
     virtual uint32_t round_count(uint32_t count) {
       return count; 
@@ -55,10 +50,10 @@ namespace dort {
       return make_slice(this->arrays_2d.at(idx.i));
     }
 
-    SampleIdx request_sample_1d();
-    SampleIdx request_sample_2d();
-    SampleIdx request_array_1d(uint32_t count);
-    SampleIdx request_array_2d(uint32_t count);
+    virtual SampleIdx request_sample_1d();
+    virtual SampleIdx request_sample_2d();
+    virtual SampleIdx request_array_1d(uint32_t count);
+    virtual SampleIdx request_array_2d(uint32_t count);
 
     float random_1d() {
       return this->rng.uniform_float();

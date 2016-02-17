@@ -34,6 +34,8 @@ namespace dort {
       int params_idx, const char* param_name, std::shared_ptr<TextureMap2d> def);
   std::shared_ptr<Filter> lua_param_filter_opt(lua_State* l,
       int params_idx, const char* param_name, std::shared_ptr<Filter> def);
+  std::shared_ptr<Sampler> lua_param_sampler_opt(lua_State* l,
+      int params_idx, const char* param_name, std::shared_ptr<Sampler> def);
 
   bool lua_param_is_set(lua_State* l, int params_idx, const char* param_name);
   bool lua_param_is_float(lua_State* l, int params_idx, const char* param_name);

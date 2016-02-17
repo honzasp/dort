@@ -1,5 +1,6 @@
 #include "dort/math.hpp"
 #include "dort/monte_carlo.hpp"
+#include "dort/rng.hpp"
 
 namespace dort {
   Vector uniform_hemisphere_sample(float u1, float u2) {
@@ -69,4 +70,50 @@ namespace dort {
     float b = num_b * pdf_b;
     return (a*a) / (a*a + b*b);
   }
+
+  void stratified_sample(slice<float> out, Rng& rng) {
+    float inv_size = 1.f / float(out.size());
+    for(uint32_t i = 0; i < out.size(); ++i) {
+      out.at(i) = (float(i) + rng.uniform_float()) * inv_size;
+    }
+  }
+
+  void stratified_sample(slice<Vec2> out,
+      uint32_t x_strata, uint32_t y_strata, Rng& rng)
+  {
+    assert(out.size() == x_strata * y_strata);
+    Vec2 inv_size = 1.f / Vec2(float(x_strata), float(y_strata));
+    for(uint32_t y = 0; y < y_strata; ++y) {
+      for(uint32_t x = 0; x < x_strata; ++x) {
+        Vec2 vec(float(x) + rng.uniform_float(), float(y) + rng.uniform_float());
+        out.at(y * x_strata + x) = vec * inv_size;
+      }
+    }
+  }
+
+  void latin_hypercube_sample(slice<Vec2> out, Rng& rng) {
+    float inv_size = 1.f / float(out.size());
+    for(uint32_t i = 0; i < out.size(); ++i) {
+      out.at(i) = Vec2(float(i) + rng.uniform_float(),
+          float(i) + rng.uniform_float()) * inv_size;
+    }
+
+    for(uint32_t i = 0; i + 1 < out.size(); ++i) {
+      int32_t shuf_x = i + rng.uniform_uint32(out.size() - i);
+      int32_t shuf_y = i + rng.uniform_uint32(out.size() - i);
+      std::swap(out.at(i).x, out.at(shuf_x).x);
+      std::swap(out.at(i).y, out.at(shuf_y).y);
+    }
+  }
+
+  template<class T>
+  void shuffle(slice<T> ary, Rng& rng) {
+    for(uint32_t i = 0; i + 1 < ary.size(); ++i) {
+      int32_t shuf = i + rng.uniform_uint32(ary.size() - i);
+      std::swap(ary.at(i), ary.at(shuf));
+    }
+  }
+
+  template void shuffle(slice<float> ary, Rng& rng);
+  template void shuffle(slice<Vec2> ary, Rng& rng);
 }

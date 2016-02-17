@@ -20,7 +20,9 @@ namespace dort {
 
     for(uint32_t y = 0; y < this->film->y_res; ++y) {
       for(uint32_t x = 0; x < this->film->x_res; ++x) {
+        this->sampler->start_pixel();
         for(uint32_t s = 0; s < this->sampler->samples_per_pixel; ++s) {
+          this->sampler->start_pixel_sample();
           Vec2 pixel_pos = this->sampler->get_sample_2d(this->pixel_pos_idx);
           Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
           Vec2 ndc_pos = film_pos * ndc_scale + ndc_shift;
@@ -34,9 +36,7 @@ namespace dort {
             this->film->add_sample(film_pos, radiance);
           }
           
-          this->sampler->next_pixel_sample();
         }
-        this->sampler->next_pixel();
       }
     }
   }

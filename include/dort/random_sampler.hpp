@@ -9,8 +9,8 @@ namespace dort {
     RandomSampler(uint32_t samples_per_pixel, Rng rng):
       Sampler(samples_per_pixel, std::move(rng)) { }
 
-    virtual void next_pixel() override final;
-    virtual void next_pixel_sample() override final;
+    virtual void start_pixel() override final;
+    virtual void start_pixel_sample() override final;
     virtual std::shared_ptr<Sampler> split() override final;
   };
 }
