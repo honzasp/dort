@@ -15,12 +15,12 @@ namespace dort {
 
   Spectrum DiffuseLight::sample_radiance(const Point& eye, float eye_epsilon,
       Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
-      Rng& rng) const
+      LightSample sample) const
   {
     Point shape_eye = this->shape_to_world.apply_inv(eye);
     Normal shape_n;
     Point shape_p = this->shape->sample_point_eye(shape_eye,
-        rng.uniform_float(), rng.uniform_float(), shape_n);
+        sample.uv_pos.x, sample.uv_pos.y, shape_n);
 
     Vector shape_wi = normalize(shape_p - shape_eye);
     Point world_p = this->shape_to_world.apply(shape_p);

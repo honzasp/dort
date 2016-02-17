@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "dort/geometry.hpp"
+#include "dort/sampler.hpp"
 #include "dort/spectrum.hpp"
 
 namespace dort {
@@ -32,6 +33,21 @@ namespace dort {
     virtual float f_pdf(const Vector& wo, const Vector& wi) const = 0;
   };
 
+  struct BsdfSamplesIdxs {
+    SampleIdx uv_pos_idx;
+    SampleIdx u_component_idx;
+    uint32_t count;
+  };
+
+  struct BsdfSample {
+    Vec2 uv_pos;
+    float u_component;
+
+    explicit BsdfSample(Sampler& sampler);
+    BsdfSample(Sampler& sampler, const BsdfSamplesIdxs& idxs, uint32_t n);
+    static BsdfSamplesIdxs request(Sampler& sampler, uint32_t count);
+  };
+
   class Bsdf {
     // TODO: use a small_vector
     std::vector<std::unique_ptr<Bxdf>> bxdfs;
@@ -44,7 +60,7 @@ namespace dort {
 
     Spectrum f(const Vector& wo, const Vector& wi, BxdfFlags flags) const;
     Spectrum sample_f(const Vector& wo, Vector& out_wi, float& out_pdf,
-        BxdfFlags flags, BxdfFlags& out_flags, Rng& rng) const;
+        BxdfFlags flags, BxdfFlags& out_flags, BsdfSample sample) const;
     float f_pdf(const Vector& wo, const Vector& wi, BxdfFlags flags) const;
     uint32_t num_bxdfs(BxdfFlags flags) const;
 

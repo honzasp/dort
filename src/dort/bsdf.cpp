@@ -3,6 +3,24 @@
 #include "dort/shape.hpp"
 
 namespace dort {
+  BsdfSample::BsdfSample(Sampler& sampler) {
+    this->uv_pos = sampler.random_2d();
+    this->u_component = sampler.random_1d();
+  }
+
+  BsdfSample::BsdfSample(Sampler& sampler, const BsdfSamplesIdxs& idxs, uint32_t n) {
+    this->uv_pos = sampler.get_array_2d(idxs.uv_pos_idx).at(n);
+    this->u_component = sampler.get_array_1d(idxs.u_component_idx).at(n);
+  }
+
+  BsdfSamplesIdxs BsdfSample::request(Sampler& sampler, uint32_t count) {
+    BsdfSamplesIdxs idxs;
+    idxs.uv_pos_idx = sampler.request_array_2d(count);
+    idxs.u_component_idx = sampler.request_array_1d(count);
+    idxs.count = count;
+    return idxs;
+  }
+
   Bsdf::Bsdf(const DiffGeom& diff_geom):
     nn(diff_geom.nn.v)
   {
@@ -39,7 +57,7 @@ namespace dort {
   }
 
   Spectrum Bsdf::sample_f(const Vector& wo, Vector& out_wi, float& out_pdf,
-      BxdfFlags flags, BxdfFlags& out_flags, Rng& rng) const
+      BxdfFlags flags, BxdfFlags& out_flags, BsdfSample sample) const
   {
     uint32_t num_bxdfs = this->num_bxdfs(flags);
     if(num_bxdfs == 0) {
@@ -47,7 +65,7 @@ namespace dort {
       return Spectrum(0.f);
     }
       
-    uint32_t bxdf_idx = floor_int32(float(num_bxdfs) * rng.uniform_float());
+    uint32_t bxdf_idx = floor_int32(float(num_bxdfs) * sample.u_component);
     const Bxdf* sampled_bxdf = this->bxdfs.at(0).get();
     for(const auto& bxdf: this->bxdfs) {
       if(bxdf->matches(flags) && (bxdf_idx--) == 0) {
@@ -56,11 +74,10 @@ namespace dort {
       }
     }
 
-    float u1 = rng.uniform_float();
-    float u2 = rng.uniform_float();
     Vector wo_local = this->world_to_local(wo);
     Vector wi_local;
-    Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf, u1, u2);
+    Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf,
+      sample.uv_pos.x, sample.uv_pos.y);
     out_flags = sampled_bxdf->flags;
     out_wi = this->local_to_world(wi_local);
     return f;

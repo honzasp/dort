@@ -12,19 +12,19 @@ namespace dort {
     virtual float evaluate(Vec2 p) const = 0;
   };
 
-  class BoxFilter: public Filter {
+  class BoxFilter final: public Filter {
   public:
     BoxFilter(Vec2 radius): Filter(radius) { }
     virtual float evaluate(Vec2 p) const override final;
   };
 
-  class TriangleFilter: public Filter {
+  class TriangleFilter final: public Filter {
   public:
     TriangleFilter(Vec2 radius): Filter(radius) { }
     virtual float evaluate(Vec2 p) const override final;
   };
 
-  class GaussianFilter: public Filter {
+  class GaussianFilter final: public Filter {
     float alpha;
   public:
     GaussianFilter(Vec2 radius, float alpha):
@@ -32,7 +32,7 @@ namespace dort {
     virtual float evaluate(Vec2 p) const override final;
   };
 
-  class MitchellFilter: public Filter {
+  class MitchellFilter final: public Filter {
     float b, c;
   public:
     MitchellFilter(Vec2 radius, float b, float c):
@@ -42,7 +42,7 @@ namespace dort {
     float evaluate_cubic(float x) const;
   };
 
-  class LanczosSincFilter: public Filter {
+  class LanczosSincFilter final: public Filter {
     float inv_tau;
   public:
     LanczosSincFilter(Vec2 radius, float tau):

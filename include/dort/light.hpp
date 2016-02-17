@@ -1,6 +1,7 @@
 #pragma once
 #include "dort/geometry.hpp"
 #include "dort/rng.hpp"
+#include "dort/sampler.hpp"
 #include "dort/scene.hpp"
 #include "dort/spectrum.hpp"
 
@@ -16,6 +17,19 @@ namespace dort {
     bool visible(const Scene& scene) const;
   };
 
+  struct LightSamplesIdxs {
+    SampleIdx uv_pos_idx;
+    uint32_t count;
+  };
+
+  struct LightSample {
+    Vec2 uv_pos;
+
+    explicit LightSample(Sampler& sampler);
+    LightSample(Sampler& sampler, const LightSamplesIdxs& idxs, uint32_t n);
+    static LightSamplesIdxs request(Sampler& sampler, uint32_t count);
+  };
+
   class Light {
   public:
     uint32_t num_samples;
@@ -24,7 +38,8 @@ namespace dort {
     virtual ~Light() {}
 
     virtual Spectrum sample_radiance(const Point& eye, float eye_epsilon,
-        Vector& out_wi, float& out_pdf, ShadowTest& out_shadow, Rng& rng) const = 0;
+        Vector& out_wi, float& out_pdf, ShadowTest& out_shadow, 
+        LightSample sample) const = 0;
     virtual float radiance_pdf(const Point& pt, const Vector& wi) const = 0;
     virtual Spectrum background_radiance(const Ray& ray) const = 0;
     virtual bool is_delta() const = 0;

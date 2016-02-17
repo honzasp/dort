@@ -13,6 +13,7 @@
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/ply_mesh.hpp"
+#include "dort/random_sampler.hpp"
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
 
@@ -226,16 +227,19 @@ namespace dort {
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
     uint32_t seed = lua_param_uint32_opt(l, p, "seed", 42);
     uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+    uint32_t samples_per_pixel = lua_param_uint32_opt(l, p, "samples_per_pixel", 1);
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     lua_params_check_unused(l, p);
 
-    Rng rng(seed);
-    Film film(x_res, y_res, filter);
-    DirectRenderer renderer(max_depth);
-    renderer.render(*scene, film, rng);
+    auto sampler = std::make_shared<RandomSampler>(samples_per_pixel, Rng(seed));
+    auto film = std::make_shared<Film>(x_res, y_res, filter);
 
-    auto image = std::make_shared<Image<PixelRgb8>>(film.to_image());
+    DirectRenderer renderer(scene, film, sampler, max_depth);
+    renderer.preprocess();
+    renderer.render();
+
+    auto image = std::make_shared<Image<PixelRgb8>>(film->to_image());
     lua_push_image(l, image);
     return 1;
   }

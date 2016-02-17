@@ -3,7 +3,8 @@
 
 namespace dort {
   Spectrum PointLight::sample_radiance(const Point& eye, float eye_epsilon,
-      Vector& out_wi, float& out_pdf, ShadowTest& out_shadow, Rng&) const
+      Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
+      LightSample) const
   {
     out_wi = normalize(this->pt - eye);
     out_pdf = 1.f;

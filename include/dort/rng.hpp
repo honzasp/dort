@@ -14,5 +14,10 @@ namespace dort {
     float uniform_float() {
       return std::uniform_real_distribution<float>(0.f, 1.f)(this->gen);
     }
+
+    Rng split() {
+      // TODO: this is probably not correct
+      return Rng(this->gen());
+    }
   };
 }

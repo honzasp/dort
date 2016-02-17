@@ -51,6 +51,10 @@ namespace dort {
     return s1.rgb == s2.rgb;
   }
 
+  inline RgbSpectrum operator+=(RgbSpectrum& s1, const RgbSpectrum& s2) {
+    return s1 = s1 + s2;
+  }
+
   inline bool is_finite(const RgbSpectrum& s) {
     return is_finite(s.rgb);
   }

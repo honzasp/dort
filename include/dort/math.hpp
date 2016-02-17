@@ -14,6 +14,8 @@
 
 namespace dort {
   constexpr float INFINITY = std::numeric_limits<float>::infinity();
+  constexpr float SIGNALING_NAN = std::numeric_limits<float>::signaling_NaN();
+  constexpr float QUIET_NAN = std::numeric_limits<float>::quiet_NaN();
   constexpr float PI = 3.141592653589793f;
   constexpr float TWO_PI = 6.283185307179586f;
   constexpr float FOUR_PI = 12.56637061435917f;
