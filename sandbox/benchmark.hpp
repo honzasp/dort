@@ -1,6 +1,7 @@
 #pragma once
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 
 template<class T>
 void force_eval(T value) {

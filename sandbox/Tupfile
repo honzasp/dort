@@ -13,3 +13,5 @@ CXXFLAGS = -Wall -Wextra -std=c++11 -O2
 : copy.cpp |> !clang |> copy.clang~
 : copy.cpp |> !gcc |> copy.gcc~
 : copy.cpp |> !clang_s |> copy.clang.s~
+: chrono.cpp |> !clang |> chrono.clang~
+: chrono.cpp |> !gcc |> chrono.gcc~
