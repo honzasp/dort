@@ -1,16 +1,18 @@
+#include "dort/direct_renderer.hpp"
 #include "dort/light.hpp"
 #include "dort/lighting.hpp"
 #include "dort/primitive.hpp"
-#include "dort/direct_renderer.hpp"
+#include "dort/stats.hpp"
 
 namespace dort {
   Spectrum DirectRenderer::get_radiance(const Scene& scene, Ray& ray,
       uint32_t depth, Sampler& sampler) const 
   {
+    stat_count(COUNTER_DIRECT_GET_RADIANCE);
     Spectrum radiance(0.f);
 
     Intersection isect;
-    if(!scene.primitive->intersect(ray, isect)) {
+    if(!scene.intersect(ray, isect)) {
       for(const auto& light: scene.lights) {
         radiance += light->background_radiance(ray);
       }
@@ -35,6 +37,7 @@ namespace dort {
     radiance += uniform_sample_all_lights(scene, geom, *bsdf, sampler,
         make_slice(this->light_samples_idxs),
         make_slice(this->bsdf_samples_idxs));
+    stat_sample_int(DISTRIB_BSDF_NUM_BXDFS, bsdf->num_bxdfs());
 
     if(depth < this->max_depth) {
       Spectrum reflection = trace_specular(*this, scene,

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "dort/bvh_primitive.hpp"
+#include "dort/stats.hpp"
 
 namespace dort {
   BvhPrimitive::BvhPrimitive(std::vector<std::unique_ptr<Primitive>> prims,
@@ -33,8 +34,10 @@ namespace dort {
     uint32_t todo_stack[this->max_depth + 1];
     uint32_t todo_top = 0;
     uint32_t todo_index = 0;
+    uint32_t traversed = 0;
     for(;;) {
       const LinearNode& linear_node = this->linear_nodes.at(todo_index);
+      traversed += 1;
 
       if(fast_box_hit_p(linear_node.bounds, ray, inv_dir, dir_is_neg)) {
         if(linear_node.prim_count == 0) {
@@ -51,6 +54,7 @@ namespace dort {
         for(uint32_t i = 0; i < linear_node.prim_count; ++i) {
           auto& prim = this->ordered_prims.at(linear_node.offset + i);
           if(!callback(*prim)) {
+            stat_sample_int(DISTRIB_INT_BVH_TRAVERSE_COUNT, traversed);
             return;
           }
         }
@@ -61,9 +65,12 @@ namespace dort {
       }
       todo_index = todo_stack[--todo_top];
     }
+
+    stat_sample_int(DISTRIB_INT_BVH_TRAVERSE_COUNT, traversed);
   }
 
   bool BvhPrimitive::intersect(Ray& ray, Intersection& out_isect) const {
+    stat_count(COUNTER_BVH_INTERSECT);
     bool found = false;
     this->traverse_primitives(ray, [&](const Primitive& prim) {
       if(prim.intersect(ray, out_isect)) {
@@ -71,10 +78,14 @@ namespace dort {
       }
       return true;
     });
+    if(found) {
+      stat_count(COUNTER_BVH_INTERSECT_HIT);
+    }
     return found;
   }
 
   bool BvhPrimitive::intersect_p(const Ray& ray) const {
+    stat_count(COUNTER_BVH_INTERSECT_P);
     bool found = false;
     this->traverse_primitives(ray, [&](const Primitive& prim) {
       if(prim.intersect_p(ray)) {
@@ -84,6 +95,9 @@ namespace dort {
         return true;
       }
     });
+    if(found) {
+      stat_count(COUNTER_BVH_INTERSECT_P_HIT);
+    }
     return found;
   }
 
@@ -213,6 +227,8 @@ namespace dort {
   bool BvhPrimitive::fast_box_hit_p(const Box& bounds, const Ray& ray,
       const Vector& inv_dir, bool dir_is_neg[3])
   {
+    stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P);
+
     float t_min =  (bounds[  dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
     float t_max =  (bounds[1-dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
 
@@ -242,6 +258,10 @@ namespace dort {
       t_max = tz_max;
     }
 
-    return (t_min < ray.t_max) && (t_max > ray.t_min);
+    bool hit = (t_min < ray.t_max) && (t_max > ray.t_min);
+    if(hit) {
+      stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P_HIT);
+    }
+    return hit;
   }
 }

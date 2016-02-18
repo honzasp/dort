@@ -75,7 +75,6 @@ for sampler in pairs(samplers) do
     x_res = 400, y_res = 400,
     filter = mitchell_filter { radius = 1.8 },
     sampler = samplers[sampler],
-    num_threads = 1,
   }))
 end
 

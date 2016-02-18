@@ -2,6 +2,7 @@
 #include "dort/monte_carlo.hpp"
 #include "dort/primitive.hpp"
 #include "dort/renderer.hpp"
+#include "dort/stats.hpp"
 
 namespace dort {
   Spectrum uniform_sample_all_lights(const Scene& scene,
@@ -9,6 +10,7 @@ namespace dort {
       slice<const LightSamplesIdxs> light_samples_idxs,
       slice<const BsdfSamplesIdxs> bsdf_samples_idxs)
   {
+    stat_count(COUNTER_UNIFORM_SAMPLE_ALL_LIGHTS);
     assert(light_samples_idxs.size() == scene.lights.size());
     assert(bsdf_samples_idxs.size() == scene.lights.size());
 
@@ -35,6 +37,7 @@ namespace dort {
   Spectrum uniform_sample_all_lights(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler)
   {
+    stat_count(COUNTER_UNIFORM_SAMPLE_ALL_LIGHTS);
     Spectrum radiance(0.f);
     for(const auto& light: scene.lights) {
       uint32_t num_samples = max(1u, light->num_samples);
@@ -55,6 +58,7 @@ namespace dort {
       const Light& light, BxdfFlags bxdf_flags,
       LightSample light_sample, BsdfSample bsdf_sample)
   {
+    stat_count(COUNTER_ESTIMATE_DIRECT);
     Spectrum light_contrib(0.f);
     Spectrum bsdf_contrib(0.f);
 
@@ -97,7 +101,7 @@ namespace dort {
         Spectrum light_radiance(0.f);
         Ray light_ray(geom.p, wi, geom.ray_epsilon, INFINITY);
         Intersection light_isect;
-        if(scene.primitive->intersect(light_ray, light_isect)) {
+        if(scene.intersect(light_ray, light_isect)) {
           const AreaLight* area_light =
             light_isect.primitive->get_area_light(light_isect.world_diff_geom);
           if(area_light == &light) {
@@ -121,6 +125,8 @@ namespace dort {
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler)
   {
+    stat_count(COUNTER_TRACE_SPECULAR);
+
     Vector wi;
     float pdf;
     BxdfFlags sampled_flags;

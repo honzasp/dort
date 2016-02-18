@@ -63,6 +63,7 @@ namespace dort {
         BxdfFlags flags, BxdfFlags& out_flags, BsdfSample sample) const;
     float f_pdf(const Vector& wo, const Vector& wi, BxdfFlags flags) const;
     uint32_t num_bxdfs(BxdfFlags flags) const;
+    uint32_t num_bxdfs() const { return this->bxdfs.size(); }
 
     Vector local_to_world(const Vector& vec) const {
       return this->sn * vec.v.x + this->tn * vec.v.y + this->nn * vec.v.z;

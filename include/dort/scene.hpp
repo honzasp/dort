@@ -9,5 +9,8 @@ namespace dort {
     std::vector<std::shared_ptr<Light>> lights;
     std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes;
     std::shared_ptr<Camera> camera;
+
+    bool intersect(Ray& ray, Intersection& out_isect) const;
+    bool intersect_p(const Ray& ray) const;
   };
 }

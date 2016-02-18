@@ -1,3 +1,4 @@
+#include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
 
 namespace dort {
@@ -30,11 +31,13 @@ namespace dort {
   }
 
   void ThreadPool::thread_body() {
+    stat_init_thread();
+
     for(;;) {
       std::unique_lock<std::mutex> lock(this->queue_mutex);
       if(this->queue.empty()) {
         if(this->stop_flag.load()) {
-          return;
+          break;
         }
         this->queue_condvar.wait(lock);
       }
@@ -46,6 +49,8 @@ namespace dort {
         job();
       }
     }
+
+    stat_finish_thread();
   }
 
   uint32_t ThreadPool::num_threads() const {

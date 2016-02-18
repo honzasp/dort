@@ -9,6 +9,7 @@
 #include "dort/lua_math.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/lua_texture.hpp"
+#include "dort/stats.hpp"
 
 namespace dort {
   int main(int argc, char** argv) {
@@ -26,6 +27,8 @@ namespace dort {
       luaL_requiref(l, CAMERA_LIBNAME, lua_open_camera, true);
       luaL_requiref(l, BUILDER_LIBNAME, lua_open_builder, true);
 
+      stat_init_global();
+
       const char* input_file = argc == 1 ? 0 : argv[1];
 
       int error;
@@ -38,6 +41,7 @@ namespace dort {
         lua_pop(l, 1);
         exit_status = 1;
       } else {
+        stat_report_global(stdout);
         exit_status = 0;
       }
     } catch(std::exception& exn) {

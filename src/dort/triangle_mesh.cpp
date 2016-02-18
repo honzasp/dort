@@ -1,4 +1,5 @@
 #include "dort/bsdf.hpp"
+#include "dort/stats.hpp"
 #include "dort/triangle_mesh.hpp"
 #include "dort/material.hpp"
 
@@ -6,6 +7,7 @@ namespace dort {
   bool Triangle::hit(const Ray& ray, float& out_t_hit,
       float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
+    stat_count(COUNTER_TRIANGLE_HIT);
     Point p[3];
     this->get_points(p);
 
@@ -34,6 +36,8 @@ namespace dort {
     if(t < ray.t_min || t > ray.t_max) {
       return false;
     }
+
+    stat_count(COUNTER_TRIANGLE_HIT_HIT);
 
     float uv[3][2];
     this->get_uvs(uv);
@@ -64,6 +68,7 @@ namespace dort {
   }
 
   bool Triangle::hit_p(const Ray& ray) const {
+    stat_count(COUNTER_TRIANGLE_HIT_P);
     Point p[3];
     this->get_points(p);
 
@@ -92,6 +97,8 @@ namespace dort {
     if(t < ray.t_min || t > ray.t_max) {
       return false;
     }
+
+    stat_count(COUNTER_TRIANGLE_HIT_P_HIT);
     return true;
   }
 
