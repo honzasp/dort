@@ -16,6 +16,8 @@ namespace dort {
     int exit_status = 3;
     lua_State* l = luaL_newstate();
     try {
+      stat_init_global();
+
       luaL_requiref(l, "base", luaopen_base, true);
       luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
       luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
@@ -26,8 +28,6 @@ namespace dort {
       luaL_requiref(l, LIGHT_LIBNAME, lua_open_light, true);
       luaL_requiref(l, CAMERA_LIBNAME, lua_open_camera, true);
       luaL_requiref(l, BUILDER_LIBNAME, lua_open_builder, true);
-
-      stat_init_global();
 
       const char* input_file = argc == 1 ? 0 : argv[1];
 

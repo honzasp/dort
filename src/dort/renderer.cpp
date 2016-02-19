@@ -5,6 +5,7 @@
 #include "dort/renderer.hpp"
 #include "dort/sampler.hpp"
 #include "dort/scene.hpp"
+#include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
 
 namespace dort {
@@ -14,6 +15,7 @@ namespace dort {
   }
 
   void Renderer::render(CtxG& ctx) {
+    StatTimer t(TIMER_RENDER);
     Vec2i layout_tiles = this->layout_tiles(ctx);
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
       Vec2(float(layout_tiles.x), float(layout_tiles.y));

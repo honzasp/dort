@@ -9,6 +9,8 @@ namespace dort {
       uint32_t depth, Sampler& sampler) const 
   {
     stat_count(COUNTER_DIRECT_GET_RADIANCE);
+    StatTimer t(TIMER_DIRECT_GET_RADIANCE);
+
     Spectrum radiance(0.f);
 
     Intersection isect;
@@ -37,7 +39,7 @@ namespace dort {
     radiance += uniform_sample_all_lights(scene, geom, *bsdf, sampler,
         make_slice(this->light_samples_idxs),
         make_slice(this->bsdf_samples_idxs));
-    stat_sample_int(DISTRIB_BSDF_NUM_BXDFS, bsdf->num_bxdfs());
+    stat_sample_int(DISTRIB_INT_BSDF_NUM_BXDFS, bsdf->num_bxdfs());
 
     if(depth < this->max_depth) {
       Spectrum reflection = trace_specular(*this, scene,

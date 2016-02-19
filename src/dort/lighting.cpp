@@ -11,6 +11,7 @@ namespace dort {
       slice<const BsdfSamplesIdxs> bsdf_samples_idxs)
   {
     stat_count(COUNTER_UNIFORM_SAMPLE_ALL_LIGHTS);
+    StatTimer t(TIMER_UNIFORM_SAMPLE_ALL_LIGHTS);
     assert(light_samples_idxs.size() == scene.lights.size());
     assert(bsdf_samples_idxs.size() == scene.lights.size());
 
@@ -38,6 +39,7 @@ namespace dort {
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler)
   {
     stat_count(COUNTER_UNIFORM_SAMPLE_ALL_LIGHTS);
+    StatTimer t(TIMER_UNIFORM_SAMPLE_ALL_LIGHTS);
     Spectrum radiance(0.f);
     for(const auto& light: scene.lights) {
       uint32_t num_samples = max(1u, light->num_samples);
@@ -59,6 +61,7 @@ namespace dort {
       LightSample light_sample, BsdfSample bsdf_sample)
   {
     stat_count(COUNTER_ESTIMATE_DIRECT);
+    StatTimer t(TIMER_ESTIMATE_DIRECT);
     Spectrum light_contrib(0.f);
     Spectrum bsdf_contrib(0.f);
 
@@ -126,6 +129,7 @@ namespace dort {
       BxdfFlags flags, uint32_t depth, Sampler& sampler)
   {
     stat_count(COUNTER_TRACE_SPECULAR);
+    StatTimer t(TIMER_TRACE_SPECULAR);
 
     Vector wi;
     float pdf;

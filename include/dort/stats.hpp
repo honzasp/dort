@@ -29,12 +29,28 @@ namespace dort {
 
   enum StatDistribInt: uint32_t {
     DISTRIB_INT_BVH_TRAVERSE_COUNT,
-    DISTRIB_BSDF_NUM_BXDFS,
+    DISTRIB_INT_BSDF_NUM_BXDFS,
     _DISTRIB_INT_END,
   };
 
   struct StatDistribIntDef {
     const char* name;
+  };
+
+  enum StatDistribTime: uint32_t {
+    TIMER_RENDER,
+    TIMER_DIRECT_GET_RADIANCE,
+    TIMER_UNIFORM_SAMPLE_ALL_LIGHTS,
+    TIMER_ESTIMATE_DIRECT,
+    TIMER_TRACE_SPECULAR,
+    TIMER_SCENE_INTERSECT,
+    TIMER_SCENE_INTERSECT_P,
+    _TIMER_END,
+  };
+
+  struct StatDistribTimeDef {
+    const char* name;
+    uint32_t sample_probability;
   };
 
   struct Stats {
@@ -46,22 +62,45 @@ namespace dort {
       int64_t max = INT64_MIN;
     };
 
+    struct DistribTime {
+      uint64_t total_count = 0;
+      uint64_t sampled_count = 0;
+      int64_t sum_ns = 0;
+      int64_t sum_squares_ns = 0;
+      int64_t sum_overhead_ns = 0;
+      int64_t min_ns = INT64_MAX;
+      int64_t max_ns = INT64_MIN;
+    };
+
     bool initialized = false;
     std::vector<uint64_t> counters;
     std::vector<DistribInt> distrib_ints;
+    std::vector<DistribTime> distrib_times;
+  };
+
+  class StatTimer {
+    StatDistribTime distrib_id;
+    int64_t time_0;
+    bool active;
+  public:
+    StatTimer(StatDistribTime distrib_id);
+    ~StatTimer();
   };
 
   extern Stats GLOBAL_STATS;
   extern thread_local Stats THREAD_STATS;
 
-  extern const std::vector<StatCounterDef> stat_counter_defs;
-  extern const std::vector<StatDistribIntDef> stat_distrib_int_defs;
+  extern const std::vector<StatCounterDef> STAT_COUNTER_DEFS;
+  extern const std::vector<StatDistribIntDef> STAT_DISTRIB_INT_DEFS;
+  extern const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS;
 
   void stat_init_global();
   void stat_init_thread();
   void stat_init(Stats& stats);
   void stat_finish_thread();
   void stat_report_global(FILE* output);
+
+  int64_t stat_clock_now_ns();
 
   inline void stat_count(StatCounter id) {
     THREAD_STATS.counters.at(id) += 1;
