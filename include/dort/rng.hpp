@@ -13,12 +13,12 @@ namespace dort {
     Rng& operator=(Rng&&) = default;
 
     float uniform_float() {
-      StatTimer t(TIMER_RNG_FLOAT);
+      //StatTimer t(TIMER_RNG_FLOAT);
       return std::uniform_real_distribution<float>(0.f, 1.f)(this->gen);
     }
 
     uint32_t uniform_uint32(uint32_t limit) {
-      StatTimer t(TIMER_RNG_UINT32);
+      //StatTimer t(TIMER_RNG_UINT32);
       return std::uniform_int_distribution<uint32_t>(0u, limit - 1)(this->gen);
     }
 

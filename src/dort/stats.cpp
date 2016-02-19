@@ -46,25 +46,37 @@ namespace dort {
     { "sampler start_pixel_sample", UINT32_MAX / 256 },
     { "rng float", UINT32_MAX / 1024 },
     { "rng uint32", UINT32_MAX / 1024 },
+    { "bvh build", UINT32_MAX },
+    { "bvh traverse node", UINT32_MAX / 256 },
+    { "bvh intersect prim", UINT32_MAX / 256 },
   };
 
   StatTimer::StatTimer(StatDistribTime distrib_id) {
     this->distrib_id = distrib_id;
     uint32_t prob = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_probability;
     uint32_t rand = THREAD_TIME_SAMPLE_RNG() << (32 - THREAD_TIME_SAMPLE_RNG.word_size);
-    if((this->active = rand < prob)) {
+    if((this->measuring = rand < prob)) {
       this->time_0 = stat_clock_now_ns();
     }
+    this->active = true;
   }
 
   StatTimer::~StatTimer() {
+    if(this->active) {
+      this->stop();
+    }
+  }
+
+  void StatTimer::stop() {
+    assert(this->active);
     auto& distrib = THREAD_STATS.distrib_times.at(this->distrib_id);
     distrib.total_count += 1;
-    if(!this->active) {
+    if(!this->measuring) {
       return;
     }
 
     int64_t time_1 = stat_clock_now_ns();
+    THREAD_TIME_SAMPLE_RNG();
     int64_t time_2 = stat_clock_now_ns();
     int64_t overhead_ns = time_2 - time_1;
     int64_t sample_ns = time_1 - this->time_0 - overhead_ns;
@@ -75,6 +87,7 @@ namespace dort {
     distrib.sum_overhead_ns += overhead_ns;
     distrib.min_ns = std::min(distrib.min_ns, sample_ns);
     distrib.max_ns = std::max(distrib.max_ns, sample_ns);
+    this->active = this->measuring = false;
   }
 
   void stat_init_global() {

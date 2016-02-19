@@ -7,13 +7,26 @@ namespace dort {
   enum class BvhSplitMethod {
     Middle,
     EqualCounts,
+    Sah,
   };
 
   class BvhPrimitive final: public Primitive {
+    static constexpr uint32_t SAH_BUCKET_COUNT = 20;
+    static constexpr int32_t SAH_INTERSECTION_COST = 2;
+    static constexpr int32_t SAH_TRAVERSAL_COST = 1;
+
     struct PrimitiveInfo {
       uint32_t prim_index;
       Box bounds;
       Point centroid;
+    };
+
+    struct BucketInfo {
+      uint32_t count = 0;
+      Box bounds;
+      Box prefix_bounds;
+      Box postfix_bounds;
+      uint32_t prefix_count;
     };
 
     struct BuildNode {
@@ -52,6 +65,10 @@ namespace dort {
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
     uint32_t split_equal_counts(std::vector<PrimitiveInfo>& build_infos,
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
+    uint32_t split_sah(std::vector<PrimitiveInfo>& build_infos,
+        const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
+    int32_t sah_split_cost(const Box& bounds,
+        const BucketInfo& bucket, uint32_t prim_count);
     void linearize_node(const BuildNode& node, uint32_t depth);
 
     template<class F>

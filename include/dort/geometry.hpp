@@ -174,6 +174,11 @@ namespace dort {
         return this->p_max;
       }
     }
+
+    float area() const {
+      Vec3 r = (this->p_max - this->p_min).v;
+      return 2.f * (r.y * r.z + r.x * r.z + r.y * r.z);
+    }
   };
 
   Box union_box(const Box& b1, const Box& b2);

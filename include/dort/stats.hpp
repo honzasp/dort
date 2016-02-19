@@ -49,6 +49,9 @@ namespace dort {
     TIMER_SAMPLER_START_PIXEL_SAMPLE,
     TIMER_RNG_FLOAT,
     TIMER_RNG_UINT32,
+    TIMER_BVH_BUILD,
+    TIMER_BVH_TRAVERSE_NODE,
+    TIMER_BVH_INTERSECT_PRIM,
     _TIMER_END,
   };
 
@@ -86,9 +89,11 @@ namespace dort {
     StatDistribTime distrib_id;
     int64_t time_0;
     bool active;
+    bool measuring;
   public:
     StatTimer(StatDistribTime distrib_id);
     ~StatTimer();
+    void stop();
   };
 
   extern Stats GLOBAL_STATS;
