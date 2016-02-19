@@ -20,6 +20,7 @@ namespace dort {
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
       Vec2(float(layout_tiles.x), float(layout_tiles.y));
     uint32_t job_count = layout_tiles.x * layout_tiles.y;
+    stat_sample_int(DISTRIB_INT_RENDER_JOBS, job_count);
 
     std::vector<std::shared_ptr<Sampler>> samplers;
     for(uint32_t i = 0; i < job_count; ++i) {
@@ -48,6 +49,8 @@ namespace dort {
   void Renderer::render_tile(CtxG&, Recti tile_rect, 
       Recti tile_film_rect, Film& tile_film, Sampler& sampler) const
   {
+    StatTimer t(TIMER_RENDER_TILE);
+
     float x_res = float(this->film->x_res);
     float y_res = float(this->film->y_res);
     float res = max(x_res, y_res);
@@ -56,9 +59,17 @@ namespace dort {
 
     for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
       for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
-        sampler.start_pixel();
+        {
+          StatTimer t(TIMER_SAMPLER_START_PIXEL);
+          sampler.start_pixel();
+        }
+
         for(uint32_t s = 0; s < sampler.samples_per_pixel; ++s) {
-          sampler.start_pixel_sample();
+          {
+            StatTimer t(TIMER_SAMPLER_START_PIXEL_SAMPLE);
+            sampler.start_pixel_sample();
+          }
+
           Vec2 pixel_pos = sampler.get_sample_2d(this->pixel_pos_idx);
           Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
           Vec2 ndc_pos = film_pos * ndc_scale + ndc_shift;

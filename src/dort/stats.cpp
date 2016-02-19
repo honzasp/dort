@@ -23,25 +23,29 @@ namespace dort {
     { "triangle hit hit" },
     { "triangle hit_p" },
     { "triangle hit_p hit" },
-    { "direct get_radiance" },
-    { "uniform_sample_all_lights" },
-    { "estimate_direct" },
-    { "trace_specular" },
   };
 
   const std::vector<StatDistribIntDef> STAT_DISTRIB_INT_DEFS = {
     { "bvh traverse count" },
     { "bsdf number of bxdfs" },
+    { "render jobs" },
   };
 
   const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS = {
     { "render", UINT32_MAX },
+    { "render tile", UINT32_MAX / 16 },
     { "direct get_radiance", UINT32_MAX / 256 },
     { "uniform_sample_all_lights", UINT32_MAX / 256 }, 
     { "estimate_direct", UINT32_MAX / 512 },
     { "trace_specular", UINT32_MAX / 512 },
     { "scene isect", UINT32_MAX / 256 },
     { "scene isect_p", UINT32_MAX / 256 },
+    { "film add_sample", UINT32_MAX / 256 },
+    { "film add_tile", UINT32_MAX / 16 },
+    { "sampler start_pixel", UINT32_MAX / 256 },
+    { "sampler start_pixel_sample", UINT32_MAX / 256 },
+    { "rng float", UINT32_MAX / 1024 },
+    { "rng uint32", UINT32_MAX / 1024 },
   };
 
   StatTimer::StatTimer(StatDistribTime distrib_id) {
@@ -175,20 +179,20 @@ namespace dort {
       std::fprintf(output, "avg %g ns, sd %g ns, n %" PRIu64 "/%" PRIu64 ",",
           average_ns, stddev_ns, distrib.sampled_count, distrib.total_count);
 
-      if(estimate_total_ns < 20e3f) {
+      if(abs(estimate_total_ns) < 20e3f) {
         std::fprintf(output, " total ~%3g ns", estimate_total_ns);
-      } else if(estimate_total_ns < 20e6f) {
+      } else if(abs(estimate_total_ns) < 20e6f) {
         std::fprintf(output, " total ~%3g us", estimate_total_ns * 1e-3f);
-      } else if(estimate_total_ns < 20e9f) {
+      } else if(abs(estimate_total_ns) < 20e9f) {
         std::fprintf(output, " total ~%3g ms", estimate_total_ns * 1e-6f);
-      } else if(estimate_total_ns < 2000e12f) {
+      } else if(abs(estimate_total_ns) < 2000e12f) {
         std::fprintf(output, " total ~%3g s", estimate_total_ns * 1e-9f);
       } else {
         std::fprintf(output, " total ~%3g min", estimate_total_ns * 1e-9f / 60.f);
       }
 
       std::fprintf(output, "\n                                  ");
-      std::fprintf(output, "min %" PRIi64 " ns, max %" PRIi64 ", avg ohead %g ns\n",
+      std::fprintf(output, "min %" PRIi64 " ns, max %" PRIi64 " ns, avg ohead %g ns\n",
           distrib.min_ns, distrib.max_ns, average_overhead_ns);
     }
   }

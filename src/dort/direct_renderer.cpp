@@ -8,9 +8,7 @@ namespace dort {
   Spectrum DirectRenderer::get_radiance(const Scene& scene, Ray& ray,
       uint32_t depth, Sampler& sampler) const 
   {
-    stat_count(COUNTER_DIRECT_GET_RADIANCE);
     StatTimer t(TIMER_DIRECT_GET_RADIANCE);
-
     Spectrum radiance(0.f);
 
     Intersection isect;

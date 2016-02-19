@@ -1,5 +1,6 @@
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
+#include "dort/stats.hpp"
 
 namespace dort {
   Film::Film(uint32_t x_res, uint32_t y_res, std::shared_ptr<Filter> filter):
@@ -7,6 +8,8 @@ namespace dort {
   { }
 
   void Film::add_sample(Vec2 pos, const Spectrum& radiance) {
+    StatTimer t(TIMER_FILM_ADD_SAMPLE);
+
     int32_t x0 = ceil_int32(pos.x - 0.5f - this->filter->radius.x);
     int32_t x1 = floor_int32(pos.x - 0.5f + this->filter->radius.x);
     int32_t y0 = ceil_int32(pos.y - 0.5f - this->filter->radius.y);
@@ -29,6 +32,8 @@ namespace dort {
   }
 
   void Film::add_tile(Vec2i pos, const Film& tile) {
+    StatTimer t(TIMER_FILM_ADD_TILE);
+
     uint32_t y_min = max(0, -pos.y);
     uint32_t x_min = max(0, -pos.x);
     uint32_t y_max = min(tile.y_res, this->y_res - pos.y);
