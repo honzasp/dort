@@ -28,7 +28,10 @@ namespace dort {
 
   const std::vector<StatDistribIntDef> STAT_DISTRIB_INT_DEFS = {
     { "bvh traverse count" },
-    { "bvh build_node count" },
+    { "bvh build_node parallel count" },
+    { "bvh build_node serial count" },
+    { "bvh build serial count" },
+    { "bvh build linear resize" },
     { "bsdf number of bxdfs" },
     { "render jobs" },
   };
@@ -50,7 +53,8 @@ namespace dort {
     { "rng uint32", UINT32_MAX / 1024 },
     { "bvh build", UINT32_MAX },
     { "bvh compute build_infos", UINT32_MAX },
-    { "bvh build node", UINT32_MAX / 256 },
+    { "bvh build node parallel", UINT32_MAX / 256 },
+    { "bvh build node serial", UINT32_MAX / 512 },
     { "bvh split_middle", UINT32_MAX / 256 },
     { "bvh split_median", UINT32_MAX / 256 },
     { "bvh split_sah", UINT32_MAX / 256 },

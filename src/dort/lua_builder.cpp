@@ -189,8 +189,6 @@ namespace dort {
       std::string method = luaL_checkstring(l, 2);
       if(method == "sah") {
         builder.state.bvh_split_method = BvhSplitMethod::Sah;
-      } else if(method == "median") {
-        builder.state.bvh_split_method = BvhSplitMethod::Median;
       } else if(method == "middle") {
         builder.state.bvh_split_method = BvhSplitMethod::Middle;
       } else {

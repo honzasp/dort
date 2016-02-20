@@ -186,20 +186,20 @@ namespace dort {
     Point centroid() const {
       return (this->p_max + this->p_min) * 0.5f;
     }
+
+    uint8_t max_axis() const {
+      Vector extent = this->p_max - this->p_min;
+      if(extent.v.x < extent.v.y) {
+        return (extent.v.y < extent.v.z) ? 2 : 1;
+      } else {
+        return (extent.v.x < extent.v.z) ? 2 : 0;
+      }
+    }
   };
 
   Box union_box(const Box& b1, const Box& b2);
   Box union_box(const Box& box, const Point& pt);
   bool box_hit_p(const Box& box, const Ray& ray);
-
-  inline uint8_t box_max_axis(const Box& box) {
-    Vector extent = box.p_max - box.p_min;
-    if(extent.v.x < extent.v.y) {
-      return (extent.v.y < extent.v.z) ? 2 : 1;
-    } else {
-      return (extent.v.x < extent.v.z) ? 2 : 0;
-    }
-  }
 
   inline bool is_finite(const Box& box) {
     return is_finite(box.p_min) && is_finite(box.p_max);

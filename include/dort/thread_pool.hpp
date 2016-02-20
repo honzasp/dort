@@ -28,4 +28,6 @@ namespace dort {
 
   void fork_join(ThreadPool& pool, uint32_t count,
       std::function<void(uint32_t)> worker);
+  void fork_join_or_serial(ThreadPool& pool, bool serial,
+      uint32_t count, std::function<void(uint32_t)> worker);
 }

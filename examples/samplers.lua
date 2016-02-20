@@ -60,8 +60,8 @@ local scene = define_scene(function()
 end)
 
 samplers = {
-  --random_1 = random_sampler { samples_per_pixel = 1 },
-  random_4 = random_sampler { samples_per_pixel = 4 },
+  random_1 = random_sampler { samples_per_pixel = 1 },
+  --random_4 = random_sampler { samples_per_pixel = 4 },
   --random_16 = random_sampler { samples_per_pixel = 16 },
   --stratified_1 = stratified_sampler { samples_per_x = 1, samples_per_y = 1 },
   --stratified_4 = stratified_sampler { samples_per_x = 2, samples_per_y = 2 },

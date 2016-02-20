@@ -50,7 +50,8 @@ namespace dort {
         lua_pop(l, 1);
         exit_status = 1;
       } else {
-        stat_report_global(stdout);
+        ctx_g.pool->stop();
+        stat_report_global(stderr);
         exit_status = 0;
       }
     } catch(std::exception& exn) {

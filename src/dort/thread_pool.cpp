@@ -1,3 +1,4 @@
+#include <future>
 #include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
 
@@ -26,7 +27,9 @@ namespace dort {
   }
 
   void ThreadPool::stop() {
-    assert(!this->stop_flag.load());
+    if(this->stop_flag.load()) {
+      return;
+    }
     assert(this->main_thread_id == std::this_thread::get_id());
 
     this->stop_flag.store(true);
@@ -67,26 +70,30 @@ namespace dort {
   void fork_join(ThreadPool& pool, uint32_t count,
       std::function<void(uint32_t)> worker)
   {
-    uint32_t done_jobs = 0;
-    std::mutex done_mutex;
-    std::condition_variable done_condvar;
+    std::atomic<uint32_t> done_jobs(0);
+    std::promise<void> done;
 
     for(uint32_t job = 0; job < count; ++job) {
       pool.schedule([&, job]() {
         worker(job);
-        std::unique_lock<std::mutex> lock(done_mutex);
-        done_jobs += 1;
-        lock.unlock();
-        done_condvar.notify_one();
+        if(done_jobs.fetch_add(1) + 1 >= count) {
+          done.set_value();
+        }
       });
     }
 
-    for(;;) {
-      std::unique_lock<std::mutex> lock(done_mutex);
-      if(done_jobs >= count) {
-        return;
+    done.get_future().get();
+  }
+
+  void fork_join_or_serial(ThreadPool& pool, bool serial,
+      uint32_t count, std::function<void(uint32_t)> worker)
+  {
+    if(serial) {
+      for(uint32_t job = 0; job < count; ++job) {
+        worker(job);
       }
-      done_condvar.wait(lock);
+    } else {
+      fork_join(pool, count, worker);
     }
   }
 }
