@@ -29,7 +29,9 @@ namespace dort {
     };
     int result = stbi_write_png_to_func(write, output, 
           img.x_res, img.y_res, 3, img.storage.data(), 0);
-    assert(result != 0);
+    if(result == 0) {
+      throw std::runtime_error("Error writing PNG (stbi_write_png_to_func)");
+    }
   }
 
   void write_image_ppm(FILE* output, const Image<PixelRgb8>& img) {

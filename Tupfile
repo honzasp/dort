@@ -10,7 +10,7 @@ CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
 LDFLAGS  = -pthread
 DEBUG    = -g -O2
 PROFILE  = -g -O2
-FAST     = -g -O3
+FAST     = -g -O3 -DNDEBUG -DDORT_DISABLE_STAT
 
 CXXFLAGS_DEBUG   = $(CXXFLAGS) $(DEBUG)
 CFLAGS_DEBUG     = $(CFLAGS) $(DEBUG)

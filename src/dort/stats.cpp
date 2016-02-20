@@ -1,3 +1,4 @@
+#ifndef DORT_DISABLE_STAT
 #include <cinttypes>
 #include <mutex>
 #include <random>
@@ -51,43 +52,10 @@ namespace dort {
     { "bvh intersect prim", UINT32_MAX / 256 },
   };
 
-  StatTimer::StatTimer(StatDistribTime distrib_id) {
-    this->distrib_id = distrib_id;
-    uint32_t prob = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_probability;
-    uint32_t rand = THREAD_TIME_SAMPLE_RNG() << (32 - THREAD_TIME_SAMPLE_RNG.word_size);
-    if((this->measuring = rand < prob)) {
-      this->time_0 = stat_clock_now_ns();
-    }
-    this->active = true;
-  }
-
-  StatTimer::~StatTimer() {
-    if(this->active) {
-      this->stop();
-    }
-  }
-
-  void StatTimer::stop() {
-    assert(this->active);
-    auto& distrib = THREAD_STATS.distrib_times.at(this->distrib_id);
-    distrib.total_count += 1;
-    if(!this->measuring) {
-      return;
-    }
-
-    int64_t time_1 = stat_clock_now_ns();
-    THREAD_TIME_SAMPLE_RNG();
-    int64_t time_2 = stat_clock_now_ns();
-    int64_t overhead_ns = time_2 - time_1;
-    int64_t sample_ns = time_1 - this->time_0 - overhead_ns;
-
-    distrib.sampled_count += 1;
-    distrib.sum_ns += sample_ns;
-    distrib.sum_squares_ns += sample_ns * sample_ns;
-    distrib.sum_overhead_ns += overhead_ns;
-    distrib.min_ns = std::min(distrib.min_ns, sample_ns);
-    distrib.max_ns = std::max(distrib.max_ns, sample_ns);
-    this->active = this->measuring = false;
+  int64_t stat_clock_now_ns() {
+    struct timespec tp;
+    ::clock_gettime(CLOCK_MONOTONIC, &tp);
+    return 1000ll*1000ll*1000ll * int64_t(tp.tv_sec) + int64_t(tp.tv_nsec);
   }
 
   void stat_init_global() {
@@ -210,9 +178,43 @@ namespace dort {
     }
   }
 
-  int64_t stat_clock_now_ns() {
-    struct timespec tp;
-    ::clock_gettime(CLOCK_MONOTONIC, &tp);
-    return 1000ll*1000ll*1000ll * int64_t(tp.tv_sec) + int64_t(tp.tv_nsec);
+  StatTimer::StatTimer(StatDistribTime distrib_id) {
+    this->distrib_id = distrib_id;
+    uint32_t prob = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_probability;
+    uint32_t rand = THREAD_TIME_SAMPLE_RNG() << (32 - THREAD_TIME_SAMPLE_RNG.word_size);
+    if((this->measuring = rand < prob)) {
+      this->time_0 = stat_clock_now_ns();
+    }
+    this->active = true;
+  }
+
+  StatTimer::~StatTimer() {
+    if(this->active) {
+      this->stop();
+    }
+  }
+
+  void StatTimer::stop() {
+    assert(this->active);
+    auto& distrib = THREAD_STATS.distrib_times.at(this->distrib_id);
+    distrib.total_count += 1;
+    if(!this->measuring) {
+      return;
+    }
+
+    int64_t time_1 = stat_clock_now_ns();
+    THREAD_TIME_SAMPLE_RNG();
+    int64_t time_2 = stat_clock_now_ns();
+    int64_t overhead_ns = time_2 - time_1;
+    int64_t sample_ns = time_1 - this->time_0 - overhead_ns;
+
+    distrib.sampled_count += 1;
+    distrib.sum_ns += sample_ns;
+    distrib.sum_squares_ns += sample_ns * sample_ns;
+    distrib.sum_overhead_ns += overhead_ns;
+    distrib.min_ns = std::min(distrib.min_ns, sample_ns);
+    distrib.max_ns = std::max(distrib.max_ns, sample_ns);
+    this->active = this->measuring = false;
   }
 }
+#endif

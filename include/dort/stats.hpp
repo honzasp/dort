@@ -85,6 +85,26 @@ namespace dort {
     std::vector<DistribTime> distrib_times;
   };
 
+  extern Stats GLOBAL_STATS;
+  extern thread_local Stats THREAD_STATS;
+
+  extern const std::vector<StatCounterDef> STAT_COUNTER_DEFS;
+  extern const std::vector<StatDistribIntDef> STAT_DISTRIB_INT_DEFS;
+  extern const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS;
+
+  int64_t stat_clock_now_ns();
+
+#ifndef DORT_DISABLE_STAT
+  void stat_init_global();
+  void stat_init_thread();
+  void stat_init(Stats& stats);
+  void stat_finish_thread();
+  void stat_report_global(FILE* output);
+
+  inline void stat_count(StatCounter id) {
+    THREAD_STATS.counters.at(id) += 1;
+  }
+
   class StatTimer {
     StatDistribTime distrib_id;
     int64_t time_0;
@@ -96,25 +116,6 @@ namespace dort {
     void stop();
   };
 
-  extern Stats GLOBAL_STATS;
-  extern thread_local Stats THREAD_STATS;
-
-  extern const std::vector<StatCounterDef> STAT_COUNTER_DEFS;
-  extern const std::vector<StatDistribIntDef> STAT_DISTRIB_INT_DEFS;
-  extern const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS;
-
-  void stat_init_global();
-  void stat_init_thread();
-  void stat_init(Stats& stats);
-  void stat_finish_thread();
-  void stat_report_global(FILE* output);
-
-  int64_t stat_clock_now_ns();
-
-  inline void stat_count(StatCounter id) {
-    THREAD_STATS.counters.at(id) += 1;
-  }
-
   inline void stat_sample_int(StatDistribInt id, int64_t sample) {
     auto& distrib = THREAD_STATS.distrib_ints.at(id);
     distrib.count += 1;
@@ -123,4 +124,22 @@ namespace dort {
     distrib.min = std::min(distrib.min, sample);
     distrib.max = std::max(distrib.max, sample);
   }
+#else
+  inline void stat_init_global() { }
+  inline void stat_init_thread() { }
+  inline void stat_init(Stats&) { }
+  inline void stat_finish_thread() { }
+  inline void stat_report_global(FILE*) { }
+
+  inline void stat_count(StatCounter) { }
+
+  class StatTimer {
+  public:
+    StatTimer(StatDistribTime) { }
+    ~StatTimer() { }
+    void stop() { }
+  };
+
+  inline void stat_sample_int(StatDistribInt, int64_t) { }
+#endif
 }

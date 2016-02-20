@@ -172,7 +172,7 @@ namespace dort {
           begin, mid, max_leaf_size, split_method, depth + 1);
       uint32_t right_idx = this->build_node(build_infos, prims,
           mid, end, max_leaf_size, split_method, depth + 1);
-      assert(left_idx == node_idx + 1);
+      assert(left_idx == node_idx + 1); (void)left_idx;
 
       LinearNode& branch = this->linear_nodes.at(node_idx);
       branch.bounds = bounds;
