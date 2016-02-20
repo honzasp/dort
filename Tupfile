@@ -1,5 +1,7 @@
 CXX_DEBUG = clang++
 CXX_PROFILE = g++
+CXX_FAST = clang++
+CAT_CPPS = sh script/cat_cpps.sh
 
 INCLUDES = -Iinclude -Iextern/rply -Iextern/stb -Iextern/lua
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
@@ -7,14 +9,20 @@ CXXFLAGS = -x c++ -std=c++11 $(INCLUDES) $(WARNINGS) -pthread
 CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
 LDFLAGS  = -pthread
 DEBUG    = -g -O2
-PROFILE  = -g -pg -O2
+PROFILE  = -g -O2
+FAST     = -g -O3
 
 CXXFLAGS_DEBUG   = $(CXXFLAGS) $(DEBUG)
 CFLAGS_DEBUG     = $(CFLAGS) $(DEBUG)
 LDFLAGS_DEBUG    = $(LDFLAGS)
-CXXFLAGS_PROFILE = $(CXXFLAGS) $(PROFILE)
-CFLAGS_PROFILE   = $(CFLAGS) $(PROFILE)
+
+CXXFLAGS_PROFILE = $(CXXFLAGS) $(PROFILE) -pg
+CFLAGS_PROFILE   = $(CFLAGS) $(PROFILE) -pg
 LDFLAGS_PROFILE  = $(LDFLAGS) -pg
+
+CXXFLAGS_FAST = $(CXXFLAGS) $(FAST)
+CFLAGS_FAST   = $(CFLAGS) $(FAST)
+LDFLAGS_FAST  = $(LDFLAGS)
 
 !cxx_c_debug = |> ^ c++ debug %f^ $(CXX_DEBUG) $(CXXFLAGS_DEBUG) -c %f -o %o |>
 !cc_c_debug = |> ^ cc debug %f^ $(CXX_DEBUG) $(CFLAGS_DEBUG) -c %f -o %o |>
@@ -23,6 +31,12 @@ LDFLAGS_PROFILE  = $(LDFLAGS) -pg
 !cxx_c_profile = |> ^ c++ profile %f^ $(CXX_PROFILE) $(CXXFLAGS_PROFILE) -c %f -o %o |>
 !cc_c_profile = |> ^ cc profile %f^ $(CXX_PROFILE) $(CFLAGS_PROFILE) -c %f -o %o |>
 !link_profile = |> ^ link %f^ $(CXX_PROFILE) $(LDFLAGS_PROFILE) %f -o %o |>
+
+!cxx_cat_c_fast = |> ^ c++ cat fast %f^ $(CAT_CPPS) %f |\
+  $(CXX_FAST) $(CXXFLAGS_FAST) -c - -o %o |>
+!cxx_c_fast = |> ^ c++ fast %f^ $(CXX_FAST) $(CXXFLAGS_FAST) -c %f -o %o |>
+!cc_c_fast = |> ^ cc fast %f^ $(CXX_FAST) $(CFLAGS_FAST) -c %f -o %o |>
+!link_fast = |> ^ link %f^ $(CXX_FAST) $(LDFLAGS_FAST) %f -o %o |>
 
 : foreach src/dort/*.cpp |> !cxx_c_debug |> build/d/%B.o {debug_objs}
 : foreach extern/rply/*.c |> !cc_c_debug |> build/d/rply/%B.o {debug_objs}
@@ -34,4 +48,11 @@ ifdef CONFIG_PROFILE
   : foreach extern/rply/*.c |> !cc_c_profile |> build/p/rply/%B.o {profile_objs}
   : foreach extern/lua/*.c |> !cxx_c_profile |> build/p/lua/%B.o {profile_objs}
   : {profile_objs} |> !link_profile |> build/p/dort
+endif
+
+ifdef CONFIG_FAST
+  : src/dort/*.cpp |> !cxx_cat_c_fast |> build/f/cat_dort.o {fast_objs}
+  : foreach extern/rply/*.c |> !cc_c_fast |> build/f/rply/%B.o {fast_objs}
+  : foreach extern/lua/*.c |> !cxx_c_fast |> build/f/lua/%B.o {fast_objs}
+  : {fast_objs} |> !link_fast |> build/f/dort
 endif
