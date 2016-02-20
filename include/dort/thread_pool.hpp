@@ -10,6 +10,7 @@
 
 namespace dort {
   class ThreadPool {
+    std::thread::id main_thread_id;
     std::vector<std::thread> threads;
     std::deque<std::function<void()>> queue;
     std::mutex queue_mutex;

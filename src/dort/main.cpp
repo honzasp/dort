@@ -1,3 +1,5 @@
+#include <thread>
+#include "dort/ctx.hpp"
 #include "dort/geometry.hpp"
 #include "dort/lua.hpp"
 #include "dort/lua_builder.hpp"
@@ -10,14 +12,21 @@
 #include "dort/lua_shape.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/stats.hpp"
+#include "dort/thread_pool.hpp"
 
 namespace dort {
   int main(int argc, char** argv) {
+    stat_init_global();
+
+    uint32_t num_threads = std::thread::hardware_concurrency();
+    auto pool_g = std::make_shared<ThreadPool>(num_threads == 0 ? 1 : num_threads);
+    CtxG ctx_g(pool_g);
+
     int exit_status = 3;
     lua_State* l = luaL_newstate();
+    lua_set_ctx(l, &ctx_g);
+    
     try {
-      stat_init_global();
-
       luaL_requiref(l, "base", luaopen_base, true);
       luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
       luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
@@ -53,6 +62,7 @@ namespace dort {
     }
 
     lua_close(l);
+    ctx_g.pool->stop();
     return exit_status;
   }
 }

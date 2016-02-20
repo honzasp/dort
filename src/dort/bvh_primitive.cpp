@@ -2,21 +2,29 @@
 #include <array>
 #include "dort/bvh_primitive.hpp"
 #include "dort/stats.hpp"
+#include "dort/thread_pool.hpp"
 
 namespace dort {
   BvhPrimitive::BvhPrimitive(std::vector<std::unique_ptr<Primitive>> prims,
-      uint32_t max_leaf_size, BvhSplitMethod split_method)
+      uint32_t max_leaf_size, BvhSplitMethod split_method,
+      ThreadPool& pool)
   {
     StatTimer t(TIMER_BVH_BUILD);
 
     std::vector<PrimitiveInfo> build_infos(prims.size());
     {
       StatTimer t(TIMER_BVH_COMPUTE_BUILD_INFOS);
-      for(uint32_t i = 0; i < prims.size(); ++i) {
-        Box bounds = prims.at(i)->bounds();
-        assert(is_finite(bounds));
-        build_infos.at(i) = PrimitiveInfo { i, bounds };
-      }
+      uint32_t jobs = std::min(pool.num_threads(),
+          uint32_t(prims.size()) / MIN_PRIM_INFOS_PER_THREAD);
+      fork_join(pool, jobs, [&](uint32_t job) {
+        uint32_t begin = job * prims.size() / jobs;
+        uint32_t end = (job + 1) * prims.size() / jobs;
+        for(uint32_t i = begin; i < end; ++i) {
+          Box bounds = prims.at(i)->bounds();
+          assert(is_finite(bounds));
+          build_infos.at(i) = PrimitiveInfo { i, bounds };
+        }
+      });
     }
 
     max_leaf_size = min(max_leaf_size, 0xffu);

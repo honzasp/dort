@@ -58,7 +58,7 @@ namespace dort {
 
   int lua_ply_mesh_read(lua_State* l);
 
-  std::unique_ptr<Primitive> lua_make_aggregate(
+  std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame);
 
   Builder& lua_get_current_builder(lua_State* l);

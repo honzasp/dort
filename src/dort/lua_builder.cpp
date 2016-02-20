@@ -97,7 +97,8 @@ namespace dort {
     }
 
     auto scene = std::make_shared<Scene>();
-    scene->primitive = lua_make_aggregate(builder.state, std::move(builder.frame));
+    scene->primitive = lua_make_aggregate(*lua_get_ctx(l),
+        builder.state, std::move(builder.frame));
     scene->lights = std::move(builder.lights);
     scene->triangle_meshes = std::move(builder.triangle_meshes);
     scene->camera = std::move(builder.camera);
@@ -148,7 +149,8 @@ namespace dort {
         return luaL_error(l, "State stack is empty (not balanced)");
       }
 
-      auto primitive = lua_make_aggregate(builder.state, std::move(builder.frame));
+      auto primitive = lua_make_aggregate(*lua_get_ctx(l),
+          builder.state, std::move(builder.frame));
       builder.frame = std::move(builder.frame_stack.back());
       builder.state = std::move(builder.state_stack.back());
       builder.frame_stack.pop_back();
@@ -288,22 +290,17 @@ namespace dort {
     uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", 800);
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
     uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-    uint32_t num_threads = lua_param_uint32_opt(l, p, "num_threads",
-        std::thread::hardware_concurrency());
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
         std::make_shared<RandomSampler>(1, 42));
     lua_params_check_unused(l, p);
 
-    auto pool = std::make_shared<ThreadPool>(max(1u, num_threads));
-    CtxG ctx(pool);
-
+    CtxG& ctx = *lua_get_ctx(l);
     auto film = std::make_shared<Film>(x_res, y_res, filter);
     DirectRenderer renderer(scene, film, sampler, max_depth);
     renderer.preprocess(ctx);
     renderer.render(ctx);
-    ctx.pool->stop();
 
     auto image = std::make_shared<Image<PixelRgb8>>(film->to_image());
     lua_push_image(l, image);
@@ -372,11 +369,12 @@ namespace dort {
     return 1;
   }
 
-  std::unique_ptr<Primitive> lua_make_aggregate(
+  std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame)
   {
     return std::make_unique<BvhPrimitive>(std::move(frame.prims),
-        state.bvh_max_leaf_size, state.bvh_split_method);
+        state.bvh_max_leaf_size, state.bvh_split_method,
+        *ctx.pool);
   }
 
   Builder& lua_get_current_builder(lua_State* l) {

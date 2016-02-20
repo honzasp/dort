@@ -11,6 +11,7 @@ namespace dort {
   };
 
   class BvhPrimitive final: public Primitive {
+    static constexpr uint32_t MIN_PRIM_INFOS_PER_THREAD = 50*1000;
     static constexpr uint32_t SAH_BUCKET_COUNT = 12;
     static constexpr int32_t SAH_INTERSECTION_COST = 2;
     static constexpr int32_t SAH_TRAVERSAL_COST = 1;
@@ -41,7 +42,8 @@ namespace dort {
     uint32_t max_depth;
   public:
     BvhPrimitive(std::vector<std::unique_ptr<Primitive>> prims,
-        uint32_t max_leaf_size, BvhSplitMethod split_method);
+        uint32_t max_leaf_size, BvhSplitMethod split_method,
+        ThreadPool& pool);
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const final override;
     virtual Box bounds() const override final;

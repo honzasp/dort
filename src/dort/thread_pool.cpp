@@ -3,6 +3,7 @@
 
 namespace dort {
   ThreadPool::ThreadPool(uint32_t num_threads) {
+    this->main_thread_id = std::this_thread::get_id();
     this->stop_flag.store(false);
     for(uint32_t i = 0; i < num_threads; ++i) {
       this->threads.push_back(std::thread(&ThreadPool::thread_body, this));
@@ -15,6 +16,9 @@ namespace dort {
 
   void ThreadPool::schedule(std::function<void()> job) {
     assert(!this->threads.empty());
+    assert(!this->stop_flag.load());
+    assert(this->main_thread_id == std::this_thread::get_id());
+
     std::unique_lock<std::mutex> lock(this->queue_mutex);
     this->queue.push_back(std::move(job));
     lock.unlock();
@@ -22,6 +26,9 @@ namespace dort {
   }
 
   void ThreadPool::stop() {
+    assert(!this->stop_flag.load());
+    assert(this->main_thread_id == std::this_thread::get_id());
+
     this->stop_flag.store(true);
     this->queue_condvar.notify_all();
     for(auto& thread: this->threads) {
@@ -43,7 +50,7 @@ namespace dort {
       }
 
       if(!this->queue.empty()) {
-        auto job = this->queue.front();
+        auto job = std::move(this->queue.front());
         this->queue.pop_front();
         lock.unlock();
         job();
