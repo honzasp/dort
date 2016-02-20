@@ -18,7 +18,6 @@ namespace dort {
     struct PrimitiveInfo {
       uint32_t prim_index;
       Box bounds;
-      Point centroid;
     };
 
     struct BucketInfo {
@@ -27,14 +26,6 @@ namespace dort {
       Box prefix_bounds;
       Box postfix_bounds;
       uint32_t prefix_count;
-    };
-
-    struct BuildNode {
-      Box bounds;
-      std::unique_ptr<BuildNode> children[2];
-      uint32_t prims_begin;
-      uint32_t prims_length;
-      uint8_t axis;
     };
 
     struct LinearNode {
@@ -55,12 +46,12 @@ namespace dort {
     virtual bool intersect_p(const Ray& ray) const final override;
     virtual Box bounds() const override final;
   private:
-    std::unique_ptr<BuildNode> build_node(
+    uint32_t build_node(
         std::vector<PrimitiveInfo>& build_infos,
         std::vector<std::unique_ptr<Primitive>>& prims,
         uint32_t begin, uint32_t end,
         uint32_t max_leaf_size, BvhSplitMethod split_method,
-        uint32_t& out_node_count);
+        uint32_t depth);
     uint32_t split_middle(std::vector<PrimitiveInfo>& build_infos,
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
     uint32_t split_equal_counts(std::vector<PrimitiveInfo>& build_infos,
@@ -69,7 +60,6 @@ namespace dort {
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
     int32_t sah_split_cost(const Box& bounds,
         const BucketInfo& bucket, uint32_t prim_count);
-    void linearize_node(const BuildNode& node, uint32_t depth);
 
     template<class F>
     void traverse_primitives(const Ray& ray, F callback) const;

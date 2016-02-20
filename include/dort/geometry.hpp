@@ -179,6 +179,10 @@ namespace dort {
       Vec3 r = (this->p_max - this->p_min).v;
       return 2.f * (r.y * r.z + r.x * r.z + r.y * r.z);
     }
+
+    Point centroid() const {
+      return (this->p_max + this->p_min) * 0.5f;
+    }
   };
 
   Box union_box(const Box& b1, const Box& b2);

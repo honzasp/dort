@@ -3,6 +3,7 @@
 #include "dort/direct_renderer.hpp"
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
+#include "dort/list_primitive.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
 #include "dort/lua_geometry.hpp"
@@ -64,6 +65,7 @@ namespace dort {
     lua_register(l, "add_primitive", lua_build_add_primitive);
     lua_register(l, "add_light", lua_build_add_light);
     lua_register(l, "add_ply_mesh", lua_build_add_ply_mesh);
+    lua_register(l, "add_read_ply_mesh", lua_build_add_read_ply_mesh);
 
     lua_register(l, "render", lua_scene_render);
     lua_register(l, "random_sampler", lua_sampler_make_random);
@@ -77,7 +79,7 @@ namespace dort {
     lua_set_current_builder(l, Builder());
     lua_pushvalue(l, 1);
     lua_call(l, 0, 0);
-
+    lua_settop(l, 0);
     lua_gc(l, LUA_GCCOLLECT, 0);
 
     Builder builder = std::move(lua_get_current_builder(l));
@@ -217,7 +219,6 @@ namespace dort {
     auto ply_mesh = lua_check_ply_mesh(l, 1);
     auto material = builder.state.material;
     auto transform = builder.state.local_to_frame;
-
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
@@ -228,6 +229,34 @@ namespace dort {
     builder.triangle_meshes.push_back(std::move(triangle_mesh));
     return 0;
   }
+
+  int lua_build_add_read_ply_mesh(lua_State* l) {
+    const char* file_name = luaL_checkstring(l, 1);
+    FILE* file = std::fopen(file_name, "r");
+    if(!file) {
+      return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
+    }
+
+    Builder& builder = lua_get_current_builder(l);
+    auto material = builder.state.material;
+    auto transform = builder.state.local_to_frame;
+    if(!material) {
+      luaL_error(l, "no material is set");
+      return 0;
+    }
+
+    auto triangle_mesh = read_ply_to_triangle_mesh(file,
+        material, nullptr, transform, builder.frame.prims);
+    std::fclose(file);
+
+    if(!triangle_mesh) {
+      return luaL_error(l, "Could not read ply file: %s", file_name);
+    }
+
+    builder.triangle_meshes.push_back(std::move(triangle_mesh));
+    return 0;
+  }
+
 
   int lua_scene_render(lua_State* l) {
     auto scene = lua_check_scene(l, 1);

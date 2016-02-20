@@ -12,12 +12,31 @@ namespace dort {
     std::shared_ptr<AreaLight> area_light;
   };
 
-  class Triangle final: public Shape {
+  struct Triangle final {
     const TriangleMesh* mesh;
     uint32_t index;
+
+    Triangle(const TriangleMesh* mesh, uint32_t index):
+      mesh(mesh), index(index) { }
+
+    bool hit(const Ray& ray, float& out_t_hit,
+        float& out_ray_epsilon, DiffGeom& out_diff_geom) const;
+    bool hit_p(const Ray& ray) const;
+    Box bounds() const;
+
+    float area() const;
+    Point sample_point(float u1, float u2, Normal& out_n) const;
+    float point_pdf(const Point& pt) const;
+
+    void get_points(Point p[3]) const;
+    void get_uvs(float uv[3][2]) const;
+  };
+
+  class TriangleShape final: public Shape {
+    Triangle triangle;
   public:
-    Triangle(const TriangleMesh* mesh, uint32_t id):
-      mesh(mesh), index(id * 3) { }
+    TriangleShape(const Triangle& triangle):
+      triangle(triangle) { }
     virtual bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const override final;
     virtual bool hit_p(const Ray& ray) const override final;
@@ -26,11 +45,6 @@ namespace dort {
     virtual float area() const override final;
     virtual Point sample_point(float u1, float u2, Normal& out_n) const override final;
     virtual float point_pdf(const Point& pt) const override final;
-  private:
-    void get_points(Point p[3]) const;
-    void get_uvs(float uv[3][2]) const;
-
-    friend class TrianglePrimitive;
   };
 
   class TrianglePrimitive final: public GeometricPrimitive {

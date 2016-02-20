@@ -43,6 +43,7 @@ namespace dort {
   int lua_build_add_primitive(lua_State* l);
   int lua_build_add_light(lua_State* l);
   int lua_build_add_ply_mesh(lua_State* l);
+  int lua_build_add_read_ply_mesh(lua_State* l);
 
   int lua_scene_render(lua_State* l);
   int lua_scene_eq(lua_State* l);

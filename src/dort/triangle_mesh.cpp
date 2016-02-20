@@ -156,6 +156,32 @@ namespace dort {
     uv[2][1] = 1.f;
   }
 
+  bool TriangleShape::hit(const Ray& ray, float& out_t_hit,
+      float& out_ray_epsilon, DiffGeom& out_diff_geom) const
+  {
+    return this->triangle.hit(ray, out_t_hit, out_ray_epsilon, out_diff_geom);
+  }
+
+  bool TriangleShape::hit_p(const Ray& ray) const {
+    return this->triangle.hit_p(ray);
+  }
+
+  Box TriangleShape::bounds() const {
+    return this->triangle.bounds();
+  }
+
+  float TriangleShape::area() const {
+    return this->triangle.area();
+  }
+
+  Point TriangleShape::sample_point(float u1, float u2, Normal& out_n) const {
+    return this->triangle.sample_point(u1, u2, out_n);
+  }
+
+  float TriangleShape::point_pdf(const Point& pt) const {
+    return this->triangle.point_pdf(pt);
+  }
+
   bool TrianglePrimitive::intersect(Ray& ray, Intersection& out_isect) const {
     float t_hit;
     if(!this->triangle.hit(ray, t_hit, out_isect.ray_epsilon,

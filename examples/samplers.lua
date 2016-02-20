@@ -1,6 +1,4 @@
 local scene = define_scene(function()
-  local dragon = read_ply_mesh("data/dragon_vrip.ply")
-
   block(function()
     material(plastic_material {
       reflect = rgb(1, 1, 1),
@@ -8,7 +6,7 @@ local scene = define_scene(function()
       roughness = 1.5,
     })
     transform(translate(0, -50, 0) * scale(1e3))
-    add_ply_mesh(dragon)
+    add_read_ply_mesh("data/dragon_vrip.ply")
   end)
 
   block(function()
