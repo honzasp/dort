@@ -7,11 +7,11 @@ namespace dort {
   }
 
   OrthographicCamera::OrthographicCamera(
-      const Transform& world_to_camera, Vec2 screen_diagonal)
+      const Transform& camera_to_world, Vec2 screen_diagonal)
   {
     Transform camera_to_screen = identity();
     this->world_to_ndc = Camera::screen_to_ndc(screen_diagonal) *
-      camera_to_screen * world_to_camera;
+      camera_to_screen * camera_to_world.inverse();
   }
 
   Ray OrthographicCamera::generate_ray(Vec2 ndc) const {
@@ -24,13 +24,13 @@ namespace dort {
   }
 
   PerspectiveCamera::PerspectiveCamera(
-      const Transform& world_to_camera, Vec2 screen_diagonal,
+      const Transform& camera_to_world, Vec2 screen_diagonal,
       float fov, float z_near, float z_far)
   {
     Transform camera_to_screen = perspective(fov, z_near, z_far);
     this->world_to_ndc = Camera::screen_to_ndc(screen_diagonal) *
-      camera_to_screen * world_to_camera;
-    this->world_orig = world_to_camera.apply_inv(Point(0.f, 0.f, 0.f));
+      camera_to_screen * camera_to_world.inverse();
+    this->world_orig = camera_to_world.apply(Point(0.f, 0.f, 0.f));
   }
 
   Ray PerspectiveCamera::generate_ray(Vec2 ndc) const {

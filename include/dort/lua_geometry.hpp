@@ -17,6 +17,7 @@ namespace dort {
   int lua_vector_get_z(lua_State* l);
   int lua_vector_tostring(lua_State* l);
   int lua_vector_add(lua_State* l);
+  int lua_vector_sub(lua_State* l);
   int lua_vector_eq(lua_State* l);
 
   int lua_point_make(lua_State* l);

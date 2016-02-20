@@ -137,21 +137,21 @@ namespace dort {
 
   Transform look_at(const Point& eye, const Point& look, const Vector& up) {
     Vector ortho_dir = normalize(look - eye);
-    Vector ortho_left = normalize(cross(normalize(up), ortho_dir));
-    Vector ortho_up = cross(ortho_dir, ortho_left);
+    Vector ortho_right = normalize(cross(normalize(up), ortho_dir));
+    Vector ortho_up = cross(ortho_dir, ortho_right);
 
     Mat4x4 mat(1.f);
     Mat4x4 mat_inv(1.f);
     for(uint32_t row = 0; row < 3; ++row) {
-      mat.cols[row][0] = mat_inv.cols[0][row] = ortho_left.v[row];
-      mat.cols[row][1] = mat_inv.cols[1][row] = ortho_up.v[row];
-      mat.cols[row][2] = mat_inv.cols[2][row] = ortho_dir.v[row];
-      mat_inv.cols[3][row] = eye.v[row];
+      mat_inv.cols[row][0] = mat.cols[0][row] = ortho_right.v[row];
+      mat_inv.cols[row][1] = mat.cols[1][row] = ortho_up.v[row];
+      mat_inv.cols[row][2] = mat.cols[2][row] = ortho_dir.v[row];
+      mat.cols[3][row] = eye.v[row];
     }
 
-    mat.cols[3][0] = -dot(ortho_left.v, eye.v);
-    mat.cols[3][1] = -dot(ortho_up.v, eye.v);
-    mat.cols[3][2] = -dot(ortho_dir.v, eye.v);
+    mat_inv.cols[3][0] = -dot(ortho_right.v, eye.v);
+    mat_inv.cols[3][1] = -dot(ortho_up.v, eye.v);
+    mat_inv.cols[3][2] = -dot(ortho_dir.v, eye.v);
 
     return Transform(mat, mat_inv);
   }

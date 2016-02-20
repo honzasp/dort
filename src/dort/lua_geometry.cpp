@@ -10,6 +10,7 @@ namespace dort {
       {"z", lua_vector_get_z},
       {"__tostring", lua_vector_tostring},
       {"__add", lua_vector_add},
+      {"__sub", lua_vector_sub},
       {"__eq", lua_vector_eq},
       {0, 0},
     };
@@ -19,6 +20,8 @@ namespace dort {
       {"y", lua_point_get_y},
       {"z", lua_point_get_z},
       {"__tostring", lua_point_tostring},
+      {"__add", lua_vector_add},
+      {"__sub", lua_vector_sub},
       {"__eq", lua_point_eq},
       {0, 0},
     };
@@ -75,7 +78,23 @@ namespace dort {
     return 1;
   }
   int lua_vector_add(lua_State* l) {
-    lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
+    if(lua_test_vector(l, 1) && lua_test_point(l, 2)) {
+      lua_push_point(l, lua_check_vector(l, 1) + lua_check_point(l, 2));
+    } else if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
+      lua_push_point(l, lua_check_point(l, 1) + lua_check_vector(l, 2));
+    } else {
+      lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
+    }
+    return 1;
+  }
+  int lua_vector_sub(lua_State* l) {
+    if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
+      lua_push_point(l, lua_check_point(l, 1) - lua_check_vector(l, 2));
+    } else if(lua_test_point(l, 1) && lua_test_point(l, 2)) {
+      lua_push_vector(l, lua_check_point(l, 1) - lua_check_point(l, 2));
+    } else {
+      lua_push_vector(l, lua_check_vector(l, 1) - lua_check_vector(l, 2));
+    }
     return 1;
   }
   int lua_vector_eq(lua_State* l) {

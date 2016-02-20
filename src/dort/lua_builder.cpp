@@ -352,7 +352,8 @@ namespace dort {
   std::unique_ptr<Primitive> lua_make_aggregate(BuilderFrame frame)
   {
     return std::make_unique<BvhPrimitive>(
-        std::move(frame.prims), 5, BvhSplitMethod::Sah);
+        //std::move(frame.prims), 5, BvhSplitMethod::Sah);
+        std::move(frame.prims), 5, BvhSplitMethod::Middle);
   }
 
   Builder& lua_get_current_builder(lua_State* l) {

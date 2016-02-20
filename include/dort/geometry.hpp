@@ -35,6 +35,9 @@ namespace dort {
   inline Point operator+(const Point& pt, const Vector& vec) {
     return Point(pt.v + vec.v);
   }
+  inline Point operator+(const Vector& vec, const Point& pt) {
+    return Point(vec.v + pt.v);
+  }
   inline Point operator+(const Point& pt1, const Point& pt2) {
     return Point(pt1.v + pt2.v);
   }

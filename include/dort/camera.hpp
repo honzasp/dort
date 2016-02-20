@@ -13,7 +13,7 @@ namespace dort {
   class OrthographicCamera final: public Camera {
     Transform world_to_ndc;
   public:
-    OrthographicCamera(const Transform& world_to_camera, Vec2 screen_diagonal);
+    OrthographicCamera(const Transform& camera_to_world, Vec2 screen_diagonal);
     virtual Ray generate_ray(Vec2 ndc) const override final;
   };
 
@@ -21,7 +21,7 @@ namespace dort {
     Transform world_to_ndc;
     Point world_orig;
   public:
-    PerspectiveCamera(const Transform& world_to_camera, Vec2 screen_diagonal,
+    PerspectiveCamera(const Transform& camera_to_world, Vec2 screen_diagonal,
         float fov, float z_near, float z_far);
     virtual Ray generate_ray(Vec2 ndc) const override final;
   };
