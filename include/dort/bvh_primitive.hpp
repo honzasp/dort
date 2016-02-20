@@ -6,12 +6,12 @@
 namespace dort {
   enum class BvhSplitMethod {
     Middle,
-    EqualCounts,
+    Median,
     Sah,
   };
 
   class BvhPrimitive final: public Primitive {
-    static constexpr uint32_t SAH_BUCKET_COUNT = 20;
+    static constexpr uint32_t SAH_BUCKET_COUNT = 12;
     static constexpr int32_t SAH_INTERSECTION_COST = 2;
     static constexpr int32_t SAH_TRAVERSAL_COST = 1;
 
@@ -54,7 +54,7 @@ namespace dort {
         uint32_t depth);
     uint32_t split_middle(std::vector<PrimitiveInfo>& build_infos,
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
-    uint32_t split_equal_counts(std::vector<PrimitiveInfo>& build_infos,
+    uint32_t split_median(std::vector<PrimitiveInfo>& build_infos,
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);
     uint32_t split_sah(std::vector<PrimitiveInfo>& build_infos,
         const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end);

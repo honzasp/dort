@@ -10,10 +10,13 @@ namespace dort {
     StatTimer t(TIMER_BVH_BUILD);
 
     std::vector<PrimitiveInfo> build_infos(prims.size());
-    for(uint32_t i = 0; i < prims.size(); ++i) {
-      Box bounds = prims.at(i)->bounds();
-      assert(is_finite(bounds));
-      build_infos.at(i) = PrimitiveInfo { i, bounds };
+    {
+      StatTimer t(TIMER_BVH_COMPUTE_BUILD_INFOS);
+      for(uint32_t i = 0; i < prims.size(); ++i) {
+        Box bounds = prims.at(i)->bounds();
+        assert(is_finite(bounds));
+        build_infos.at(i) = PrimitiveInfo { i, bounds };
+      }
     }
 
     max_leaf_size = min(max_leaf_size, 0xffu);
@@ -116,6 +119,9 @@ namespace dort {
       uint32_t max_leaf_size, BvhSplitMethod split_method,
       uint32_t depth)
   {
+    StatTimer t(TIMER_BVH_BUILD_NODE);
+    stat_sample_int(DISTRIB_INT_BVH_BUILD_NODE_COUNT, end - begin);
+
     this->max_depth = std::max(this->max_depth, depth);
     uint32_t node_idx = this->linear_nodes.size();
 
@@ -134,8 +140,8 @@ namespace dort {
         case BvhSplitMethod::Middle:
           mid = this->split_middle(build_infos, bounds, axis, begin, end);
           break;
-        case BvhSplitMethod::EqualCounts:
-          mid = this->split_equal_counts(build_infos, bounds, axis, begin, end);
+        case BvhSplitMethod::Median:
+          mid = this->split_median(build_infos, bounds, axis, begin, end);
           break;
         case BvhSplitMethod::Sah:
           mid = this->split_sah(build_infos, bounds, axis, begin, end);
@@ -148,6 +154,8 @@ namespace dort {
         make_leaf = true;
       }
     }
+
+    t.stop();
 
     if(make_leaf && (end - begin) <= max_leaf_size) {
       uint32_t prims_begin = this->ordered_prims.size();
@@ -188,6 +196,7 @@ namespace dort {
       std::vector<PrimitiveInfo>& build_infos,
       const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end)
   {
+    StatTimer t(TIMER_BVH_SPLIT_MIDDLE);
     float center = (bounds.p_max + bounds.p_min).v[axis] * 0.5f;
     auto mid = std::partition(
         build_infos.begin() + begin,
@@ -198,10 +207,11 @@ namespace dort {
     return mid - build_infos.begin();
   }
 
-  uint32_t BvhPrimitive::split_equal_counts(
+  uint32_t BvhPrimitive::split_median(
       std::vector<PrimitiveInfo>& build_infos,
       const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end)
   {
+    StatTimer t(TIMER_BVH_SPLIT_MEDIAN);
     (void)bounds;
     uint32_t mid = begin + (end - begin) / 2;
     std::nth_element(
@@ -217,6 +227,7 @@ namespace dort {
   uint32_t BvhPrimitive::split_sah(std::vector<PrimitiveInfo>& build_infos,
       const Box& bounds, uint8_t axis, uint32_t begin, uint32_t end)
   {
+    StatTimer t(TIMER_BVH_SPLIT_SAH);
     float extent = bounds.p_max.v[axis] - bounds.p_min.v[axis];
     float inv_extent = 1.f / extent;
 

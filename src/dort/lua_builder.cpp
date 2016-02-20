@@ -61,6 +61,7 @@ namespace dort {
     lua_register(l, "transform", lua_build_set_transform);
     lua_register(l, "material", lua_build_set_material);
     lua_register(l, "camera", lua_build_set_camera);
+    lua_register(l, "option", lua_build_set_option);
     lua_register(l, "add_shape", lua_build_add_shape);
     lua_register(l, "add_primitive", lua_build_add_primitive);
     lua_register(l, "add_light", lua_build_add_light);
@@ -96,7 +97,7 @@ namespace dort {
     }
 
     auto scene = std::make_shared<Scene>();
-    scene->primitive = lua_make_aggregate(std::move(builder.frame));
+    scene->primitive = lua_make_aggregate(builder.state, std::move(builder.frame));
     scene->lights = std::move(builder.lights);
     scene->triangle_meshes = std::move(builder.triangle_meshes);
     scene->camera = std::move(builder.camera);
@@ -147,7 +148,7 @@ namespace dort {
         return luaL_error(l, "State stack is empty (not balanced)");
       }
 
-      auto primitive = lua_make_aggregate(std::move(builder.frame));
+      auto primitive = lua_make_aggregate(builder.state, std::move(builder.frame));
       builder.frame = std::move(builder.frame_stack.back());
       builder.state = std::move(builder.state_stack.back());
       builder.frame_stack.pop_back();
@@ -176,6 +177,28 @@ namespace dort {
     Builder& builder = lua_get_current_builder(l);
     auto camera = lua_check_camera(l, 1);
     builder.camera = camera;
+    return 0;
+  }
+
+  int lua_build_set_option(lua_State* l) {
+    Builder& builder = lua_get_current_builder(l);
+    std::string option = luaL_checkstring(l, 1);
+    if(option == "bvh split method") {
+      std::string method = luaL_checkstring(l, 2);
+      if(method == "sah") {
+        builder.state.bvh_split_method = BvhSplitMethod::Sah;
+      } else if(method == "median") {
+        builder.state.bvh_split_method = BvhSplitMethod::Median;
+      } else if(method == "middle") {
+        builder.state.bvh_split_method = BvhSplitMethod::Middle;
+      } else {
+        luaL_error(l, "unknown bvh split method: %s", method.c_str());
+      }
+    } else if(option == "bvh max leaf size") {
+      builder.state.bvh_max_leaf_size = luaL_checkinteger(l, 2);
+    } else {
+      luaL_error(l, "unknown option: %s", option.c_str());
+    }
     return 0;
   }
 
@@ -349,11 +372,11 @@ namespace dort {
     return 1;
   }
 
-  std::unique_ptr<Primitive> lua_make_aggregate(BuilderFrame frame)
+  std::unique_ptr<Primitive> lua_make_aggregate(
+      const BuilderState& state, BuilderFrame frame)
   {
-    return std::make_unique<BvhPrimitive>(
-        //std::move(frame.prims), 5, BvhSplitMethod::Sah);
-        std::move(frame.prims), 5, BvhSplitMethod::Middle);
+    return std::make_unique<BvhPrimitive>(std::move(frame.prims),
+        state.bvh_max_leaf_size, state.bvh_split_method);
   }
 
   Builder& lua_get_current_builder(lua_State* l) {

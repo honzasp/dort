@@ -1,6 +1,9 @@
-local quality = true
+local quality = false
 
 local scene = define_scene(function()
+  option("bvh split method", "sah")
+  option("bvh max leaf size", 5)
+
   block(function() 
     material(matte_material {
       reflect = rgb(1, 1, 1),

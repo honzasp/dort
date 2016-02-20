@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "dort/bvh_primitive.hpp"
 #include "dort/lua.hpp"
 #include "dort/transform.hpp"
 
@@ -19,6 +20,8 @@ namespace dort {
   struct BuilderState {
     Transform local_to_frame;
     std::shared_ptr<Material> material;
+    BvhSplitMethod bvh_split_method = BvhSplitMethod::Middle;
+    uint32_t bvh_max_leaf_size = 6;
   };
 
   struct Builder {
@@ -39,6 +42,7 @@ namespace dort {
   int lua_build_set_transform(lua_State* l);
   int lua_build_set_material(lua_State* l);
   int lua_build_set_camera(lua_State* l);
+  int lua_build_set_option(lua_State* l);
   int lua_build_add_shape(lua_State* l);
   int lua_build_add_primitive(lua_State* l);
   int lua_build_add_light(lua_State* l);
@@ -54,7 +58,8 @@ namespace dort {
 
   int lua_ply_mesh_read(lua_State* l);
 
-  std::unique_ptr<Primitive> lua_make_aggregate(BuilderFrame frame);
+  std::unique_ptr<Primitive> lua_make_aggregate(
+      const BuilderState& state, BuilderFrame frame);
 
   Builder& lua_get_current_builder(lua_State* l);
   void lua_set_current_builder(lua_State* l, Builder builder);
