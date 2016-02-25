@@ -20,6 +20,8 @@ namespace dort {
     assert(!this->stop_flag.load());
     assert(this->main_thread_id == std::this_thread::get_id());
 
+    StatTimer t(TIMER_POOL_SCHEDULE);
+    stat_count(COUNTER_POOL_JOBS);
     std::unique_lock<std::mutex> lock(this->queue_mutex);
     this->queue.push_back(std::move(job));
     lock.unlock();
@@ -49,13 +51,20 @@ namespace dort {
         if(this->stop_flag.load()) {
           break;
         }
+
+        StatTimer t(TIMER_POOL_WAIT);
+        stat_count(COUNTER_POOL_WAITS);
         this->queue_condvar.wait(lock);
+      } else {
+        stat_count(COUNTER_POOL_NO_WAITS);
       }
 
       if(!this->queue.empty()) {
         auto job = std::move(this->queue.front());
         this->queue.pop_front();
         lock.unlock();
+
+        StatTimer t(TIMER_POOL_JOB);
         job();
       }
     }

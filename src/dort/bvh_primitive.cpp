@@ -129,7 +129,7 @@ namespace dort {
         make_leaf = true;
       }
 
-      assert(node.begin < split.mid && split.mid < node.end);
+      assert(node.begin < split.mid && split.mid + 1 < node.end);
     }
 
     if(make_leaf && prim_count <= ctx.max_leaf_size) {
@@ -175,8 +175,10 @@ namespace dort {
   void BvhPrimitive::write_linear_node(BuildCtx& ctx, uint32_t idx,
       const LinearNode& node)
   {
+    StatTimer t(TIMER_BVH_WRITE_LINEAR_NODE);
     std::shared_lock<std::shared_timed_mutex> write_lock(ctx.linear_mutex);
     if(this->linear_nodes.size() <= idx) {
+      StatTimer t(TIMER_BVH_WRITE_LINEAR_NODE_RESIZE);
       write_lock.unlock();
       std::unique_lock<std::shared_timed_mutex> resize_lock(ctx.linear_mutex);
       this->linear_nodes.reserve(std::max(idx + 1, idx * 2 - idx / 2));
@@ -200,6 +202,9 @@ namespace dort {
     uint32_t end = node.end;
     float center = node.centroid_bounds.centroid().v[axis];
     uint32_t mid = this->partition(ctx, parallel, begin, end, axis, center);
+    if(mid == begin || mid + 1 == end) {
+      mid = begin + (end - begin) / 2;
+    }
 
     uint32_t jobs = !parallel ? 1
       : std::max(ctx.pool.num_threads(),
@@ -210,7 +215,17 @@ namespace dort {
     std::vector<Box> job_right_bounds(jobs);
     std::vector<Box> job_right_centroid_bounds(jobs);
 
+    StatTimer t_out(parallel
+        ? TIMER_BVH_SPLIT_MIDDLE_BOUNDS_OUT_PARALLEL
+        : TIMER_BVH_SPLIT_MIDDLE_BOUNDS_OUT_SERIAL);
+    if(parallel) {
+      stat_sample_int(DISTRIB_INT_BVH_SPLIT_MIDDLE_JOBS, jobs);
+    }
+
     fork_join_or_serial(ctx.pool, !parallel, jobs, [&](uint32_t job) {
+      StatTimer t_in(parallel
+          ? TIMER_BVH_SPLIT_MIDDLE_BOUNDS_IN_PARALLEL
+          : TIMER_BVH_SPLIT_MIDDLE_BOUNDS_IN_SERIAL);
       uint32_t left_begin = begin + uint64_t(job) * (mid - begin) / jobs;
       uint32_t left_end = begin + uint64_t(job + 1) * (mid - begin) / jobs;
       uint32_t right_begin = mid + uint64_t(job) * (end - mid) / jobs;
@@ -267,7 +282,9 @@ namespace dort {
   uint32_t BvhPrimitive::partition(BuildCtx& ctx, bool parallel,
       uint32_t begin, uint32_t end, uint8_t axis, float separator)
   {
-    (void)parallel;
+    StatTimer t(parallel
+        ? TIMER_BVH_BUILD_PARTITION_PARALLEL
+        : TIMER_BVH_BUILD_PARTITION_SERIAL);
     auto mid = std::partition(
         ctx.build_infos.begin() + begin,
         ctx.build_infos.begin() + end,

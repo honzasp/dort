@@ -24,6 +24,9 @@ namespace dort {
     { "triangle hit hit" },
     { "triangle hit_p" },
     { "triangle hit_p hit" },
+    { "pool jobs" },
+    { "pool no-waits" },
+    { "pool waits" },
   };
 
   const std::vector<StatDistribIntDef> STAT_DISTRIB_INT_DEFS = {
@@ -32,6 +35,7 @@ namespace dort {
     { "bvh build_node serial count" },
     { "bvh build serial count" },
     { "bvh build linear resize" },
+    { "bvh split_middle jobs" },
     { "bsdf number of bxdfs" },
     { "render jobs" },
   };
@@ -54,12 +58,23 @@ namespace dort {
     { "bvh build", UINT32_MAX },
     { "bvh compute build_infos", UINT32_MAX },
     { "bvh build node parallel", UINT32_MAX / 256 },
-    { "bvh build node serial", UINT32_MAX / 512 },
+    { "bvh build node serial", UINT32_MAX / 256 },
+    { "bvh build partition parallel", UINT32_MAX / 256 },
+    { "bvh build partition serial", UINT32_MAX / 256 },
+    { "bvh write_linear_node", UINT32_MAX / 1024 },
+    { "bvh write_linear_node resize", UINT32_MAX },
     { "bvh split_middle", UINT32_MAX / 256 },
+    { "bvh split_middle bounds out parallel", UINT32_MAX / 256 },
+    { "bvh split_middle bounds out serial", UINT32_MAX / 256 },
+    { "bvh split_middle bounds in parallel", UINT32_MAX / 1024 },
+    { "bvh split_middle bounds in serial", UINT32_MAX / 1024 },
     { "bvh split_median", UINT32_MAX / 256 },
     { "bvh split_sah", UINT32_MAX / 256 },
     { "bvh traverse node", UINT32_MAX / 256 },
     { "bvh intersect prim", UINT32_MAX / 256 },
+    { "pool wait", UINT32_MAX / 16 },
+    { "pool job", UINT32_MAX / 16 },
+    { "pool schedule", UINT32_MAX / 16 },
   };
 
   int64_t stat_clock_now_ns() {

@@ -13,7 +13,7 @@ namespace dort {
 
   class BvhPrimitive final: public Primitive {
     static constexpr uint32_t MIN_PRIM_INFOS_PER_THREAD = 5*1000; // TODO
-    static constexpr uint32_t MIN_SPLIT_PRIMS_PER_THREAD = 2*1000; // TODO
+    static constexpr uint32_t MIN_SPLIT_PRIMS_PER_THREAD = 200*1000; // TODO
     static constexpr uint32_t SAH_BUCKET_COUNT = 12;
     static constexpr int32_t SAH_INTERSECTION_COST = 2;
     static constexpr int32_t SAH_TRAVERSAL_COST = 1;
