@@ -34,6 +34,7 @@ namespace dort {
     struct BucketInfo {
       uint32_t count = 0;
       Box bounds;
+      Box centroid_bounds;
       Box prefix_bounds;
       Box postfix_bounds;
       uint32_t prefix_count;
@@ -51,6 +52,7 @@ namespace dort {
       Box left_bounds, right_bounds;
       Box left_centroid_bounds, right_centroid_bounds;
       uint32_t mid;
+      bool prefer_leaf;
     };
 
     struct BuildCtx {
@@ -62,6 +64,8 @@ namespace dort {
       std::atomic<uint32_t> free_linear_idx;
       std::vector<NodeInfo> todo_serial;
       std::shared_timed_mutex linear_mutex;
+      std::vector<std::unique_ptr<Primitive>> ordered_prims;
+      std::vector<LinearNode> linear_nodes;
     };
 
     std::vector<LinearNode> linear_nodes;
@@ -74,22 +78,23 @@ namespace dort {
     virtual bool intersect_p(const Ray& ray) const final override;
     virtual Box bounds() const override final;
   private:
-    std::vector<PrimitiveInfo> compute_build_infos(
+    static std::vector<PrimitiveInfo> compute_build_infos(
         const std::vector<std::unique_ptr<Primitive>>& prims,
         Box& out_bounds, Box& out_centroid_bounds,
         ThreadPool& pool);
 
-    void build_node(BuildCtx& ctx, const NodeInfo& node, bool parallel);
-    void write_linear_node(BuildCtx& ctx, uint32_t idx, const LinearNode& node);
+    static void build_node(BuildCtx& ctx, const NodeInfo& node, bool parallel);
+    static void write_linear_node(BuildCtx& ctx,
+        uint32_t idx, const LinearNode& node);
 
-    SplitInfo split_middle(BuildCtx& ctx, const NodeInfo& node,
+    static SplitInfo split_middle(BuildCtx& ctx, const NodeInfo& node,
         uint8_t axis, bool parallel);
-    SplitInfo split_sah(BuildCtx& ctx, const NodeInfo& node,
+    static SplitInfo split_sah(BuildCtx& ctx, const NodeInfo& node,
         uint8_t axis, bool parallel);
-    uint32_t partition(BuildCtx& ctx, bool parallel,
+    static uint32_t partition(BuildCtx& ctx, bool parallel,
         uint32_t begin, uint32_t end, uint8_t axis, float separator);
 
-    int32_t sah_split_cost(const Box& bounds,
+    static int32_t sah_split_cost(const Box& centroid_bounds,
         const BucketInfo& bucket, uint32_t prim_count);
 
     template<class F>

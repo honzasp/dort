@@ -1,8 +1,8 @@
 local quality = false
 
 local scene = define_scene(function()
-  option("bvh split method", "middle")
-  option("bvh max leaf size", 10)
+  option("bvh split method", "sah")
+  option("bvh max leaf size", 16)
 
   block(function() 
     material(matte_material {
@@ -36,8 +36,6 @@ local scene = define_scene(function()
     fov = 0.2 * pi,
     screen_x = 1.5, screen_y = 1.5,
   })
-
-  reset_stats()
 end)
 
 local sampler, filter, size

@@ -12,7 +12,7 @@ namespace dort {
     StatTimer t(TIMER_BVH_BUILD);
     Box root_bounds;
     Box root_centroid_bounds;
-    auto build_infos = this->compute_build_infos(prims,
+    auto build_infos = BvhPrimitive::compute_build_infos(prims,
         root_bounds, root_centroid_bounds, pool);
 
     BuildCtx ctx {
@@ -21,11 +21,11 @@ namespace dort {
       pool,
       std::min(max_leaf_size, 0xffu),
       split_method,
-      {},
-      {},
-      {},
+      {}, {}, {}, {}, {},
     };
     ctx.free_linear_idx.store(1);
+    ctx.ordered_prims.resize(ctx.prims.size());
+    ctx.linear_nodes.resize(ctx.prims.size() / max_leaf_size);
 
     NodeInfo root_node {
       root_bounds,
@@ -34,9 +34,7 @@ namespace dort {
       0
     };
 
-    this->ordered_prims.resize(ctx.prims.size());
-    this->linear_nodes.resize(ctx.prims.size() / max_leaf_size);
-    this->build_node(ctx, root_node, true);
+    BvhPrimitive::build_node(ctx, root_node, true);
 
     std::sort(ctx.todo_serial.begin(), ctx.todo_serial.end(),
         [&](const NodeInfo& n1, const NodeInfo& n2) {
@@ -45,10 +43,12 @@ namespace dort {
     stat_sample_int(DISTRIB_INT_BVH_BUILD_SERIAL_COUNT, ctx.todo_serial.size());
 
     fork_join(ctx.pool, ctx.todo_serial.size(), [&](uint32_t job) {
-      this->build_node(ctx, ctx.todo_serial.at(job), false);
+        BvhPrimitive::build_node(ctx, ctx.todo_serial.at(job), false);
     });
 
-    this->linear_nodes.shrink_to_fit();
+    ctx.linear_nodes.shrink_to_fit();
+    this->linear_nodes = std::move(ctx.linear_nodes);
+    this->ordered_prims = std::move(ctx.ordered_prims);
   }
 
   std::vector<BvhPrimitive::PrimitiveInfo> BvhPrimitive::compute_build_infos(
@@ -116,26 +116,23 @@ namespace dort {
     if(!make_leaf) {
       switch(ctx.split_method) {
         case BvhSplitMethod::Middle:
-          split = this->split_middle(ctx, node, axis, parallel_split);
+          split = BvhPrimitive::split_middle(ctx, node, axis, parallel_split);
           break;
         case BvhSplitMethod::Sah:
-          split = this->split_sah(ctx, node, axis, parallel_split);
+          split = BvhPrimitive::split_sah(ctx, node, axis, parallel_split);
           break;
         default:
           assert("Bad split method");
       }
 
-      if(split.mid == -1u) {
-        make_leaf = true;
-      }
-
+      make_leaf = split.prefer_leaf;
       assert(node.begin < split.mid && split.mid + 1 < node.end);
     }
 
     if(make_leaf && prim_count <= ctx.max_leaf_size) {
       for(uint32_t i = node.begin; i < node.end; ++i) {
         uint32_t prim_idx = ctx.build_infos.at(i).prim_index;
-        this->ordered_prims.at(i) = std::move(ctx.prims.at(prim_idx));
+        ctx.ordered_prims.at(i) = std::move(ctx.prims.at(prim_idx));
       }
 
       LinearNode leaf;
@@ -143,7 +140,7 @@ namespace dort {
       leaf.prim_offset_or_left_child = node.begin;
       leaf.prim_count_or_zero = prim_count;
       leaf.axis = axis;
-      this->write_linear_node(ctx, node.linear_idx, leaf);
+      BvhPrimitive::write_linear_node(ctx, node.linear_idx, leaf);
     } else {
       NodeInfo left;
       left.bounds = split.left_bounds;
@@ -164,11 +161,11 @@ namespace dort {
       branch.prim_offset_or_left_child = left.linear_idx;
       branch.prim_count_or_zero = 0;
       branch.axis = axis;
-      this->write_linear_node(ctx, node.linear_idx, branch);
+      BvhPrimitive::write_linear_node(ctx, node.linear_idx, branch);
 
       t.stop();
-      this->build_node(ctx, left, parallel);
-      this->build_node(ctx, right, parallel);
+      BvhPrimitive::build_node(ctx, left, parallel);
+      BvhPrimitive::build_node(ctx, right, parallel);
     }
   }
 
@@ -177,21 +174,21 @@ namespace dort {
   {
     StatTimer t(TIMER_BVH_WRITE_LINEAR_NODE);
     std::shared_lock<std::shared_timed_mutex> write_lock(ctx.linear_mutex);
-    if(this->linear_nodes.size() <= idx) {
+    if(ctx.linear_nodes.size() <= idx) {
       StatTimer t(TIMER_BVH_WRITE_LINEAR_NODE_RESIZE);
       write_lock.unlock();
       std::unique_lock<std::shared_timed_mutex> resize_lock(ctx.linear_mutex);
-      this->linear_nodes.reserve(std::max(idx + 1, idx * 2 - idx / 2));
-      uint32_t capacity = this->linear_nodes.capacity();
-      if(this->linear_nodes.size() < capacity) {
+      ctx.linear_nodes.reserve(std::max(idx + 1, idx * 2 - idx / 2));
+      uint32_t capacity = ctx.linear_nodes.capacity();
+      if(ctx.linear_nodes.size() < capacity) {
         stat_sample_int(DISTRIB_INT_BVH_BUILD_LINEAR_RESIZE, capacity);
-        this->linear_nodes.resize(capacity);
+        ctx.linear_nodes.resize(capacity);
       }
       resize_lock.unlock();
       write_lock.lock();
     }
 
-    this->linear_nodes.at(idx) = node;
+    ctx.linear_nodes.at(idx) = node;
   }
 
   BvhPrimitive::SplitInfo BvhPrimitive::split_middle(BuildCtx& ctx,
@@ -201,7 +198,7 @@ namespace dort {
     uint32_t begin = node.begin;
     uint32_t end = node.end;
     float center = node.centroid_bounds.centroid().v[axis];
-    uint32_t mid = this->partition(ctx, parallel, begin, end, axis, center);
+    uint32_t mid = BvhPrimitive::partition(ctx, parallel, begin, end, axis, center);
     if(mid == begin || mid + 1 == end) {
       mid = begin + (end - begin) / 2;
     }
@@ -268,15 +265,107 @@ namespace dort {
     split.left_centroid_bounds = left_centroid_bounds;
     split.right_centroid_bounds = right_centroid_bounds;
     split.mid = mid;
+    split.prefer_leaf = false;
     return split;
   }
 
   BvhPrimitive::SplitInfo BvhPrimitive::split_sah(BuildCtx& ctx,
       const NodeInfo& node, uint8_t axis, bool parallel)
   {
-    (void)ctx; (void)node; (void)axis; (void)parallel;
-    assert("sah not implemented");
-    return SplitInfo();
+    StatTimer t(TIMER_BVH_SPLIT_SAH);
+    float extent = (node.centroid_bounds.p_max - node.centroid_bounds.p_min).v[axis];
+    float bounds_min = node.centroid_bounds.p_min.v[axis];
+    float inv_extent = 1.f / extent;
+    uint32_t begin = node.begin;
+    uint32_t end = node.end;
+
+    uint32_t num_jobs = parallel ? ctx.pool.num_threads() : 1;
+    std::vector<std::array<BucketInfo, SAH_BUCKET_COUNT>> job_buckets(num_jobs);
+    fork_join_or_serial(ctx.pool, !parallel, num_jobs, [&](uint32_t job) {
+      auto& buckets = job_buckets.at(job);
+      uint32_t job_begin = begin + uint64_t(end - begin) * job / num_jobs;
+      uint32_t job_end = begin + uint64_t(end - begin) * (job + 1) / num_jobs;
+      for(uint32_t i = job_begin; i < job_end; ++i) {
+        auto& prim_info = ctx.build_infos.at(i);
+        Point centroid = prim_info.bounds.centroid();
+        float prim_pos = centroid.v[axis] - bounds_min;
+        uint32_t bucket_idx = clamp(
+          uint32_t(floor_int32(float(SAH_BUCKET_COUNT) * prim_pos * inv_extent)),
+          0u, SAH_BUCKET_COUNT - 1);
+        auto& bucket = buckets.at(bucket_idx);
+        bucket.count += 1;
+        bucket.bounds = union_box(bucket.bounds, prim_info.bounds);
+        bucket.centroid_bounds = union_box(bucket.centroid_bounds, centroid);
+      }
+    });
+
+    std::array<BucketInfo, SAH_BUCKET_COUNT> buckets;
+    for(uint32_t j = 0; j < num_jobs; ++j) {
+      for(uint32_t b = 0; b < SAH_BUCKET_COUNT; ++b) {
+        auto& bucket = buckets.at(b);
+        auto& job_bucket = job_buckets.at(j).at(b);
+        bucket.count += job_bucket.count;
+        bucket.bounds = union_box(bucket.bounds, job_bucket.bounds);
+        bucket.centroid_bounds = union_box(bucket.centroid_bounds,
+            job_bucket.centroid_bounds);
+      }
+    }
+
+    Box prefix_bounds;
+    uint32_t prefix_count = 0;
+    for(uint32_t b = 0; b < buckets.size(); ++b) {
+      prefix_bounds = union_box(prefix_bounds, buckets.at(b).bounds);
+      prefix_count += buckets.at(b).count;
+      buckets.at(b).prefix_bounds = prefix_bounds;
+      buckets.at(b).prefix_count = prefix_count;
+    }
+
+    Box postfix_bounds;
+    for(uint32_t b = buckets.size(); b-- > 0; ) {
+      buckets.at(b).postfix_bounds = postfix_bounds;
+      postfix_bounds = union_box(postfix_bounds, buckets.at(b).bounds);
+    }
+
+    int32_t best_cost = BvhPrimitive::sah_split_cost(node.centroid_bounds,
+        buckets.at(0), end - begin);
+    uint32_t best_bucket = 0;
+    for(uint32_t b = 1; b < buckets.size() - 1; ++b) {
+      int32_t cost = BvhPrimitive::sah_split_cost(node.centroid_bounds,
+          buckets.at(b), end - begin);
+      if(cost < best_cost) {
+        best_cost = cost;
+        best_bucket = b;
+      }
+    }
+
+    int32_t leaf_cost = SAH_INTERSECTION_COST * (end - begin);
+    float separator = float(best_bucket + 1) / float(buckets.size()) * extent 
+      + bounds_min;
+
+    SplitInfo split;
+    split.prefer_leaf = leaf_cost < best_cost;
+    split.mid = BvhPrimitive::partition(ctx,
+        parallel, begin, end, axis, separator);
+
+    for(uint32_t b = 0; b < buckets.size(); ++b) {
+      if(b <= best_bucket) {
+        split.left_bounds = union_box(split.left_bounds, buckets.at(b).bounds);
+        split.left_centroid_bounds = union_box(split.left_centroid_bounds,
+            buckets.at(b).centroid_bounds);
+      } else {
+        split.right_bounds = union_box(split.right_bounds, buckets.at(b).bounds);
+        split.right_centroid_bounds = union_box(split.right_centroid_bounds,
+            buckets.at(b).centroid_bounds);
+      }
+    }
+
+    if(split.mid == begin || split.mid + 1 == end) {
+      split.mid = begin + (end - begin) / 2;
+      split.left_bounds = split.right_bounds = node.bounds;
+      split.left_centroid_bounds = split.right_centroid_bounds = node.centroid_bounds;
+    }
+
+    return split;
   }
 
   uint32_t BvhPrimitive::partition(BuildCtx& ctx, bool parallel,
@@ -289,8 +378,7 @@ namespace dort {
         ctx.build_infos.begin() + begin,
         ctx.build_infos.begin() + end,
         [&](const PrimitiveInfo& info) {
-          float centroid = (info.bounds.p_max.v[axis] + info.bounds.p_min.v[axis]) * 0.5f;
-          return centroid < separator;
+          return info.bounds.centroid().v[axis] < separator;
         });
     return mid - ctx.build_infos.begin();
   }
@@ -356,7 +444,7 @@ namespace dort {
   }
   */
 
-  int32_t BvhPrimitive::sah_split_cost(const Box& bounds,
+  int32_t BvhPrimitive::sah_split_cost(const Box& centroid_bounds,
       const BucketInfo& bucket, uint32_t prim_count)
   {
     uint32_t count_l = bucket.prefix_count;
@@ -367,7 +455,8 @@ namespace dort {
 
     float area_l = bucket.prefix_bounds.area();
     float area_r = bucket.postfix_bounds.area();
-    float isects = (area_l * float(count_l) + area_r * float(count_r)) / bounds.area();
+    float isects = (area_l * float(count_l) + area_r * float(count_r)) /
+      centroid_bounds.area();
     return SAH_TRAVERSAL_COST + floor_int32(isects * float(SAH_INTERSECTION_COST));
   }
 
