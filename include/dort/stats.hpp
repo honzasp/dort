@@ -125,6 +125,7 @@ namespace dort {
   void stat_init(Stats& stats);
   void stat_finish_thread();
   void stat_report_global(FILE* output);
+  void stat_reset_global();
 
   inline void stat_count(StatCounter id) {
     THREAD_STATS.counters.at(id) += 1;
@@ -155,6 +156,7 @@ namespace dort {
   inline void stat_init(Stats&) { }
   inline void stat_finish_thread() { }
   inline void stat_report_global(FILE*) { }
+  inline void stat_reset_global() { }
 
   inline void stat_count(StatCounter) { }
 

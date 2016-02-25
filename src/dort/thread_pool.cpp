@@ -5,10 +5,7 @@
 namespace dort {
   ThreadPool::ThreadPool(uint32_t num_threads) {
     this->main_thread_id = std::this_thread::get_id();
-    this->stop_flag.store(false);
-    for(uint32_t i = 0; i < num_threads; ++i) {
-      this->threads.push_back(std::thread(&ThreadPool::thread_body, this));
-    }
+    this->start(num_threads);
   }
 
   ThreadPool::~ThreadPool() {
@@ -28,6 +25,15 @@ namespace dort {
     this->queue_condvar.notify_one();
   }
 
+  void ThreadPool::start(uint32_t num_threads) {
+    assert(this->main_thread_id == std::this_thread::get_id());
+    assert(this->threads.empty());
+    this->stop_flag.store(false);
+    for(uint32_t i = 0; i < num_threads; ++i) {
+      this->threads.push_back(std::thread(&ThreadPool::thread_body, this));
+    }
+  }
+
   void ThreadPool::stop() {
     if(this->stop_flag.load()) {
       return;
@@ -40,6 +46,12 @@ namespace dort {
       thread.join();
     }
     this->threads.clear();
+  }
+
+  void ThreadPool::restart() {
+    uint32_t num_threads = this->num_threads();
+    this->stop();
+    this->start(num_threads);
   }
 
   void ThreadPool::thread_body() {

@@ -57,16 +57,16 @@ namespace dort {
     { "rng uint32", UINT32_MAX / 1024 },
     { "bvh build", UINT32_MAX },
     { "bvh compute build_infos", UINT32_MAX },
-    { "bvh build node parallel", UINT32_MAX / 256 },
+    { "bvh build node parallel", UINT32_MAX },
     { "bvh build node serial", UINT32_MAX / 256 },
-    { "bvh build partition parallel", UINT32_MAX / 256 },
+    { "bvh build partition parallel", UINT32_MAX },
     { "bvh build partition serial", UINT32_MAX / 256 },
     { "bvh write_linear_node", UINT32_MAX / 1024 },
     { "bvh write_linear_node resize", UINT32_MAX },
     { "bvh split_middle", UINT32_MAX / 256 },
-    { "bvh split_middle bounds out parallel", UINT32_MAX / 256 },
+    { "bvh split_middle bounds out parallel", UINT32_MAX },
     { "bvh split_middle bounds out serial", UINT32_MAX / 256 },
-    { "bvh split_middle bounds in parallel", UINT32_MAX / 1024 },
+    { "bvh split_middle bounds in parallel", UINT32_MAX },
     { "bvh split_middle bounds in serial", UINT32_MAX / 1024 },
     { "bvh split_median", UINT32_MAX / 256 },
     { "bvh split_sah", UINT32_MAX / 256 },
@@ -201,6 +201,12 @@ namespace dort {
       std::fprintf(output, "min %" PRIi64 " ns, max %" PRIi64 " ns, avg ohead %g ns\n",
           distrib.min_ns, distrib.max_ns, average_overhead_ns);
     }
+  }
+
+  void stat_reset_global() {
+    GLOBAL_STATS = Stats();
+    THREAD_STATS = Stats();
+    stat_init_global();
   }
 
   StatTimer::StatTimer(StatDistribTime distrib_id) {

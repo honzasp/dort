@@ -10,6 +10,7 @@
 #include "dort/lua_material.hpp"
 #include "dort/lua_math.hpp"
 #include "dort/lua_shape.hpp"
+#include "dort/lua_stats.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
@@ -30,6 +31,7 @@ namespace dort {
       luaL_requiref(l, "base", luaopen_base, true);
       luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
       luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
+      luaL_requiref(l, STATS_LIBNAME, lua_open_stats, true);
       luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
       luaL_requiref(l, TEXTURE_LIBNAME, lua_open_texture, true);
       luaL_requiref(l, SHAPE_LIBNAME, lua_open_shape, true);
