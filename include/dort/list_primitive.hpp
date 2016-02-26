@@ -5,7 +5,8 @@
 
 namespace dort {
   class ListPrimitive final: public Primitive {
-    std::vector<std::unique_ptr<Primitive>> primitives;
+    std::vector<std::unique_ptr<Primitive>> prims;
+    std::vector<Box> prim_bounds;
     Box total_bounds;
   public:
     ListPrimitive(std::vector<std::unique_ptr<Primitive>> prims);

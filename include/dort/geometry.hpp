@@ -200,6 +200,8 @@ namespace dort {
   Box union_box(const Box& b1, const Box& b2);
   Box union_box(const Box& box, const Point& pt);
   bool box_hit_p(const Box& box, const Ray& ray);
+  bool fast_box_hit_p(const Box& bounds, const Ray& ray,
+      const Vector& inv_dir, bool dir_is_neg[3]);
 
   inline bool is_finite(const Box& box) {
     return is_finite(box.p_min) && is_finite(box.p_max);

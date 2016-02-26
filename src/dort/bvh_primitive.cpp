@@ -4,7 +4,7 @@
 namespace dort {
   BvhPrimitive::BvhPrimitive(std::vector<std::unique_ptr<Primitive>> prims,
       const BvhOpts& opts, ThreadPool& pool):
-    bvh(std::move(prims), opts, pool)
+    bvh(std::move(prims), BvhTraits::Arg(), opts, pool)
   { }
 
   bool BvhPrimitive::intersect(Ray& ray, Intersection& out_isect) const {

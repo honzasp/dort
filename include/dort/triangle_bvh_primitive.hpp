@@ -4,9 +4,21 @@
 
 namespace dort {
   class TriangleBvhPrimitive final: public GeometricPrimitive {
+    struct BvhTraits {
+      using Element = uint32_t;
+      using Arg = const TriangleMesh*;
+
+      static Box get_bounds(const TriangleMesh* mesh, uint32_t idx) {
+        return Triangle(mesh, idx).bounds();
+      }
+    };
+
     const TriangleMesh* mesh;
-    Bvh<> bvh;
+    Bvh<BvhTraits> bvh;
   public:
+    TriangleBvhPrimitive(const TriangleMesh* mesh, std::vector<uint32_t> indices,
+        const BvhOpts& opts, ThreadPool& pool);
+
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const override final;
     virtual Box bounds() const override final;

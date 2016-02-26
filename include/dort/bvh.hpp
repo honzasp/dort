@@ -23,8 +23,9 @@ namespace dort {
   template<class Traits>
   class Bvh final {
     using Element = typename Traits::Element;
-    static Box get_elem_bounds(const Element& elem) {
-      return Traits::get_bounds(elem);
+    using TraitsArg = typename Traits::Arg;
+    static Box get_elem_bounds(TraitsArg arg, const Element& elem) {
+      return Traits::get_bounds(arg, elem);
     }
 
     static constexpr int32_t SAH_INTERSECTION_COST = 2;
@@ -82,7 +83,8 @@ namespace dort {
     std::vector<LinearNode> linear_nodes;
     std::vector<Element> ordered_elems;
   public:
-    Bvh(std::vector<Element> elems, const BvhOpts& opts, ThreadPool& pool);
+    Bvh(std::vector<Element> elems, TraitsArg arg,
+        const BvhOpts& opts, ThreadPool& pool);
     Box bounds() const;
     void traverse_elems(const Ray& ray,
         std::function<bool(const Element&)> callback) const;
@@ -90,6 +92,7 @@ namespace dort {
     static std::vector<ElementInfo> compute_build_infos(
         const std::vector<Element>& elems,
         Box& out_bounds, Box& out_centroid_bounds,
+        TraitsArg traits_arg,
         const BvhOpts& opts, ThreadPool& pool);
 
     static void build_node(BuildCtx& ctx, const NodeInfo& node, bool parallel);
@@ -105,8 +108,5 @@ namespace dort {
 
     static int32_t sah_split_cost(const Box& centroid_bounds,
         const BucketInfo& bucket, uint32_t elem_count);
-
-    static bool fast_box_hit_p(const Box& bounds, const Ray& ray,
-        const Vector& inv_dir, bool dir_is_neg[3]);
   };
 }

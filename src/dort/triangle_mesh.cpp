@@ -1,7 +1,7 @@
 #include "dort/bsdf.hpp"
+#include "dort/material.hpp"
 #include "dort/stats.hpp"
 #include "dort/triangle_mesh.hpp"
-#include "dort/material.hpp"
 
 namespace dort {
   bool TriangleShape::hit(const Ray& ray, float& out_t_hit,

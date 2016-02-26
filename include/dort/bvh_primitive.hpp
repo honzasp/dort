@@ -6,8 +6,10 @@ namespace dort {
   class BvhPrimitive final: public Primitive {
     struct BvhTraits {
       using Element = std::unique_ptr<Primitive>;
-      static Box get_bounds(const Element& elem) {
-        return elem->bounds();
+      struct Arg {};
+
+      static Box get_bounds(Arg, const std::unique_ptr<Primitive>& prim) {
+        return prim->bounds();
       }
     };
 

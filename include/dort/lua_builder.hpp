@@ -9,7 +9,6 @@ namespace dort {
   constexpr const char SCENE_TNAME[] = "dort.Scene";
   constexpr const char SAMPLER_TNAME[] = "dort.Sampler";
   constexpr const char PRIMITIVE_TNAME[] = "dort.Primitive";
-  constexpr const char PLY_MESH_TNAME[] = "dort.PlyMesh";
   constexpr const char BUILDER_TNAME[] = "dort.Builder";
   constexpr const char BUILDER_REG_KEY[] = "dort.current_builder";
 
@@ -45,8 +44,8 @@ namespace dort {
   int lua_build_add_shape(lua_State* l);
   int lua_build_add_primitive(lua_State* l);
   int lua_build_add_light(lua_State* l);
-  int lua_build_add_ply_mesh(lua_State* l);
   int lua_build_add_read_ply_mesh(lua_State* l);
+  int lua_build_add_read_ply_mesh_as_bvh(lua_State* l);
 
   int lua_scene_render(lua_State* l);
   int lua_scene_eq(lua_State* l);
@@ -76,8 +75,4 @@ namespace dort {
   std::shared_ptr<Primitive> lua_check_primitive(lua_State* l, int idx);
   bool lua_test_primitive(lua_State* l, int idx);
   void lua_push_primitive(lua_State* l, std::shared_ptr<Primitive> prim);
-
-  std::shared_ptr<PlyMesh> lua_check_ply_mesh(lua_State* l, int idx);
-  bool lua_test_ply_mesh(lua_State* l, int idx);
-  void lua_push_ply_mesh(lua_State* l, std::shared_ptr<PlyMesh> ply);
 }

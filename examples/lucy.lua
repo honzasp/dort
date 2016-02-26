@@ -9,7 +9,7 @@ local scene = define_scene(function()
       reflect = rgb(1, 1, 1),
     })
     transform(rotate_x(-pi / 2))
-    add_read_ply_mesh("data/lucy.ply")
+    add_read_ply_mesh_as_bvh("data/lucy.ply")
   end)
 
   local look = point(700, 200, 250)

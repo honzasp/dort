@@ -76,55 +76,12 @@ namespace dort {
     return true;
   }
 
-  bool read_ply(FILE* file, PlyMesh& out_mesh) {
-    uint32_t vertex_offset = out_mesh.points.size();
-    return read_ply_callbacks(file,
-        [&](uint32_t point_count, uint32_t face_count) {
-          out_mesh.points.reserve(out_mesh.points.size() + point_count);
-          out_mesh.vertices.reserve(out_mesh.vertices.size() + face_count * 3);
-        },
-        [&](Point pt) {
-          out_mesh.points.push_back(pt);
-        },
-        [&](uint32_t idx_1, uint32_t idx_2, uint32_t idx_3) {
-          out_mesh.vertices.push_back(vertex_offset + idx_1);
-          out_mesh.vertices.push_back(vertex_offset + idx_2);
-          out_mesh.vertices.push_back(vertex_offset + idx_3);
-        });
-  }
-
-  std::shared_ptr<TriangleMesh> ply_to_triangle_mesh(
-      const PlyMesh& ply_mesh,
-      std::shared_ptr<Material> material,
-      std::shared_ptr<AreaLight> area_light,
-      const Transform& mesh_to_frame,
-      std::vector<std::unique_ptr<Primitive>>& out_prims)
-  {
-    auto triangle_mesh = std::make_shared<TriangleMesh>();
-    triangle_mesh->material = material;
-    triangle_mesh->area_light = area_light;
-    triangle_mesh->vertices = ply_mesh.vertices;
-
-    triangle_mesh->points.reserve(ply_mesh.points.size());
-    for(const Point& point: ply_mesh.points) {
-      triangle_mesh->points.push_back(mesh_to_frame.apply(point));
-    }
-
-    out_prims.reserve(out_prims.size() + ply_mesh.vertices.size() / 3);
-    for(uint32_t i = 0; i * 3 < ply_mesh.vertices.size(); ++i) {
-      out_prims.push_back(std::make_unique<TrianglePrimitive>(
-            triangle_mesh.get(), i * 3));
-    }
-
-    return triangle_mesh;
-  }
-
   std::shared_ptr<TriangleMesh> read_ply_to_triangle_mesh(
       FILE* file,
       std::shared_ptr<Material> material,
       std::shared_ptr<AreaLight> area_light,
       const Transform& mesh_to_frame,
-      std::vector<std::unique_ptr<Primitive>>& out_prims)
+      std::function<void(const TriangleMesh*, uint32_t index)> triangle_callback)
   {
     auto mesh = std::make_shared<TriangleMesh>();
     mesh->material = material;
@@ -133,7 +90,7 @@ namespace dort {
     bool success = read_ply_callbacks(file,
         [&](uint32_t point_count, uint32_t face_count) {
           mesh->points.reserve(point_count);
-          mesh->vertices.reserve(face_count);
+          mesh->vertices.reserve(face_count * 3);
         },
         [&](Point pt) {
           mesh->points.push_back(mesh_to_frame.apply(pt));
@@ -142,8 +99,7 @@ namespace dort {
           mesh->vertices.push_back(idx_1);
           mesh->vertices.push_back(idx_2);
           mesh->vertices.push_back(idx_3);
-          out_prims.push_back(std::make_unique<TrianglePrimitive>(
-              mesh.get(), mesh->vertices.size() - 3));
+          triangle_callback(mesh.get(), mesh->vertices.size() - 3);
         });
     mesh->vertices.shrink_to_fit();
 

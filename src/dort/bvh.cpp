@@ -3,17 +3,18 @@
 #include "dort/bvh_primitive.hpp"
 #include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
-
-#include "dort/triangle_mesh.hpp"
+#include "dort/triangle_bvh_primitive.hpp"
 
 namespace dort {
   template<class R>
-  Bvh<R>::Bvh(std::vector<Element> elems, const BvhOpts& opts, ThreadPool& pool) {
+  Bvh<R>::Bvh(std::vector<Element> elems, TraitsArg arg,
+      const BvhOpts& opts, ThreadPool& pool) 
+  {
     StatTimer t(TIMER_BVH_BUILD);
     Box root_bounds;
     Box root_centroid_bounds;
     auto build_infos = Bvh::compute_build_infos(elems,
-        root_bounds, root_centroid_bounds, opts, pool);
+        root_bounds, root_centroid_bounds, arg, opts, pool);
 
     BuildCtx ctx {
       std::move(build_infos),
@@ -57,6 +58,7 @@ namespace dort {
   std::vector<typename Bvh<R>::ElementInfo> Bvh<R>::compute_build_infos(
       const std::vector<Element>& elems,
       Box& out_bounds, Box& out_centroid_bounds,
+      TraitsArg traits_arg,
       const BvhOpts& opts, ThreadPool& pool)
   {
     StatTimer t(TIMER_BVH_COMPUTE_BUILD_INFOS);
@@ -73,7 +75,7 @@ namespace dort {
       Box bounds, centroid_bounds;
 
       for(uint32_t i = begin; i < end; ++i) {
-        Box elem_bounds = Bvh::get_elem_bounds(elems.at(i));
+        Box elem_bounds = Bvh::get_elem_bounds(traits_arg, elems.at(i));
         assert(is_finite(elem_bounds));
 
         build_infos.at(i) = ElementInfo { i, elem_bounds };
@@ -414,48 +416,6 @@ namespace dort {
   }
 
   template<class R>
-  bool Bvh<R>::fast_box_hit_p(const Box& bounds, const Ray& ray,
-      const Vector& inv_dir, bool dir_is_neg[3])
-  {
-    stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P);
-
-    float t_min =  (bounds[  dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
-    float t_max =  (bounds[1-dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
-
-    float ty_min = (bounds[  dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
-    float ty_max = (bounds[1-dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
-    if(t_min > ty_max || ty_min > t_max) {
-      return false;
-    }
-
-    if(ty_min > t_min) {
-      t_min = ty_min;
-    }
-    if(ty_max < t_max) {
-      t_max = ty_max;
-    }
-
-    float tz_min = (bounds[  dir_is_neg[2]].v.z - ray.orig.v.z) * inv_dir.v.z;
-    float tz_max = (bounds[1-dir_is_neg[2]].v.z - ray.orig.v.z) * inv_dir.v.z;
-    if(t_min > tz_max || t_max < tz_min) {
-      return false;
-    }
-
-    if(tz_min > t_min) {
-      t_min = tz_min;
-    }
-    if(t_max > tz_max) {
-      t_max = tz_max;
-    }
-
-    bool hit = (t_min < ray.t_max) && (t_max > ray.t_min);
-    if(hit) {
-      stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P_HIT);
-    }
-    return hit;
-  }
-
-  template<class R>
   void Bvh<R>::traverse_elems(const Ray& ray,
       std::function<bool(const Element&)> callback) const 
   {
@@ -471,7 +431,9 @@ namespace dort {
       const LinearNode& linear_node = this->linear_nodes.at(todo_index);
       traversed += 1;
 
+      stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P);
       if(fast_box_hit_p(linear_node.bounds, ray, inv_dir, dir_is_neg)) {
+        stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P_HIT);
         if(linear_node.elem_count_or_zero == 0) {
           uint32_t left_child = linear_node.elem_offset_or_left_child;
           uint32_t right_child = left_child + 1;
@@ -515,4 +477,5 @@ namespace dort {
   }
 
   template class Bvh<BvhPrimitive::BvhTraits>;
+  template class Bvh<TriangleBvhPrimitive::BvhTraits>;
 }

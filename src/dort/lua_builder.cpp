@@ -19,6 +19,8 @@
 #include "dort/scene.hpp"
 #include "dort/stratified_sampler.hpp"
 #include "dort/thread_pool.hpp"
+#include "dort/triangle_bvh_primitive.hpp"
+#include "dort/triangle_mesh.hpp"
 
 namespace dort {
   int lua_open_builder(lua_State* l) {
@@ -39,11 +41,6 @@ namespace dort {
       {0, 0},
     };
 
-    const luaL_Reg ply_mesh_methods[] = {
-      {"__gc", lua_gc_shared_obj<PlyMesh, PLY_MESH_TNAME>},
-      {0, 0},
-    };
-
     const luaL_Reg builder_methods[] = {
       {"__gc", lua_gc_managed_obj<Builder, BUILDER_TNAME>},
       {0, 0},
@@ -52,7 +49,6 @@ namespace dort {
     lua_register_type(l, SCENE_TNAME, scene_methods);
     lua_register_type(l, SAMPLER_TNAME, sampler_methods);
     lua_register_type(l, PRIMITIVE_TNAME, primitive_methods);
-    lua_register_type(l, PLY_MESH_TNAME, ply_mesh_methods);
     lua_register_type(l, BUILDER_TNAME, builder_methods);
 
     lua_register(l, "define_scene", lua_build_define_scene);
@@ -65,13 +61,12 @@ namespace dort {
     lua_register(l, "add_shape", lua_build_add_shape);
     lua_register(l, "add_primitive", lua_build_add_primitive);
     lua_register(l, "add_light", lua_build_add_light);
-    lua_register(l, "add_ply_mesh", lua_build_add_ply_mesh);
     lua_register(l, "add_read_ply_mesh", lua_build_add_read_ply_mesh);
+    lua_register(l, "add_read_ply_mesh_as_bvh", lua_build_add_read_ply_mesh_as_bvh);
 
     lua_register(l, "render", lua_scene_render);
     lua_register(l, "random_sampler", lua_sampler_make_random);
     lua_register(l, "stratified_sampler", lua_sampler_make_stratified);
-    lua_register(l, "read_ply_mesh", lua_ply_mesh_read);
 
     return 0;
   }
@@ -239,22 +234,6 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_ply_mesh(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto ply_mesh = lua_check_ply_mesh(l, 1);
-    auto material = builder.state.material;
-    auto transform = builder.state.local_to_frame;
-    if(!material) {
-      luaL_error(l, "no material is set");
-      return 0;
-    }
-
-    auto triangle_mesh = ply_to_triangle_mesh(*ply_mesh,
-        material, nullptr, transform, builder.frame.prims);
-    builder.triangle_meshes.push_back(std::move(triangle_mesh));
-    return 0;
-  }
-
   int lua_build_add_read_ply_mesh(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     FILE* file = std::fopen(file_name, "r");
@@ -271,13 +250,50 @@ namespace dort {
     }
 
     auto triangle_mesh = read_ply_to_triangle_mesh(file,
-        material, nullptr, transform, builder.frame.prims);
+      material, nullptr, transform,
+      [&](const TriangleMesh* mesh, uint32_t index) {
+        builder.frame.prims.push_back(std::make_unique<TrianglePrimitive>(mesh, index));
+      });
     std::fclose(file);
 
     if(!triangle_mesh) {
       return luaL_error(l, "Could not read ply file: %s", file_name);
     }
 
+    builder.triangle_meshes.push_back(std::move(triangle_mesh));
+    return 0;
+  }
+
+  int lua_build_add_read_ply_mesh_as_bvh(lua_State* l) {
+    const char* file_name = luaL_checkstring(l, 1);
+    FILE* file = std::fopen(file_name, "r");
+    if(!file) {
+      return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
+    }
+
+    Builder& builder = lua_get_current_builder(l);
+    auto material = builder.state.material;
+    auto transform = builder.state.local_to_frame;
+    if(!material) {
+      luaL_error(l, "no material is set");
+      return 0;
+    }
+
+    std::vector<uint32_t> indices;
+    auto triangle_mesh = read_ply_to_triangle_mesh(file,
+      material, nullptr, transform,
+      [&](const TriangleMesh*, uint32_t index) {
+        indices.push_back(index);
+      });
+    std::fclose(file);
+
+    if(!triangle_mesh) {
+      return luaL_error(l, "Could not read ply file: %s", file_name);
+    }
+
+    builder.frame.prims.push_back(std::make_unique<TriangleBvhPrimitive>(
+        triangle_mesh.get(), std::move(indices), builder.state.bvh_opts,
+        *lua_get_ctx(l)->pool));
     builder.triangle_meshes.push_back(std::move(triangle_mesh));
     return 0;
   }
@@ -351,29 +367,17 @@ namespace dort {
     return 1;
   }
 
-  int lua_ply_mesh_read(lua_State* l) {
-    const char* file_name = luaL_checkstring(l, 1);
-    FILE* file = std::fopen(file_name, "r");
-    if(!file) {
-      return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
-    }
-
-    auto ply_mesh = std::make_shared<PlyMesh>();
-    bool success = read_ply(file, *ply_mesh);
-    std::fclose(file);
-
-    if(!success) {
-      return luaL_error(l, "Could not read ply file: %s", file_name);
-    }
-    lua_push_ply_mesh(l, ply_mesh);
-    return 1;
-  }
-
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame)
   {
-    return std::make_unique<BvhPrimitive>(std::move(frame.prims),
-        state.bvh_opts, *ctx.pool);
+    if(frame.prims.size() == 1) {
+      return std::move(frame.prims.at(0));
+    } else if(frame.prims.size() <= state.bvh_opts.leaf_size) {
+      return std::make_unique<ListPrimitive>(std::move(frame.prims));
+    } else {
+      return std::make_unique<BvhPrimitive>(std::move(frame.prims),
+          state.bvh_opts, *ctx.pool);
+    }
   }
 
   Builder& lua_get_current_builder(lua_State* l) {
@@ -428,15 +432,5 @@ namespace dort {
   }
   void lua_push_primitive(lua_State* l, std::shared_ptr<Primitive> prim) {
     lua_push_shared_obj<Primitive, PRIMITIVE_TNAME>(l, prim);
-  }
-
-  std::shared_ptr<PlyMesh> lua_check_ply_mesh(lua_State* l, int idx) {
-    return lua_check_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, idx);
-  }
-  bool lua_test_ply_mesh(lua_State* l, int idx) {
-    return lua_test_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, idx);
-  }
-  void lua_push_ply_mesh(lua_State* l, std::shared_ptr<PlyMesh> ply) {
-    lua_push_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, ply);
   }
 }
