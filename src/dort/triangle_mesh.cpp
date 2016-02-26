@@ -4,12 +4,21 @@
 #include "dort/material.hpp"
 
 namespace dort {
+  Triangle::Triangle(const TriangleMesh* mesh, uint32_t index) {
+    this->p[0] = mesh->points.at(mesh->vertices.at(index));
+    this->p[1] = mesh->points.at(mesh->vertices.at(index + 1));
+    this->p[2] = mesh->points.at(mesh->vertices.at(index + 2));
+    this->uv[0] = Vec2(0.f, 0.f);
+    this->uv[1] = Vec2(1.f, 0.f);
+    this->uv[2] = Vec2(0.f, 1.f);
+  }
+
   bool Triangle::hit(const Ray& ray, float& out_t_hit,
       float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
     stat_count(COUNTER_TRIANGLE_HIT);
-    Point p[3];
-    this->get_points(p);
+    const auto& p = this->p;
+    const auto& uv = this->uv;
 
     Vector e1 = p[1] - p[0];
     Vector e2 = p[2] - p[0];
@@ -39,8 +48,6 @@ namespace dort {
 
     stat_count(COUNTER_TRIANGLE_HIT_HIT);
 
-    float uv[3][2];
-    this->get_uvs(uv);
     float du1 = uv[1][0] - uv[0][0];
     float du2 = uv[2][0] - uv[0][0];
     float dv1 = uv[1][1] - uv[0][1];
@@ -69,8 +76,7 @@ namespace dort {
 
   bool Triangle::hit_p(const Ray& ray) const {
     stat_count(COUNTER_TRIANGLE_HIT_P);
-    Point p[3];
-    this->get_points(p);
+    const auto& p = this->p;
 
     Vector e1 = p[1] - p[0];
     Vector e2 = p[2] - p[0];
@@ -103,29 +109,22 @@ namespace dort {
   }
 
   Box Triangle::bounds() const {
-    Point p[3];
-    this->get_points(p);
-
     Box bound;
-    bound = union_box(bound, p[0]);
-    bound = union_box(bound, p[1]);
-    bound = union_box(bound, p[2]);
+    bound = union_box(bound, this->p[0]);
+    bound = union_box(bound, this->p[1]);
+    bound = union_box(bound, this->p[2]);
     return bound;
   }
 
   float Triangle::area() const {
-    Point p[3];
-    this->get_points(p);
-    Vector e1 = p[1] - p[0];
-    Vector e2 = p[2] - p[0];
+    Vector e1 = this->p[1] - this->p[0];
+    Vector e2 = this->p[2] - this->p[0];
     return 0.5f * length(cross(e1, e2));
   }
 
   Point Triangle::sample_point(float u1, float u2, Normal& out_n) const {
-    Point p[3];
-    this->get_points(p);
-    Vector e1 = p[1] - p[0];
-    Vector e2 = p[2] - p[0];
+    Vector e1 = this->p[1] - this->p[0];
+    Vector e2 = this->p[2] - this->p[0];
 
     float s = sqrt(u1);
     float b1 = 1.f - s;
@@ -139,52 +138,39 @@ namespace dort {
     return 1.f / this->area();
   }
 
-  void Triangle::get_points(Point p[3]) const {
-    auto& pts = this->mesh->points;
-    auto& verts = this->mesh->vertices;
-    p[0] = pts.at(verts.at(this->index));
-    p[1] = pts.at(verts.at(this->index + 1));
-    p[2] = pts.at(verts.at(this->index + 2));
-  }
-
-  void Triangle::get_uvs(float uv[3][2]) const {
-    uv[0][0] = 0.f;
-    uv[0][1] = 0.f;
-    uv[1][0] = 1.f;
-    uv[1][1] = 0.f;
-    uv[2][0] = 0.f;
-    uv[2][1] = 1.f;
-  }
-
   bool TriangleShape::hit(const Ray& ray, float& out_t_hit,
       float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
-    return this->triangle.hit(ray, out_t_hit, out_ray_epsilon, out_diff_geom);
+    return this->get_triangle().hit(ray, out_t_hit, out_ray_epsilon, out_diff_geom);
   }
 
   bool TriangleShape::hit_p(const Ray& ray) const {
-    return this->triangle.hit_p(ray);
+    return this->get_triangle().hit_p(ray);
   }
 
   Box TriangleShape::bounds() const {
-    return this->triangle.bounds();
+    return this->get_triangle().bounds();
   }
 
   float TriangleShape::area() const {
-    return this->triangle.area();
+    return this->get_triangle().area();
   }
 
   Point TriangleShape::sample_point(float u1, float u2, Normal& out_n) const {
-    return this->triangle.sample_point(u1, u2, out_n);
+    return this->get_triangle().sample_point(u1, u2, out_n);
   }
 
   float TriangleShape::point_pdf(const Point& pt) const {
-    return this->triangle.point_pdf(pt);
+    return this->get_triangle().point_pdf(pt);
+  }
+
+  Triangle TriangleShape::get_triangle() const {
+    return Triangle(this->mesh, this->index);
   }
 
   bool TrianglePrimitive::intersect(Ray& ray, Intersection& out_isect) const {
     float t_hit;
-    if(!this->triangle.hit(ray, t_hit, out_isect.ray_epsilon,
+    if(!this->get_triangle().hit(ray, t_hit, out_isect.ray_epsilon,
           out_isect.frame_diff_geom)) {
       return false;
     }
@@ -195,20 +181,24 @@ namespace dort {
   }
 
   bool TrianglePrimitive::intersect_p(const Ray& ray) const {
-    return this->triangle.hit_p(ray);
+    return this->get_triangle().hit_p(ray);
   }
 
   Box TrianglePrimitive::bounds() const {
-    return this->triangle.bounds();
+    return this->get_triangle().bounds();
   }
 
   std::unique_ptr<Bsdf> TrianglePrimitive::get_bsdf(
       const DiffGeom& frame_diff_geom) const 
   {
-    return this->triangle.mesh->material->get_bsdf(frame_diff_geom);
+    return this->mesh->material->get_bsdf(frame_diff_geom);
   }
 
   const AreaLight* TrianglePrimitive::get_area_light(const DiffGeom&) const {
-    return this->triangle.mesh->area_light.get();
+    return this->mesh->area_light.get();
+  }
+
+  Triangle TrianglePrimitive::get_triangle() const {
+    return Triangle(this->mesh, this->index);
   }
 }

@@ -113,7 +113,7 @@ namespace dort {
     out_prims.reserve(out_prims.size() + ply_mesh.vertices.size() / 3);
     for(uint32_t i = 0; i * 3 < ply_mesh.vertices.size(); ++i) {
       out_prims.push_back(std::make_unique<TrianglePrimitive>(
-            Triangle(triangle_mesh.get(), i * 3)));
+            triangle_mesh.get(), i * 3));
     }
 
     return triangle_mesh;
@@ -143,7 +143,7 @@ namespace dort {
           mesh->vertices.push_back(idx_2);
           mesh->vertices.push_back(idx_3);
           out_prims.push_back(std::make_unique<TrianglePrimitive>(
-              Triangle(mesh.get(), mesh->vertices.size() - 3)));
+              mesh.get(), mesh->vertices.size() - 3));
         });
     mesh->vertices.shrink_to_fit();
 

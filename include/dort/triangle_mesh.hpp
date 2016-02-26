@@ -3,6 +3,7 @@
 #include "dort/geometry.hpp"
 #include "dort/primitive.hpp"
 #include "dort/shape.hpp"
+#include "dort/vec_2.hpp"
 
 namespace dort {
   struct TriangleMesh {
@@ -13,11 +14,10 @@ namespace dort {
   };
 
   struct Triangle final {
-    const TriangleMesh* mesh;
-    uint32_t index;
+    Point p[3];
+    Vec2 uv[2];
 
-    Triangle(const TriangleMesh* mesh, uint32_t index):
-      mesh(mesh), index(index) { }
+    Triangle(const TriangleMesh* mesh, uint32_t index);
 
     bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const;
@@ -27,16 +27,14 @@ namespace dort {
     float area() const;
     Point sample_point(float u1, float u2, Normal& out_n) const;
     float point_pdf(const Point& pt) const;
-
-    void get_points(Point p[3]) const;
-    void get_uvs(float uv[3][2]) const;
   };
 
   class TriangleShape final: public Shape {
-    Triangle triangle;
+    const TriangleMesh* mesh;
+    uint32_t index;
   public:
-    TriangleShape(const Triangle& triangle):
-      triangle(triangle) { }
+    TriangleShape(const TriangleMesh* mesh, uint32_t index):
+      mesh(mesh), index(index) { }
     virtual bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const override final;
     virtual bool hit_p(const Ray& ray) const override final;
@@ -45,13 +43,16 @@ namespace dort {
     virtual float area() const override final;
     virtual Point sample_point(float u1, float u2, Normal& out_n) const override final;
     virtual float point_pdf(const Point& pt) const override final;
+  private:
+    Triangle get_triangle() const;
   };
 
   class TrianglePrimitive final: public GeometricPrimitive {
-    Triangle triangle;
+    const TriangleMesh* mesh;
+    uint32_t index;
   public:
-    TrianglePrimitive(const Triangle& triangle):
-      triangle(triangle) { }
+    TrianglePrimitive(const TriangleMesh* mesh, uint32_t index):
+      mesh(mesh), index(index) { }
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const override final;
     virtual Box bounds() const override final;
@@ -59,5 +60,7 @@ namespace dort {
         const DiffGeom& frame_diff_geom) const override final;
     virtual const AreaLight* get_area_light(
         const DiffGeom& frame_diff_geom) const override final;
+  private:
+    Triangle get_triangle() const;
   };
 }
