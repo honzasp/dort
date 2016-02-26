@@ -2,7 +2,7 @@ local quality = false
 
 local scene = define_scene(function()
   option("bvh split method", "sah")
-  option("bvh max leaf size", 16)
+  option("bvh leaf size", 12)
 
   block(function() 
     material(matte_material {

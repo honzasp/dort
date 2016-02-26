@@ -20,8 +20,7 @@ namespace dort {
   struct BuilderState {
     Transform local_to_frame;
     std::shared_ptr<Material> material;
-    BvhSplitMethod bvh_split_method = BvhSplitMethod::Middle;
-    uint32_t bvh_max_leaf_size = 6;
+    BvhOpts bvh_opts;
   };
 
   struct Builder {

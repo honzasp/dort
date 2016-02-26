@@ -188,14 +188,16 @@ namespace dort {
     if(option == "bvh split method") {
       std::string method = luaL_checkstring(l, 2);
       if(method == "sah") {
-        builder.state.bvh_split_method = BvhSplitMethod::Sah;
+        builder.state.bvh_opts.split_method = BvhSplitMethod::Sah;
       } else if(method == "middle") {
-        builder.state.bvh_split_method = BvhSplitMethod::Middle;
+        builder.state.bvh_opts.split_method = BvhSplitMethod::Middle;
       } else {
         luaL_error(l, "unknown bvh split method: %s", method.c_str());
       }
+    } else if(option == "bvh leaf size") {
+      builder.state.bvh_opts.leaf_size = luaL_checkinteger(l, 2);
     } else if(option == "bvh max leaf size") {
-      builder.state.bvh_max_leaf_size = luaL_checkinteger(l, 2);
+      builder.state.bvh_opts.max_leaf_size = luaL_checkinteger(l, 2);
     } else {
       luaL_error(l, "unknown option: %s", option.c_str());
     }
@@ -371,8 +373,7 @@ namespace dort {
       const BuilderState& state, BuilderFrame frame)
   {
     return std::make_unique<BvhPrimitive>(std::move(frame.prims),
-        state.bvh_max_leaf_size, state.bvh_split_method,
-        *ctx.pool);
+        state.bvh_opts, *ctx.pool);
   }
 
   Builder& lua_get_current_builder(lua_State* l) {

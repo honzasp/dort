@@ -1,3 +1,4 @@
+#include <functional>
 #include <memory>
 #include <cstdint>
 #include <random>
@@ -43,6 +44,7 @@ int main() {
   std::vector<std::shared_ptr<Base>> objs_shared;
   std::vector<std::unique_ptr<Base>> objs_unique;
   std::vector<int32_t(*)(int32_t, int32_t)> funs;
+  std::vector<std::function<int32_t(int32_t, int32_t)>> std_funs;
 
   {
     std::mt19937 rng(42);
@@ -54,32 +56,37 @@ int main() {
           objs_shared.push_back(std::make_shared<ChildPlus>());
           objs_unique.push_back(std::unique_ptr<Base>(new ChildPlus));
           funs.push_back(free_plus);
+          std_funs.push_back([&](uint32_t a, uint32_t b) { return a + b; });
           break;
         case 1:
           objs_raw.push_back(new ChildMinus);
           objs_shared.push_back(std::make_shared<ChildMinus>());
           objs_unique.push_back(std::unique_ptr<Base>(new ChildMinus));
           funs.push_back(free_minus);
+          std_funs.push_back([&](uint32_t a, uint32_t b) { return a - b; });
           break;
         case 2:
           objs_raw.push_back(new ChildAnd);
           objs_shared.push_back(std::make_shared<ChildAnd>());
           objs_unique.push_back(std::unique_ptr<Base>(new ChildAnd));
           funs.push_back(free_and);
+          std_funs.push_back([&](uint32_t a, uint32_t b) { return a & b; });
           break;
         default:
           objs_raw.push_back(new ChildXor);
           objs_shared.push_back(std::make_shared<ChildXor>());
           objs_unique.push_back(std::unique_ptr<Base>(new ChildXor));
           funs.push_back(free_xor);
+          std_funs.push_back([&](uint32_t a, uint32_t b) { return a ^ b; });
           break;
       }
     }
   }
 
-  benchmark_fun("raw ptr   ", [&](uint32_t i) { return objs_raw[i]->fun(10, 20); }, length);
-  benchmark_fun("shared ptr", [&](uint32_t i) { return objs_shared[i]->fun(10, 20); }, length);
-  benchmark_fun("unique ptr", [&](uint32_t i) { return objs_unique[i]->fun(10, 20); }, length);
-  benchmark_fun("fun ptr   ", [&](uint32_t i) { return funs[i](10, 20); }, length);
+  benchmark_fun("raw ptr      ", [&](uint32_t i) { return objs_raw[i]->fun(10, 20); }, length);
+  benchmark_fun("shared ptr   ", [&](uint32_t i) { return objs_shared[i]->fun(10, 20); }, length);
+  benchmark_fun("unique ptr   ", [&](uint32_t i) { return objs_unique[i]->fun(10, 20); }, length);
+  benchmark_fun("fun ptr      ", [&](uint32_t i) { return funs[i](10, 20); }, length);
+  benchmark_fun("std::function", [&](uint32_t i) { return std_funs[i](10, 20); }, length);
   return 0;
 }

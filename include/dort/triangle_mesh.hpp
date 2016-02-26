@@ -3,7 +3,7 @@
 #include "dort/geometry.hpp"
 #include "dort/primitive.hpp"
 #include "dort/shape.hpp"
-#include "dort/vec_2.hpp"
+#include "dort/triangle.hpp"
 
 namespace dort {
   struct TriangleMesh {
@@ -11,22 +11,6 @@ namespace dort {
     std::vector<uint32_t> vertices;
     std::shared_ptr<Material> material;
     std::shared_ptr<AreaLight> area_light;
-  };
-
-  struct Triangle final {
-    Point p[3];
-    Vec2 uv[2];
-
-    Triangle(const TriangleMesh* mesh, uint32_t index);
-
-    bool hit(const Ray& ray, float& out_t_hit,
-        float& out_ray_epsilon, DiffGeom& out_diff_geom) const;
-    bool hit_p(const Ray& ray) const;
-    Box bounds() const;
-
-    float area() const;
-    Point sample_point(float u1, float u2, Normal& out_n) const;
-    float point_pdf(const Point& pt) const;
   };
 
   class TriangleShape final: public Shape {
