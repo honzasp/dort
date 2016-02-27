@@ -9,10 +9,6 @@ namespace dort {
       std::function<void(Point pt)> point_cb,
       std::function<void(uint32_t idx_1, uint32_t idx_2, uint32_t idx_3)> face_cb);
 
-  std::shared_ptr<TriangleMesh> read_ply_to_triangle_mesh(
-      FILE* file,
-      std::shared_ptr<Material> material,
-      std::shared_ptr<AreaLight> area_light,
-      const Transform& mesh_to_frame,
-      std::function<void(const TriangleMesh*, uint32_t index)> triangle_callback);
+  bool read_ply_to_mesh(FILE* file, const Transform& mesh_to_frame, Mesh& out_mesh,
+      std::function<void(uint32_t index)> triangle_callback);
 }

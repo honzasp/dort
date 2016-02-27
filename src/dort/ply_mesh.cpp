@@ -1,8 +1,9 @@
 #include <cstdio>
 #include <rply.h>
 #include <rplyfile.h>
+#include "dort/mesh.hpp"
 #include "dort/ply_mesh.hpp"
-#include "dort/triangle_mesh.hpp"
+#include "dort/transform.hpp"
 
 namespace dort {
   bool read_ply_callbacks(FILE* file, 
@@ -76,37 +77,27 @@ namespace dort {
     return true;
   }
 
-  std::shared_ptr<TriangleMesh> read_ply_to_triangle_mesh(
-      FILE* file,
-      std::shared_ptr<Material> material,
-      std::shared_ptr<AreaLight> area_light,
-      const Transform& mesh_to_frame,
-      std::function<void(const TriangleMesh*, uint32_t index)> triangle_callback)
+  bool read_ply_to_mesh(
+      FILE* file, const Transform& mesh_to_frame, Mesh& out_mesh,
+      std::function<void(uint32_t index)> triangle_callback)
   {
-    auto mesh = std::make_shared<TriangleMesh>();
-    mesh->material = material;
-    mesh->area_light = area_light;
-
-    bool success = read_ply_callbacks(file,
+    bool ok = read_ply_callbacks(file,
         [&](uint32_t point_count, uint32_t face_count) {
-          mesh->points.reserve(point_count);
-          mesh->vertices.reserve(face_count * 3);
+          out_mesh.points.reserve(point_count);
+          out_mesh.vertices.reserve(face_count * 3);
         },
         [&](Point pt) {
-          mesh->points.push_back(mesh_to_frame.apply(pt));
+          out_mesh.points.push_back(mesh_to_frame.apply(pt));
         },
         [&](uint32_t idx_1, uint32_t idx_2, uint32_t idx_3) {
-          mesh->vertices.push_back(idx_1);
-          mesh->vertices.push_back(idx_2);
-          mesh->vertices.push_back(idx_3);
-          triangle_callback(mesh.get(), mesh->vertices.size() - 3);
+          out_mesh.vertices.push_back(idx_1);
+          out_mesh.vertices.push_back(idx_2);
+          out_mesh.vertices.push_back(idx_3);
+          triangle_callback(out_mesh.vertices.size() - 3);
         });
-    mesh->vertices.shrink_to_fit();
+    out_mesh.points.shrink_to_fit();
+    out_mesh.vertices.shrink_to_fit();
 
-    if(success) {
-      return mesh;
-    } else {
-      return nullptr;
-    }
+    return ok;
   }
 }

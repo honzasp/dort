@@ -13,14 +13,14 @@
 #include "dort/lua_material.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
+#include "dort/mesh_bvh_primitive.hpp"
+#include "dort/mesh_triangle_primitive.hpp"
 #include "dort/ply_mesh.hpp"
 #include "dort/random_sampler.hpp"
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
 #include "dort/stratified_sampler.hpp"
 #include "dort/thread_pool.hpp"
-#include "dort/triangle_bvh_primitive.hpp"
-#include "dort/triangle_mesh.hpp"
 
 namespace dort {
   int lua_open_builder(lua_State* l) {
@@ -95,8 +95,13 @@ namespace dort {
     scene->primitive = lua_make_aggregate(*lua_get_ctx(l),
         builder.state, std::move(builder.frame));
     scene->lights = std::move(builder.lights);
-    scene->triangle_meshes = std::move(builder.triangle_meshes);
     scene->camera = std::move(builder.camera);
+
+    std::move(builder.meshes.begin(), builder.meshes.end(),
+        std::back_inserter(scene->meshes));
+    std::move(builder.prim_meshes.begin(), builder.prim_meshes.end(),
+        std::back_inserter(scene->prim_meshes));
+
     lua_push_scene(l, std::move(scene));
     return 1;
   }
@@ -249,18 +254,20 @@ namespace dort {
       return 0;
     }
 
-    auto triangle_mesh = read_ply_to_triangle_mesh(file,
-      material, nullptr, transform,
-      [&](const TriangleMesh* mesh, uint32_t index) {
-        builder.frame.prims.push_back(std::make_unique<TrianglePrimitive>(mesh, index));
+    auto prim_mesh = std::make_shared<PrimitiveMesh>();
+    prim_mesh->material = builder.state.material;
+    bool ok = read_ply_to_mesh(file, transform, prim_mesh->mesh,
+      [&](uint32_t index) {
+        builder.frame.prims.push_back(
+          std::make_unique<MeshTrianglePrimitive>(prim_mesh.get(), index));
       });
     std::fclose(file);
 
-    if(!triangle_mesh) {
+    if(!ok) {
       return luaL_error(l, "Could not read ply file: %s", file_name);
     }
 
-    builder.triangle_meshes.push_back(std::move(triangle_mesh));
+    builder.prim_meshes.insert(prim_mesh);
     return 0;
   }
 
@@ -280,21 +287,19 @@ namespace dort {
     }
 
     std::vector<uint32_t> indices;
-    auto triangle_mesh = read_ply_to_triangle_mesh(file,
-      material, nullptr, transform,
-      [&](const TriangleMesh*, uint32_t index) {
-        indices.push_back(index);
-      });
+    auto mesh = std::make_shared<Mesh>();
+    bool ok = read_ply_to_mesh(file, transform, *mesh,
+      [&](uint32_t index) { indices.push_back(index); });
     std::fclose(file);
 
-    if(!triangle_mesh) {
+    if(!ok) {
       return luaL_error(l, "Could not read ply file: %s", file_name);
     }
 
-    builder.frame.prims.push_back(std::make_unique<TriangleBvhPrimitive>(
-        triangle_mesh.get(), std::move(indices), builder.state.bvh_opts,
+    builder.frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
+        mesh.get(), material, std::move(indices), builder.state.bvh_opts,
         *lua_get_ctx(l)->pool));
-    builder.triangle_meshes.push_back(std::move(triangle_mesh));
+    builder.meshes.insert(std::move(mesh));
     return 0;
   }
 

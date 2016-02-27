@@ -1,9 +1,9 @@
 #include <algorithm>
 #include "dort/bvh.hpp"
 #include "dort/bvh_primitive.hpp"
+#include "dort/mesh_bvh_primitive.hpp"
 #include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
-#include "dort/triangle_bvh_primitive.hpp"
 
 namespace dort {
   template<class R>
@@ -477,5 +477,5 @@ namespace dort {
   }
 
   template class Bvh<BvhPrimitive::BvhTraits>;
-  template class Bvh<TriangleBvhPrimitive::BvhTraits>;
+  template class Bvh<MeshBvhPrimitive::BvhTraits>;
 }

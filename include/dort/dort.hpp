@@ -28,15 +28,16 @@ namespace dort {
   struct DiffGeom;
   struct Film;
   struct Intersection;
+  struct Mesh;
   struct PixelRgb8;
   struct PlyMesh;
   struct Point;
+  struct PrimitiveMesh;
   struct Ray;
   struct RgbSpectrum;
   struct Scene;
   struct ShadowTest;
   struct Tex2;
-  struct TriangleMesh;
   struct Vector;
 
   template<class T> class Texture;

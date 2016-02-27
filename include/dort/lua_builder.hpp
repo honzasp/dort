@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_set>
 #include <vector>
 #include "dort/bvh_primitive.hpp"
 #include "dort/lua.hpp"
@@ -28,7 +29,8 @@ namespace dort {
     std::vector<BuilderState> state_stack;
     BuilderState state;
     std::vector<std::shared_ptr<Light>> lights;
-    std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes;
+    std::unordered_set<std::shared_ptr<Mesh>> meshes;
+    std::unordered_set<std::shared_ptr<PrimitiveMesh>> prim_meshes;
     std::shared_ptr<Camera> camera;
   };
 
