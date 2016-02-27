@@ -255,7 +255,7 @@ namespace dort {
     }
 
     auto prim_mesh = std::make_shared<PrimitiveMesh>();
-    prim_mesh->material = builder.state.material;
+    prim_mesh->material = material;
     bool ok = read_ply_to_mesh(file, transform, prim_mesh->mesh,
       [&](uint32_t index) {
         builder.frame.prims.push_back(

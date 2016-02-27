@@ -7,7 +7,7 @@
 namespace dort {
   bool MeshTrianglePrimitive::intersect(Ray& ray, Intersection& out_isect) const {
     float t_hit;
-    TriangleUv triangle(this->prim_mesh->mesh, index);
+    TriangleUv triangle(this->prim_mesh->mesh, this->index);
     if(!triangle.hit(ray, t_hit, out_isect.ray_epsilon, out_isect.frame_diff_geom)) {
       return false;
     }
@@ -18,11 +18,11 @@ namespace dort {
   }
 
   bool MeshTrianglePrimitive::intersect_p(const Ray& ray) const {
-    return Triangle(this->prim_mesh->mesh, index).hit_p(ray);
+    return Triangle(this->prim_mesh->mesh, this->index).hit_p(ray);
   }
 
   Box MeshTrianglePrimitive::bounds() const {
-    return Triangle(this->prim_mesh->mesh, index).bounds();
+    return Triangle(this->prim_mesh->mesh, this->index).bounds();
   }
 
   std::unique_ptr<Bsdf> MeshTrianglePrimitive::get_bsdf(

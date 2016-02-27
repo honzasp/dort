@@ -36,10 +36,11 @@ namespace dort {
     auto shape = lua_param_shape(l, p, "shape");
     auto radiance = lua_param_spectrum(l, p, "radiance");
     auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
+    auto transform = lua_param_transform_opt(l, p, "transform", identity());
     lua_params_check_unused(l, p);
 
     lua_push_light(l, std::make_shared<DiffuseLight>(
-          shape, shape_to_world, radiance, num_samples));
+          shape, shape_to_world * transform, radiance, num_samples));
     return 1;
   }
 
