@@ -6,7 +6,7 @@ local scene = define_scene(function()
 
   block(function() 
     material(matte_material {
-      reflect = rgb(1, 1, 1),
+      color = rgb(1, 1, 1),
     })
     transform(rotate_x(-pi / 2))
     add_read_ply_mesh_as_bvh("data/lucy.ply")

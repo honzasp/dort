@@ -6,7 +6,8 @@ namespace dort {
     const Mesh* mesh;
     uint32_t index;
   public:
-    TriangleShape(const Mesh* mesh, uint32_t index);
+    TriangleShape(const Mesh* mesh, uint32_t index):
+      mesh(mesh), index(index) { }
 
     virtual bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const override final;

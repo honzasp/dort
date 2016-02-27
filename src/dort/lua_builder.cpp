@@ -299,7 +299,7 @@ namespace dort {
     builder.frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
         mesh.get(), material, std::move(indices), builder.state.bvh_opts,
         *lua_get_ctx(l)->pool));
-    builder.meshes.insert(std::move(mesh));
+    lua_register_mesh(l, std::move(mesh));
     return 0;
   }
 
@@ -383,6 +383,11 @@ namespace dort {
       return std::make_unique<BvhPrimitive>(std::move(frame.prims),
           state.bvh_opts, *ctx.pool);
     }
+  }
+
+  void lua_register_mesh(lua_State* l, std::shared_ptr<Mesh> mesh) {
+    Builder& builder = lua_get_current_builder(l);
+    builder.meshes.insert(mesh);
   }
 
   Builder& lua_get_current_builder(lua_State* l) {

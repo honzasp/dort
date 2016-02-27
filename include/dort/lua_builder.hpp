@@ -60,6 +60,7 @@ namespace dort {
 
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame);
+  void lua_register_mesh(lua_State* l, std::shared_ptr<Mesh> mesh);
 
   Builder& lua_get_current_builder(lua_State* l);
   void lua_set_current_builder(lua_State* l, Builder builder);

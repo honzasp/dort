@@ -20,7 +20,7 @@ namespace dort {
 
   int lua_material_make_matte(lua_State* l) {
     int p = 1;
-    auto reflect = lua_param_texture_spectrum_opt(l, p, "reflect", 
+    auto reflect = lua_param_texture_spectrum_opt(l, p, "color", 
         const_texture(Spectrum(1.f)));
     auto sigma = lua_param_texture_float_opt(l, p, "sigma",
         const_texture(0.f));
@@ -32,9 +32,9 @@ namespace dort {
 
   int lua_material_make_plastic(lua_State* l) {
     int p = 1;
-    auto diffuse = lua_param_texture_spectrum_opt(l, p, "diffuse",
+    auto diffuse = lua_param_texture_spectrum_opt(l, p, "diffuse_color",
         const_texture(Spectrum(1.f)));
-    auto reflect = lua_param_texture_spectrum_opt(l, p, "reflect",
+    auto reflect = lua_param_texture_spectrum_opt(l, p, "reflect_color",
         const_texture(Spectrum(1.f)));
     auto roughness = lua_param_texture_float_opt(l, p, "roughness",
         const_texture(1.f));
