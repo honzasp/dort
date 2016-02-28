@@ -23,7 +23,7 @@ namespace dort {
     if(area_light) {
       Spectrum emitted = area_light->emitted_radiance(
           isect.world_diff_geom.p, isect.world_diff_geom.nn, -ray.dir);
-      assert(is_finite(emitted));
+      assert(is_finite(emitted) && is_nonnegative(emitted));
       radiance += emitted;
     }
 
@@ -44,8 +44,8 @@ namespace dort {
           geom, *bsdf, BSDF_REFLECTION, depth, sampler);
       Spectrum refraction = trace_specular(*this, scene,
           geom, *bsdf, BSDF_TRANSMISSION, depth, sampler);
-      assert(is_finite(reflection));
-      assert(is_finite(refraction));
+      assert(is_finite(reflection) && is_nonnegative(reflection));
+      assert(is_finite(refraction) && is_nonnegative(reflection));
       radiance += reflection + refraction;
     }
 

@@ -53,7 +53,7 @@ namespace dort {
         exit_status = 1;
       } else {
         ctx_g.pool->stop();
-        stat_report_global(stderr);
+        //stat_report_global(stderr);
         exit_status = 0;
       }
     } catch(std::exception& exn) {

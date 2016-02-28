@@ -79,7 +79,7 @@ namespace dort {
           }
           light_contrib = bsdf_f * light_radiance * (abs_dot(wi, geom.nn) 
             * weight / light_pdf);
-          assert(is_finite(light_contrib));
+          assert(is_finite(light_contrib) && is_nonnegative(bsdf_contrib));
         }
       }
     }
@@ -114,7 +114,7 @@ namespace dort {
 
         bsdf_contrib = bsdf_f * light_radiance * (abs_dot(wi, geom.nn)
           * weight / bsdf_pdf);
-        assert(is_finite(bsdf_contrib));
+        assert(is_finite(bsdf_contrib) && is_nonnegative(bsdf_contrib));
       }
     }
 
@@ -133,10 +133,10 @@ namespace dort {
     Spectrum bsdf_f = bsdf.sample_f(geom.wo, wi, pdf,
         BxdfFlags(BSDF_SPECULAR | flags), sampled_flags,
         BsdfSample(sampler));
+    assert(is_finite(bsdf_f) && is_nonnegative(bsdf_f));
     if(!bsdf_f.is_black() && pdf > 0) {
       Ray spec_ray(geom.p, wi, geom.ray_epsilon, INFINITY);
       Spectrum radiance = renderer.get_radiance(scene, spec_ray, depth + 1, sampler);
-      assert(is_finite(bsdf_f));
       return radiance * bsdf_f * (abs_dot(wi, geom.nn) / pdf);
     } else {
       return Spectrum(0.f);

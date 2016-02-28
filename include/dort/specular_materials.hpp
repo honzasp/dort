@@ -3,9 +3,9 @@
 
 namespace dort {
   class MirrorMaterial final: public Material {
-    Spectrum reflectance;
+    std::shared_ptr<Texture<Spectrum>> reflectance;
   public:
-    MirrorMaterial(const Spectrum& reflectance):
+    MirrorMaterial(std::shared_ptr<Texture<Spectrum>> reflectance):
       reflectance(reflectance)
     { }
 
@@ -14,12 +14,13 @@ namespace dort {
   };
 
   class GlassMaterial final: public Material {
-    Spectrum reflectance;
-    Spectrum transmittance;
-    float eta;
+    std::shared_ptr<Texture<Spectrum>> reflectance;
+    std::shared_ptr<Texture<Spectrum>> transmittance;
+    std::shared_ptr<Texture<float>> eta;
   public:
-    GlassMaterial(const Spectrum& reflectance,
-        const Spectrum& transmittance, float eta):
+    GlassMaterial(std::shared_ptr<Texture<Spectrum>> reflectance,
+        std::shared_ptr<Texture<Spectrum>> transmittance,
+        std::shared_ptr<Texture<float>> eta):
       reflectance(reflectance),
       transmittance(transmittance),
       eta(eta)

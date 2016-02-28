@@ -47,13 +47,15 @@ namespace dort {
       flags = BxdfFlags(flags & ~BSDF_REFLECTION);
     }
 
-    Spectrum f;
+    Spectrum f_sum;
     for(const auto& bxdf: this->bxdfs) {
       if(bxdf->matches(flags)) {
-        f = f + bxdf->f(wo_local, wi_local);
+        Spectrum f = bxdf->f(wo_local, wi_local);
+        assert(is_finite(f) && is_nonnegative(f));
+        f_sum += f;
       }
     }
-    return f;
+    return f_sum;
   }
 
   Spectrum Bsdf::sample_f(const Vector& wo, Vector& out_wi, float& out_pdf,
@@ -78,6 +80,7 @@ namespace dort {
     Vector wi_local;
     Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf,
       sample.uv_pos.x, sample.uv_pos.y);
+    assert(is_finite(f) && is_nonnegative(f));
     out_flags = sampled_bxdf->flags;
     out_wi = this->local_to_world(wi_local);
     return f;

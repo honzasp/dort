@@ -1,3 +1,5 @@
+local quality = false
+
 function test_scene(name, make_material)
   local scene = define_scene(function()
     local white_color = rgb(0.8, 0.8, 0.8)
@@ -71,31 +73,41 @@ function test_scene(name, make_material)
     block(function()
       local eyes = {
         point(-99, 100, -100),
-        point(0, 100, 99),
-        point(99, 100, -100),
+        point( 99, 100, -100),
+        point(0, 150, 0),
         point(50, 100, -400),
+      }
+
+      local looks = {
+        point(0, 100, -100),
+        point(0, 100, -100),
+        point(0, 100, 100),
+        point(0, 100, -100),
       }
 
       local ups = {
         vector(0, 1, 0),
-        vector(0, 0, 1),
         vector(0, 1, 0),
+        vector(0, 0, 1),
         vector(0, 1, 0),
       }
 
       local radiances = {
+        rgb(1, 1, 1) * 15,
         rgb(1, 1, 1) * 25,
-        rgb(1, 1, 1) * 40,
-        rgb(1, 1, 1) * 25,
-        rgb(1, 1, 1) * 150,
+        rgb(1, 1, 1) * 20,
+        rgb(1, 1, 1) * 120,
       }
+
+      local num_samples
+      if quality then num_samples = 4 else num_samples = 1 end
 
       for i = 1, #eyes do
         add_light(diffuse_light {
           shape = disk { radius = 20 },
-          transform = look_at(eyes[i], point(0, 100, -100), ups[i]),
+          transform = look_at(eyes[i], looks[i], ups[i]),
           radiance = radiances[i],
-          num_samples = 4,
+          num_samples = num_samples,
         })
       end
     end)
@@ -109,22 +121,34 @@ function test_scene(name, make_material)
     })
   end)
 
-  write_png_image("mat_" .. name .. ".png", render(scene, {
+  local samples, res, name_prefix
+  if quality then 
+    samples = 4 
+    res = 800
+    name_prefix = "qmat_"
+  else
+    samples = 1
+    res = 600
+    name_prefix = "mat_"
+  end
+
+  write_png_image(name_prefix .. name .. ".png", render(scene, {
     sampler = stratified_sampler {
-      samples_per_x = 4,
-      samples_per_y = 4,
+      samples_per_x = samples,
+      samples_per_y = samples,
     },
     filter = mitchell_filter {
       radius = 2,
     },
-    x_res = 800,
-    y_res = 800,
+    x_res = res,
+    y_res = res,
   }))
 end
 
 local w = rgb(1, 1, 1) * 0.8
 
-test_scene("matte", function()
+--[[
+test_scene("matte_0", function()
   return matte_material { color = w }
 end)
 test_scene("matte_1", function()
@@ -133,3 +157,54 @@ end)
 test_scene("matte_0.1", function()
   return matte_material { color = w, sigma = 0.1 }
 end)
+test_scene("plastic_1.0", function()
+  return plastic_material {
+    color = rgb(0.9, 0.7, 0.5),
+    reflect_color = rgb(1, 1, 1) * 0.9,
+    eta = 1.5,
+    roughness = 1.0,
+  }
+end)
+test_scene("plastic_0.2", function()
+  return plastic_material {
+    color = rgb(0.9, 0.7, 0.5),
+    reflect_color = rgb(1, 1, 1) * 0.9,
+    eta = 1.5,
+    roughness = 0.2,
+  }
+end)
+--]]
+--[[
+test_scene("plastic_3.0", function()
+  return plastic_material {
+    color = rgb(0.9, 0.7, 0.5),
+    reflect_color = rgb(1, 1, 1) * 0.9,
+    eta = 1.5,
+    roughness = 3.0,
+  }
+end)
+test_scene("mirror", function()
+  return mirror_material { color = rgb(0.9, 0.9, 0.9) }
+end)
+test_scene("glass_1.5", function()
+  return glass_material {
+    color = rgb(1,1,1) * 0.9,
+    transmit_color = rgb(1,1,1) * 0.9,
+    eta = 1.5
+  }
+end)
+test_scene("glass_0.9", function()
+  return glass_material {
+    color = rgb(1,1,1) * 0.9,
+    transmit_color = rgb(1,1,1) * 0.9,
+    eta = 0.9
+  }
+end)
+test_scene("glass_2.5", function()
+  return glass_material {
+    color = rgb(1,1,1) * 0.9,
+    transmit_color = rgb(1,1,1) * 0.9,
+    eta = 2.5
+  }
+end)
+--]]

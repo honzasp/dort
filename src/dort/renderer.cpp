@@ -30,7 +30,7 @@ namespace dort {
     std::mutex film_mutex;
     fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
       uint32_t tile_x = job_i % layout_tiles.x;
-      uint32_t tile_y = job_i / layout_tiles.y;
+      uint32_t tile_y = job_i / layout_tiles.x;
       Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));
       Vec2 corner_1f = corner_0f + tile_size;
       Recti tile_rect(floor_vec2i(corner_0f), floor_vec2i(corner_1f));

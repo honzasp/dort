@@ -10,6 +10,8 @@ namespace dort {
 
   int lua_material_make_matte(lua_State* l);
   int lua_material_make_plastic(lua_State* l);
+  int lua_material_make_mirror(lua_State* l);
+  int lua_material_make_glass(lua_State* l);
 
   std::shared_ptr<Material> lua_check_material(lua_State* l, int idx);
   bool lua_test_material(lua_State* l, int idx);

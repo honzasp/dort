@@ -58,7 +58,7 @@ namespace dort {
 
     out_wi = Vector(-wo.v.x * eta, -wo.v.y * eta, cos_t);
     out_pdf = 1.0f;
-    float tau = 1.f - this->fresnel.reflectance(Bsdf::cos_theta(wo));
+    float tau = max(0.f, 1.f - this->fresnel.reflectance(Bsdf::cos_theta(wo)));
     return this->transmittance * tau / Bsdf::abs_cos_theta(wo);
   }
 
