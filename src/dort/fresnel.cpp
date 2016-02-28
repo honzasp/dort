@@ -23,18 +23,14 @@ namespace dort {
     return 0.5f * (square(r_para) + square(r_perp));
   }
 
-  float FresnelConductor::reflectance(float cos_i) const {
-    return fresnel_conductor(this->eta, this->k, abs(cos_i));
-  }
-
   float FresnelDielectric::reflectance(float cos_i) const {
     float eta_i, eta_t;
     if(cos_i > 0.f) {
-      eta_i = this->eta_i;
-      eta_t = this->eta_t;
+      eta_i = this->eta_i_;
+      eta_t = this->eta_t_;
     } else {
-      eta_i = this->eta_t;
-      eta_t = this->eta_i;
+      eta_i = this->eta_t_;
+      eta_t = this->eta_i_;
     }
 
     float sin_t_square = square(eta_i / eta_t) * (1.f - cos_i);

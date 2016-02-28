@@ -3,11 +3,12 @@
 #include "dort/fresnel.hpp"
 
 namespace dort {
+  template<class F>
   class SpecularBrdf final: public Bxdf {
     Spectrum reflectance;
-    std::unique_ptr<Fresnel> fresnel;
+    F fresnel;
   public:
-    SpecularBrdf(const Spectrum& reflectance, std::unique_ptr<Fresnel> fresnel):
+    SpecularBrdf(const Spectrum& reflectance, F fresnel):
       Bxdf(BxdfFlags(BSDF_REFLECTION | BSDF_SPECULAR)),
       reflectance(reflectance), fresnel(std::move(fresnel)) { }
 

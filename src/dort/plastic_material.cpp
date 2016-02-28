@@ -1,7 +1,9 @@
+#include "dort/fresnel.hpp"
 #include "dort/lambertian_brdf.hpp"
+#include "dort/microfacet_brdf.hpp"
+#include "dort/microfacet_distrib.hpp"
 #include "dort/plastic_material.hpp"
 #include "dort/texture.hpp"
-#include "dort/torrance_sparrow_brdf.hpp"
 
 namespace dort {
   std::unique_ptr<Bsdf> PlasticMaterial::get_bsdf(const DiffGeom& diff_geom) const {
@@ -15,9 +17,13 @@ namespace dort {
       bsdf->add(std::make_unique<LambertianBrdf>(diffuse));
     }
     if(!reflection.is_black()) {
-      bsdf->add(std::make_unique<TorranceSparrowBrdf>(reflection,
-            std::make_unique<BlinnMicrofacetDistribution>(1.f / roughness),
-            std::make_unique<FresnelDielectric>(eta, 1.f)));
+      float alpha_b = roughness;
+      bsdf->add(std::make_unique<MicrofacetBrdf<
+          BeckmanD, FresnelDielectric, SmithG<BeckmanApproxG1>>>(
+        reflection,
+        BeckmanD(alpha_b),
+        FresnelDielectric(eta, 1.f),
+        SmithG<BeckmanApproxG1>(BeckmanApproxG1(alpha_b))));
     }
     return bsdf;
   }

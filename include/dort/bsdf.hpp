@@ -79,6 +79,9 @@ namespace dort {
     static float cos_theta(const Vector& w) {
       return w.v.z;
     }
+    static float cos_theta_square(const Vector& w) {
+      return square(w.v.z);
+    }
     static float abs_cos_theta(const Vector& w) {
       return abs(w.v.z);
     }

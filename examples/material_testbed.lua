@@ -157,24 +157,26 @@ end)
 test_scene("matte_0.1", function()
   return matte_material { color = w, sigma = 0.1 }
 end)
+--]]
+for _, roughness in pairs({0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0}) do
+  test_scene("plastic_" .. roughness * 100, function()
+    return plastic_material {
+      color = rgb(0.9, 0.7, 0.5) * 0,
+      reflect_color = rgb(1, 1, 1) * 0.9,
+      eta = 1.5,
+      roughness = roughness,
+    }
+  end)
+end
+--[[
 test_scene("plastic_1.0", function()
   return plastic_material {
-    color = rgb(0.9, 0.7, 0.5),
+    color = rgb(0.9, 0.7, 0.5) * 0,
     reflect_color = rgb(1, 1, 1) * 0.9,
     eta = 1.5,
     roughness = 1.0,
   }
 end)
-test_scene("plastic_0.2", function()
-  return plastic_material {
-    color = rgb(0.9, 0.7, 0.5),
-    reflect_color = rgb(1, 1, 1) * 0.9,
-    eta = 1.5,
-    roughness = 0.2,
-  }
-end)
---]]
---[[
 test_scene("plastic_3.0", function()
   return plastic_material {
     color = rgb(0.9, 0.7, 0.5),

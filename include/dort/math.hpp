@@ -22,6 +22,7 @@ namespace dort {
   constexpr float INV_PI = 0.318309886183790f;
   constexpr float INV_TWO_PI = 0.159154943091895f;
   constexpr float INV_FOUR_PI = 0.079577471545947f;
+  constexpr float SQRT_PI = 1.77245385090551602f;
 
   template<class T>
   T clamp(T val, T min, T max) {
@@ -55,6 +56,7 @@ namespace dort {
   inline float asin(float y) { return std::asin(y); }
   inline float acos(float x) { return std::acos(x); }
   inline float atan(float y, float x) { return std::atan2(y, x); }
+  inline float erf(float x) { return std::erf(x); }
 
   inline bool is_finite(float a) { return std::isfinite(a); }
   template<class T> T min(T a, T b) { return (b < a) ? b : a; }
@@ -65,6 +67,10 @@ namespace dort {
   inline float mul_power_of_two(float a, int32_t exp) { return std::ldexp(a, exp); }
   inline float square(float a) { return a * a; }
   inline float cube(float a) { return a * a * a; }
+  inline float copysign(float magnitude, float sign) {
+    return std::copysign(magnitude, sign);
+  }
+  inline float sign(float x) { return copysign(1, x); }
 
   inline float sinc(float x) {
     float t = abs(x) * PI;

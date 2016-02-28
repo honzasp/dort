@@ -1,11 +1,14 @@
+#include "dort/fresnel.hpp"
 #include "dort/specular.hpp"
 
 namespace dort {
-  Spectrum SpecularBrdf::f(const Vector&, const Vector&) const {
+  template<class F>
+  Spectrum SpecularBrdf<F>::f(const Vector&, const Vector&) const {
     return Spectrum(0.f);
   }
 
-  Spectrum SpecularBrdf::sample_f(const Vector& wo, Vector& out_wi,
+  template<class F>
+  Spectrum SpecularBrdf<F>::sample_f(const Vector& wo, Vector& out_wi,
       float& out_pdf, float u1, float u2) const
   {
     (void)u1; (void)u2;
@@ -17,12 +20,17 @@ namespace dort {
 
     out_wi = Vector(-wo.v.x, -wo.v.y, wo.v.z);
     out_pdf = 1.f;
-    return this->reflectance * this->fresnel->reflectance(cos_theta) / abs(cos_theta);
+    return this->reflectance * this->fresnel.reflectance(cos_theta) / abs(cos_theta);
   }
 
-  float SpecularBrdf::f_pdf(const Vector&, const Vector&) const {
+  template<class F>
+  float SpecularBrdf<F>::f_pdf(const Vector&, const Vector&) const {
     return 0.f;
   }
+
+  template class SpecularBrdf<FresnelConductor>;
+  template class SpecularBrdf<FresnelDielectric>;
+  template class SpecularBrdf<FresnelConstant>;
 
   Spectrum SpecularBtdf::f(const Vector&, const Vector&) const {
     return Spectrum(0.f);
@@ -39,9 +47,9 @@ namespace dort {
 
     float eta;
     if(Bsdf::cos_theta(wo) > 0.f) {
-      eta = this->fresnel.eta_i / this->fresnel.eta_t;
+      eta = this->fresnel.eta_i() / this->fresnel.eta_t();
     } else {
-      eta = this->fresnel.eta_t / this->fresnel.eta_i;
+      eta = this->fresnel.eta_t() / this->fresnel.eta_i();
     }
 
     float sin_t_square = square(eta) * Bsdf::sin_theta_square(wo);
