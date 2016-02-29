@@ -1,4 +1,4 @@
-local quality = false
+local quality = true
 
 function test_scene(name, make_material)
   local scene = define_scene(function()
@@ -115,9 +115,11 @@ function test_scene(name, make_material)
     camera(perspective_camera {
       transform = look_at(
         point(0, 100, -500),
-        point(0, 100, 0),
+        point(5, 70, 0),
         vector(0, 1, 0)),
       fov = 2 * atan2(1, 4) + 0.02 * pi,
+      screen_x = 1.4,
+      screen_y = 1.4,
     })
   end)
 
@@ -140,73 +142,49 @@ function test_scene(name, make_material)
     filter = mitchell_filter {
       radius = 2,
     },
-    x_res = res,
+    x_res = res / 2,
     y_res = res,
   }))
 end
 
-local w = rgb(1, 1, 1) * 0.8
+for _, sigma in pairs({0, 1, 0.1}) do
+  test_scene("matte_" .. sigma * 100, function()
+    return matte_material { color = rgb(1,1,1) * 0.8, sigma = sigma }
+  end)
+end
 
---[[
-test_scene("matte_0", function()
-  return matte_material { color = w }
-end)
-test_scene("matte_1", function()
-  return matte_material { color = w, sigma = 1 }
-end)
-test_scene("matte_0.1", function()
-  return matte_material { color = w, sigma = 0.1 }
-end)
---]]
-for _, roughness in pairs({0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0}) do
+for _, roughness in pairs({0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8}) do
   test_scene("plastic_" .. roughness * 100, function()
     return plastic_material {
-      color = rgb(0.9, 0.7, 0.5) * 0,
+      color = rgb(0.9, 0.7, 0.5),
       reflect_color = rgb(1, 1, 1) * 0.9,
       eta = 1.5,
       roughness = roughness,
     }
   end)
 end
---[[
-test_scene("plastic_1.0", function()
-  return plastic_material {
-    color = rgb(0.9, 0.7, 0.5) * 0,
-    reflect_color = rgb(1, 1, 1) * 0.9,
-    eta = 1.5,
-    roughness = 1.0,
-  }
-end)
-test_scene("plastic_3.0", function()
-  return plastic_material {
-    color = rgb(0.9, 0.7, 0.5),
-    reflect_color = rgb(1, 1, 1) * 0.9,
-    eta = 1.5,
-    roughness = 3.0,
-  }
-end)
+
 test_scene("mirror", function()
   return mirror_material { color = rgb(0.9, 0.9, 0.9) }
 end)
-test_scene("glass_1.5", function()
-  return glass_material {
-    color = rgb(1,1,1) * 0.9,
-    transmit_color = rgb(1,1,1) * 0.9,
-    eta = 1.5
-  }
-end)
-test_scene("glass_0.9", function()
-  return glass_material {
-    color = rgb(1,1,1) * 0.9,
-    transmit_color = rgb(1,1,1) * 0.9,
-    eta = 0.9
-  }
-end)
-test_scene("glass_2.5", function()
-  return glass_material {
-    color = rgb(1,1,1) * 0.9,
-    transmit_color = rgb(1,1,1) * 0.9,
-    eta = 2.5
-  }
-end)
---]]
+
+for _, eta in pairs({0.8, 1.5, 2.0, 3.0}) do
+  test_scene("glass_" .. eta * 100, function()
+    return glass_material {
+      color = rgb(1,1,1) * 0.9,
+      transmit_color = rgb(1,1,1) * 0.9,
+      eta = eta
+    }
+  end)
+end
+
+for _, roughness in pairs({0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8}) do
+  test_scene("metal_" .. roughness*100, function()
+    return metal_material {
+      color = rgb(0.9, 0.8, 0.5),
+      eta = 1.07,
+      k = 6.7,
+      roughness = roughness,
+    }
+  end)
+end

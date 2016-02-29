@@ -41,4 +41,6 @@ namespace dort {
 
   template class MicrofacetBrdf<
     BeckmanD, FresnelDielectric, SmithG<BeckmanApproxG1>>;
+  template class MicrofacetBrdf<
+    BeckmanD, FresnelConductor, SmithG<BeckmanApproxG1>>;
 }

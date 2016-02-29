@@ -10,6 +10,7 @@ namespace dort {
 
   int lua_material_make_matte(lua_State* l);
   int lua_material_make_plastic(lua_State* l);
+  int lua_material_make_metal(lua_State* l);
   int lua_material_make_mirror(lua_State* l);
   int lua_material_make_glass(lua_State* l);
 

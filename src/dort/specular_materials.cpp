@@ -20,6 +20,8 @@ namespace dort {
 
     bsdf->add(std::make_unique<SpecularBrdf<FresnelDielectric>>(
           reflect, FresnelDielectric(1.f, eta)));
+    bsdf->add(std::make_unique<SpecularBtdf>(
+          transmit, FresnelDielectric(1.f, eta)));
     return bsdf;
   }
 }
