@@ -7,7 +7,7 @@ namespace dort {
     Spectrum intensity;
   public:
     PointLight(const Point& pt, const Spectrum& intensity):
-      pt(pt), intensity(intensity) {}
+      Light(1), pt(pt), intensity(intensity) {}
     virtual Spectrum sample_radiance(const Point& eye, float eye_epsilon,
         Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
         LightSample sample) const override final;

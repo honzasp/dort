@@ -63,7 +63,6 @@ namespace dort {
     Spectrum bsdf_contrib(0.f);
 
     {
-      // sample from light
       Vector wi;
       float light_pdf;
       ShadowTest shadow;
@@ -85,7 +84,6 @@ namespace dort {
     }
 
     if(!light.is_delta()) {
-      // sample from BSDF
       Vector wi;
       float bsdf_pdf;
       BxdfFlags sampled_flags;

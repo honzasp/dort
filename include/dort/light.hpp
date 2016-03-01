@@ -34,7 +34,7 @@ namespace dort {
   public:
     uint32_t num_samples;
 
-    Light(uint32_t num_samples = 1): num_samples(num_samples) { }
+    Light(uint32_t num_samples): num_samples(num_samples) { }
     virtual ~Light() {}
 
     virtual Spectrum sample_radiance(const Point& eye, float eye_epsilon,
