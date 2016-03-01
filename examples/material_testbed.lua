@@ -1,4 +1,5 @@
-local quality = true
+local quality = false
+local buddha_ply = read_ply_mesh('data/happy_vrip.ply')
 
 function test_scene(name, make_material)
   local scene = define_scene(function()
@@ -67,7 +68,7 @@ function test_scene(name, make_material)
       transform(translate(0, 100, 60) 
         * scale(9e2) * translate(0, -0.18, -0.1)
         * rotate_y(1.1 * pi))
-      add_read_ply_mesh("data/happy_vrip.ply")
+      add_ply_mesh(buddha_ply)
     end)
 
     block(function()

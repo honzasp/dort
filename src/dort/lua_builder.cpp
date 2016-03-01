@@ -63,6 +63,8 @@ namespace dort {
     lua_register(l, "add_light", lua_build_add_light);
     lua_register(l, "add_read_ply_mesh", lua_build_add_read_ply_mesh);
     lua_register(l, "add_read_ply_mesh_as_bvh", lua_build_add_read_ply_mesh_as_bvh);
+    lua_register(l, "add_ply_mesh", lua_build_add_ply_mesh);
+    lua_register(l, "add_ply_mesh_as_bvh", lua_build_add_ply_mesh_as_bvh);
 
     lua_register(l, "render", lua_scene_render);
     lua_register(l, "random_sampler", lua_sampler_make_random);
@@ -267,7 +269,7 @@ namespace dort {
       return luaL_error(l, "Could not read ply file: %s", file_name);
     }
 
-    builder.prim_meshes.insert(prim_mesh);
+    lua_register_prim_mesh(l, std::move(prim_mesh));
     return 0;
   }
 
@@ -303,6 +305,62 @@ namespace dort {
     return 0;
   }
 
+  int lua_build_add_ply_mesh(lua_State* l) {
+    auto ply_mesh = lua_check_ply_mesh(l, 1);
+
+    Builder& builder = lua_get_current_builder(l);
+    auto material = builder.state.material;
+    auto transform = builder.state.local_to_frame;
+    if(!material) {
+      luaL_error(l, "no material is set");
+      return 0;
+    }
+
+    auto prim_mesh = std::make_shared<PrimitiveMesh>();
+    prim_mesh->material = material;
+    prim_mesh->mesh.vertices = ply_mesh->vertices;
+    prim_mesh->mesh.points.reserve(ply_mesh->points.size());
+    for(Point& pt: ply_mesh->points) {
+      prim_mesh->mesh.points.push_back(transform.apply(pt));
+    }
+
+    for(uint32_t t = 0; t < ply_mesh->triangle_count; ++t) {
+      builder.frame.prims.push_back(
+          std::make_unique<MeshTrianglePrimitive>(prim_mesh.get(), t * 3));
+    }
+    lua_register_prim_mesh(l, std::move(prim_mesh));
+    return 0;
+  }
+
+  int lua_build_add_ply_mesh_as_bvh(lua_State* l) {
+    auto ply_mesh = lua_check_ply_mesh(l, 1);
+
+    Builder& builder = lua_get_current_builder(l);
+    auto material = builder.state.material;
+    auto transform = builder.state.local_to_frame;
+    if(!material) {
+      luaL_error(l, "no material is set");
+      return 0;
+    }
+
+    std::vector<uint32_t> indices;
+    for(uint32_t t = 0; t < ply_mesh->triangle_count; ++t) {
+      indices.push_back(t * 3);
+    }
+
+    auto mesh = std::make_shared<Mesh>();
+    mesh->vertices = ply_mesh->vertices;
+    mesh->points.reserve(ply_mesh->points.size());
+    for(Point& pt: ply_mesh->points) {
+      mesh->points.push_back(transform.apply(pt));
+    }
+
+    builder.frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
+        mesh.get(), material, std::move(indices), builder.state.bvh_opts,
+        *lua_get_ctx(l)->pool));
+    lua_register_mesh(l, std::move(mesh));
+    return 0;
+  }
 
   int lua_scene_render(lua_State* l) {
     auto scene = lua_check_scene(l, 1);
@@ -372,6 +430,7 @@ namespace dort {
     return 1;
   }
 
+
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame)
   {
@@ -388,6 +447,11 @@ namespace dort {
   void lua_register_mesh(lua_State* l, std::shared_ptr<Mesh> mesh) {
     Builder& builder = lua_get_current_builder(l);
     builder.meshes.insert(mesh);
+  }
+
+  void lua_register_prim_mesh(lua_State* l, std::shared_ptr<PrimitiveMesh> mesh) {
+    Builder& builder = lua_get_current_builder(l);
+    builder.prim_meshes.insert(mesh);
   }
 
   Builder& lua_get_current_builder(lua_State* l) {

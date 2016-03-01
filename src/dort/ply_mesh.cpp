@@ -100,4 +100,27 @@ namespace dort {
 
     return ok;
   }
+
+  bool read_ply_to_ply_mesh(FILE* file, PlyMesh& out_mesh) {
+    assert(out_mesh.points.empty());
+    assert(out_mesh.vertices.empty());
+    assert(out_mesh.triangle_count == 0);
+    bool ok = read_ply_callbacks(file,
+        [&](uint32_t point_count, uint32_t face_count) {
+          out_mesh.points.reserve(point_count);
+          out_mesh.vertices.reserve(face_count * 3);
+        },
+        [&](Point pt) {
+          out_mesh.points.push_back(pt);
+        },
+        [&](uint32_t idx_1, uint32_t idx_2, uint32_t idx_3) {
+          out_mesh.vertices.push_back(idx_1);
+          out_mesh.vertices.push_back(idx_2);
+          out_mesh.vertices.push_back(idx_3);
+          out_mesh.triangle_count += 1;
+        });
+    out_mesh.points.shrink_to_fit();
+    out_mesh.vertices.shrink_to_fit();
+    return ok;
+  }
 }

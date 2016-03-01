@@ -5,6 +5,7 @@
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/mesh.hpp"
+#include "dort/ply_mesh.hpp"
 #include "dort/sphere.hpp"
 #include "dort/triangle_shape.hpp"
 
@@ -20,12 +21,21 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg ply_mesh_methods[] = {
+      {"__gc", lua_gc_shared_obj<PlyMesh, PLY_MESH_TNAME>},
+      {0, 0},
+    };
+
     lua_register_type(l, SHAPE_TNAME, shape_methods);
     lua_register_type(l, MESH_TNAME, mesh_methods);
+    lua_register_type(l, PLY_MESH_TNAME, ply_mesh_methods);
+
     lua_register(l, "sphere", lua_shape_make_sphere);
     lua_register(l, "disk", lua_shape_make_disk);
     lua_register(l, "triangle", lua_shape_make_triangle);
     lua_register(l, "mesh", lua_shape_make_mesh);
+    lua_register(l, "read_ply_mesh", lua_ply_mesh_read);
+
     return 0;
   }
 
@@ -95,6 +105,26 @@ namespace dort {
     return 1;
   }
 
+  int lua_ply_mesh_read(lua_State* l) {
+    const char* file_name = luaL_checkstring(l, 1);
+    FILE* file = std::fopen(file_name, "r");
+    if(!file) {
+      return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
+    }
+
+    auto ply_mesh = std::make_shared<PlyMesh>();
+    bool ok = read_ply_to_ply_mesh(file, *ply_mesh);
+    std::fclose(file);
+
+    if(!ok) {
+      luaL_error(l, "Could not read ply file: %s", file_name);
+    }
+
+    lua_push_ply_mesh(l, ply_mesh);
+    return 1;
+  }
+
+
   std::shared_ptr<Shape> lua_check_shape(lua_State* l, int idx) {
     return lua_check_shared_obj<Shape, SHAPE_TNAME>(l, idx);
   }
@@ -113,5 +143,15 @@ namespace dort {
   }
   void lua_push_mesh(lua_State* l, std::shared_ptr<Mesh> mesh) {
     lua_push_shared_obj<Mesh, MESH_TNAME>(l, mesh);
+  }
+
+  std::shared_ptr<PlyMesh> lua_check_ply_mesh(lua_State* l, int idx) {
+    return lua_check_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, idx);
+  }
+  bool lua_test_ply_mesh(lua_State* l, int idx) {
+    return lua_test_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, idx);
+  }
+  void lua_push_ply_mesh(lua_State* l, std::shared_ptr<PlyMesh> ply_mesh) {
+    lua_push_shared_obj<PlyMesh, PLY_MESH_TNAME>(l, ply_mesh);
   }
 }
