@@ -30,6 +30,10 @@ namespace dort {
       assert(i < 2);
       return this->coords[i];
     }
+
+    explicit operator Vec2() const {
+      return Vec2(float(this->x), float(this->y));
+    }
   };
 
   inline Vec2i operator+(const Vec2i& v1, const Vec2i& v2) {

@@ -16,6 +16,7 @@ namespace dort {
   class Primitive;
   class Renderer;
   class Rng;
+  class SampledFilter;
   class Sampler;
   class Shape;
   class ShapePrimitive;

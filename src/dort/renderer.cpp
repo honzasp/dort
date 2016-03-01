@@ -35,7 +35,7 @@ namespace dort {
       Vec2 corner_1f = corner_0f + tile_size;
       Recti tile_rect(floor_vec2i(corner_0f), floor_vec2i(corner_1f));
 
-      Vec2 margin = this->film->filter->radius;
+      Vec2 margin = this->film->filter.radius;
       Recti film_rect(floor_vec2i(corner_0f - margin), ceil_vec2i(corner_1f + margin));
       Vec2i film_size = film_rect.p_max - film_rect.p_min;
       Film tile_film(film_size.x, film_size.y, this->film->filter);

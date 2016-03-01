@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "dort/image.hpp"
+#include "dort/sampled_filter.hpp"
 #include "dort/vec_2.hpp"
 #include "dort/vec_2i.hpp"
 
@@ -14,9 +15,10 @@ namespace dort {
     uint32_t x_res;
     uint32_t y_res;
     std::vector<Pixel> pixels;
-    std::shared_ptr<Filter> filter;
+    SampledFilter filter;
 
     Film(uint32_t x_res, uint32_t y_res, std::shared_ptr<Filter> filter);
+    Film(uint32_t x_res, uint32_t y_res, SampledFilter filter);
     void add_sample(Vec2 pos, const Spectrum& radiance);
     void add_tile(Vec2i pos, const Film& tile);
     Image<PixelRgb8> to_image() const;

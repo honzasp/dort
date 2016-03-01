@@ -61,11 +61,11 @@ end)
 
 samplers = {
   random_1 = random_sampler { samples_per_pixel = 1 },
-  --random_4 = random_sampler { samples_per_pixel = 4 },
-  --random_16 = random_sampler { samples_per_pixel = 16 },
-  --stratified_1 = stratified_sampler { samples_per_x = 1, samples_per_y = 1 },
-  --stratified_4 = stratified_sampler { samples_per_x = 2, samples_per_y = 2 },
-  --stratified_16 = stratified_sampler { samples_per_x = 4, samples_per_y = 4 },
+  random_4 = random_sampler { samples_per_pixel = 4 },
+  random_16 = random_sampler { samples_per_pixel = 16 },
+  stratified_1 = stratified_sampler { samples_per_x = 1, samples_per_y = 1 },
+  stratified_4 = stratified_sampler { samples_per_x = 2, samples_per_y = 2 },
+  stratified_16 = stratified_sampler { samples_per_x = 4, samples_per_y = 4 },
 }
 
 for sampler in pairs(samplers) do

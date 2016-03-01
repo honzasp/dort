@@ -77,6 +77,10 @@ namespace dort {
     return sqrt(length_squared(v));
   }
 
+  inline Vec2 abs(const Vec2& v) {
+    return Vec2(abs(v.x), abs(v.y));
+  }
+
   inline bool is_finite(const Vec2& v) {
     return is_finite(v.x) && is_finite(v.y);
   }

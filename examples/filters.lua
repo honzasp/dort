@@ -1,20 +1,18 @@
 local scene = define_scene(function()
-  local dragon = read_ply_mesh("data/dragon_vrip.ply")
-
   block(function()
     material(plastic_material {
-      reflect = rgb(1, 1, 1),
-      diffuse = rgb(0.9, 0.9, 0.1),
+      color = rgb(0.9, 0.9, 0.1),
+      reflect_color = rgb(1, 1, 1),
       roughness = 1.5,
     })
     transform(translate(0, -50, 0) * scale(1e3))
-    add_ply_mesh(dragon)
+    add_read_ply_mesh_as_bvh("data/dragon_vrip.ply")
   end)
 
   block(function()
     transform(rotate_x(pi / 2) * scale(10))
     material(matte_material {
-      reflect = checkerboard_texture {
+      color = checkerboard_texture {
         even_check = rgb(1, 1, 1),
         odd_check = rgb(0.3, 0.3, 0.3),
         map = xy_texture_map(),
@@ -26,8 +24,8 @@ local scene = define_scene(function()
   block(function()
     transform(translate(-30, 50, -100))
     material(plastic_material {
-      reflect = rgb(1, 1, 1),
-      diffuse = rgb(1, 0.2, 0.2),
+      color = rgb(1, 0.2, 0.2),
+      reflect_color = rgb(1, 1, 1),
       roughness = 0.1,
     })
     add_shape(sphere { radius = 20 })
@@ -41,7 +39,7 @@ local scene = define_scene(function()
   block(function()
     transform(translate(0, 500, -200) * rotate_x(pi / 2))
     material(matte_material {
-      reflect = rgb(1, 0, 0),
+      color = rgb(1, 0, 0),
     })
     add_light(diffuse_light {
       shape = disk { z = 0, radius = 100 },
