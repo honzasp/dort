@@ -1,13 +1,13 @@
 #include <utility>
 #include "dort/monte_carlo.hpp"
-#include "dort/sphere.hpp"
+#include "dort/sphere_shape.hpp"
 
 namespace dort {
-  Sphere::Sphere(float radius):
+  SphereShape::SphereShape(float radius):
     radius(radius), inv_radius(1.f / radius)
   { }
 
-  bool Sphere::hit(const Ray& ray, float& out_t_hit,
+  bool SphereShape::hit(const Ray& ray, float& out_t_hit,
       float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
     float t0, t1;
@@ -52,7 +52,7 @@ namespace dort {
     return true;
   }
 
-  bool Sphere::hit_p(const Ray& ray) const {
+  bool SphereShape::hit_p(const Ray& ray) const {
     float t0, t1;
     if(!this->solve_hit_t(ray, t0, t1)) {
       return false;
@@ -67,26 +67,26 @@ namespace dort {
     }
   }
 
-  Box Sphere::bounds() const {
+  Box SphereShape::bounds() const {
     float r = this->radius;
     return Box(Point(-r, -r, -r), Point(r, r, r));
   }
 
-  float Sphere::area() const {
+  float SphereShape::area() const {
     return FOUR_PI * this->radius * this->radius;
   }
 
-  Point Sphere::sample_point(float u1, float u2, Normal& out_n) const {
+  Point SphereShape::sample_point(float u1, float u2, Normal& out_n) const {
     Vector w = uniform_sphere_sample(u1, u2);
     out_n = Normal(w);
     return Point() + w * this->radius;
   }
 
-  float Sphere::point_pdf(const Point&) const {
+  float SphereShape::point_pdf(const Point&) const {
     return uniform_sphere_pdf();
   }
 
-  Point Sphere::sample_point_eye(const Point& eye,
+  Point SphereShape::sample_point_eye(const Point& eye,
       float u1, float u2, Normal& out_n) const
   {
     float dist_squared = length_squared(eye.v);
@@ -118,7 +118,7 @@ namespace dort {
     return pt;
   }
 
-  float Sphere::point_eye_pdf(const Point& eye, const Vector& w) const {
+  float SphereShape::point_eye_pdf(const Point& eye, const Vector& w) const {
     float dist_squared = length_squared(eye.v);
     if(dist_squared - this->radius * this->radius < 1e-3) {
       return Shape::point_eye_pdf(eye, w);
@@ -129,7 +129,7 @@ namespace dort {
     return uniform_cone_pdf(cos_theta_max);
   }
 
-  bool Sphere::solve_hit_t(const Ray& ray, float& t0, float& t1) const {
+  bool SphereShape::solve_hit_t(const Ray& ray, float& t0, float& t1) const {
     float A = dot(ray.dir.v, ray.dir.v);
     float B = 2.f * dot(ray.orig.v, ray.dir.v);
     float C = dot(ray.orig.v, ray.orig.v) - this->radius * this->radius;

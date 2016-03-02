@@ -1,4 +1,4 @@
-#include "dort/disk.hpp"
+#include "dort/disk_shape.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
@@ -6,7 +6,7 @@
 #include "dort/lua_shape.hpp"
 #include "dort/mesh.hpp"
 #include "dort/ply_mesh.hpp"
-#include "dort/sphere.hpp"
+#include "dort/sphere_shape.hpp"
 #include "dort/triangle_shape.hpp"
 
 namespace dort {
@@ -44,7 +44,7 @@ namespace dort {
     float radius = lua_param_float(l, p, "radius");
     lua_params_check_unused(l, p);
 
-    lua_push_shape(l, std::make_shared<Sphere>(radius));
+    lua_push_shape(l, std::make_shared<SphereShape>(radius));
     return 1;
   }
 
@@ -54,7 +54,7 @@ namespace dort {
     float z = lua_param_float_opt(l, p, "z", 0.f);
     lua_params_check_unused(l, p);
 
-    lua_push_shape(l, std::make_shared<Disk>(radius, z));
+    lua_push_shape(l, std::make_shared<DiskShape>(radius, z));
     return 1;
   }
 

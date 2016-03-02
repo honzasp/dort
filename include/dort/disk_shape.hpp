@@ -2,12 +2,12 @@
 #include "dort/shape.hpp"
 
 namespace dort {
-  class Disk final: public Shape {
+  class DiskShape final: public Shape {
     float radius;
     float inv_radius;
     float z_coord;
   public:
-    Disk(float radius, float z_coord = 0.f):
+    DiskShape(float radius, float z_coord = 0.f):
       radius(radius), inv_radius(1.f / radius), z_coord(z_coord) { }
 
     virtual bool hit(const Ray& ray, float& out_t_hit,

@@ -1,8 +1,8 @@
-#include "dort/disk.hpp"
+#include "dort/disk_shape.hpp"
 #include "dort/monte_carlo.hpp"
 
 namespace dort {
-  bool Disk::hit(const Ray& ray, float& out_t_hit,
+  bool DiskShape::hit(const Ray& ray, float& out_t_hit,
       float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
     if(ray.dir.v.z == 0.f) {
@@ -35,7 +35,7 @@ namespace dort {
     return true;
   }
 
-  bool Disk::hit_p(const Ray& ray) const {
+  bool DiskShape::hit_p(const Ray& ray) const {
     if(ray.dir.v.z == 0.f) {
       return false;
     }
@@ -50,23 +50,23 @@ namespace dort {
     return dist_square <= square(this->radius);
   }
 
-  Box Disk::bounds() const {
+  Box DiskShape::bounds() const {
     return Box(
         Point(-this->radius, -this->radius, this->z_coord),
         Point(this->radius, this->radius, this->z_coord));
   }
 
-  float Disk::area() const {
+  float DiskShape::area() const {
     return PI * square(this->radius);
   }
 
-  Point Disk::sample_point(float u1, float u2, Normal& out_n) const {
+  Point DiskShape::sample_point(float u1, float u2, Normal& out_n) const {
     Vector w = uniform_disk_sample(u1, u2);
     out_n = Normal(0.f, 0.f, 1.f);
     return Point(w.v.x * this->radius, w.v.y * this->radius, this->z_coord);
   }
 
-  float Disk::point_pdf(const Point&) const {
+  float DiskShape::point_pdf(const Point&) const {
     return INV_PI * square(this->inv_radius);
   }
 }
