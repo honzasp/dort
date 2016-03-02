@@ -9,6 +9,8 @@ namespace dort {
     DiffGeom frame_diff_geom;
     DiffGeom world_diff_geom;
     const GeometricPrimitive* primitive;
+
+    Spectrum emitted_radiance(const Vector& wo) const;
   };
 
   class Primitive {

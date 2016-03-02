@@ -1,5 +1,6 @@
 CXX_DEBUG = clang++
 CXX_PROFILE = g++
+CXX_SLOW = clang++
 CXX_FAST = clang++
 CAT_CPPS = sh script/cat_cpps.sh
 
@@ -10,6 +11,7 @@ CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
 LDFLAGS  = -pthread
 DEBUG    = -g -O2
 PROFILE  = -g -O2
+SLOW     = -g3 -O0
 FAST     = -g -O3 -DNDEBUG -DDORT_DISABLE_STAT
 
 CXXFLAGS_DEBUG   = $(CXXFLAGS) $(DEBUG)
@@ -19,6 +21,10 @@ LDFLAGS_DEBUG    = $(LDFLAGS)
 CXXFLAGS_PROFILE = $(CXXFLAGS) $(PROFILE) -pg
 CFLAGS_PROFILE   = $(CFLAGS) $(PROFILE) -pg
 LDFLAGS_PROFILE  = $(LDFLAGS) -pg
+
+CXXFLAGS_SLOW   = $(CXXFLAGS) $(SLOW)
+CFLAGS_SLOW     = $(CFLAGS) $(SLOW)
+LDFLAGS_SLOW    = $(LDFLAGS)
 
 CXXFLAGS_FAST = $(CXXFLAGS) $(FAST)
 CFLAGS_FAST   = $(CFLAGS) $(FAST)
@@ -31,6 +37,10 @@ LDFLAGS_FAST  = $(LDFLAGS)
 !cxx_c_profile = |> ^ c++ profile %f^ $(CXX_PROFILE) $(CXXFLAGS_PROFILE) -c %f -o %o |>
 !cc_c_profile = |> ^ cc profile %f^ $(CXX_PROFILE) $(CFLAGS_PROFILE) -c %f -o %o |>
 !link_profile = |> ^ link %f^ $(CXX_PROFILE) $(LDFLAGS_PROFILE) %f -o %o |>
+
+!cxx_c_slow = |> ^ c++ slow %f^ $(CXX_SLOW) $(CXXFLAGS_SLOW) -c %f -o %o |>
+!cc_c_slow = |> ^ cc slow %f^ $(CXX_SLOW) $(CFLAGS_SLOW) -c %f -o %o |>
+!link_slow = |> ^ link %f^ $(CXX_SLOW) $(LDFLAGS_SLOW) %f -o %o |>
 
 !cxx_cat_c_fast = |> ^ c++ cat fast %f^ $(CAT_CPPS) %f |\
   $(CXX_FAST) $(CXXFLAGS_FAST) -c - -o %o |>
@@ -48,6 +58,13 @@ ifdef CONFIG_PROFILE
   : foreach extern/rply/*.c |> !cc_c_profile |> build/p/rply/%B.o {profile_objs}
   : foreach extern/lua/*.c |> !cxx_c_profile |> build/p/lua/%B.o {profile_objs}
   : {profile_objs} |> !link_profile |> build/p/dort
+endif
+
+ifdef CONFIG_SLOW
+  : foreach src/dort/*.cpp |> !cxx_c_slow |> build/g/%B.o {slow_objs}
+  : foreach extern/rply/*.c |> !cc_c_slow |> build/g/rply/%B.o {slow_objs}
+  : foreach extern/lua/*.c |> !cxx_c_slow |> build/g/lua/%B.o {slow_objs}
+  : {slow_objs} |> !link_slow |> build/g/dort
 endif
 
 ifdef CONFIG_FAST

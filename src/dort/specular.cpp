@@ -15,6 +15,7 @@ namespace dort {
 
     float cos_theta = Bsdf::cos_theta(wo);
     if(cos_theta == 0.f) {
+      out_pdf = 0.f;
       return Spectrum(0.f);
     }
 
@@ -42,6 +43,7 @@ namespace dort {
     (void)u1; (void)u2;
 
     if(Bsdf::cos_theta(wo) == 0.f) {
+      out_pdf = 0.f;
       return Spectrum(0.f);
     }
 
@@ -54,6 +56,7 @@ namespace dort {
 
     float sin_t_square = square(eta) * Bsdf::sin_theta_square(wo);
     if(sin_t_square > 1.f) {
+      out_pdf = 0.f;
       return Spectrum(0.f);
     }
 

@@ -19,13 +19,9 @@ namespace dort {
       return radiance;
     }
 
-    const AreaLight* area_light = isect.primitive->get_area_light(isect.frame_diff_geom);
-    if(area_light) {
-      Spectrum emitted = area_light->emitted_radiance(
-          isect.world_diff_geom.p, isect.world_diff_geom.nn, -ray.dir);
-      assert(is_finite(emitted) && is_nonnegative(emitted));
-      radiance += emitted;
-    }
+    Spectrum emitted = isect.emitted_radiance(-ray.dir);
+    assert(is_finite(emitted) && is_nonnegative(emitted));
+    radiance += emitted;
 
     LightingGeom geom;
     geom.p = isect.world_diff_geom.p;

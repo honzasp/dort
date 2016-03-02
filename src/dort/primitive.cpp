@@ -1,8 +1,20 @@
 #include "dort/bsdf.hpp"
+#include "dort/light.hpp"
 #include "dort/material.hpp"
 #include "dort/primitive.hpp"
 
 namespace dort {
+  Spectrum Intersection::emitted_radiance(const Vector& wo) const {
+    const AreaLight* area_light = this->primitive->get_area_light(
+        this->frame_diff_geom);
+    if(area_light) {
+      return area_light->emitted_radiance(this->world_diff_geom.p,
+          this->world_diff_geom.nn, wo);
+    } else {
+      return Spectrum(0.f);
+    }
+  }
+
   bool ShapePrimitive::intersect(Ray& ray, Intersection& out_isect) const {
     Ray new_ray(this->shape_to_frame.apply_inv(ray));
     float t_hit;

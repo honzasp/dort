@@ -15,6 +15,7 @@
 #include "dort/lua_shape.hpp"
 #include "dort/mesh_bvh_primitive.hpp"
 #include "dort/mesh_triangle_primitive.hpp"
+#include "dort/path_renderer.hpp"
 #include "dort/ply_mesh.hpp"
 #include "dort/random_sampler.hpp"
 #include "dort/rng.hpp"
@@ -377,7 +378,8 @@ namespace dort {
 
     CtxG& ctx = *lua_get_ctx(l);
     auto film = std::make_shared<Film>(x_res, y_res, filter);
-    DirectRenderer renderer(scene, film, sampler, max_depth);
+    //DirectRenderer renderer(scene, film, sampler, max_depth);
+    PathRenderer renderer(scene, film, sampler, max_depth);
     renderer.preprocess(ctx);
     renderer.render(ctx);
 

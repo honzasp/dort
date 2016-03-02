@@ -46,7 +46,7 @@ namespace dort {
   }
 
   float cosine_hemisphere_pdf(const Vector& w) {
-    return w.v.z * INV_PI;
+    return max(0.f, w.v.z * INV_PI);
   }
 
   Vector uniform_cone_sample(float cos_theta_max, float u1, float u2) {

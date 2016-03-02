@@ -53,6 +53,19 @@ namespace dort {
     return radiance;
   }
 
+  Spectrum uniform_sample_one_light(const Scene& scene,
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler&,
+      float u_select, const LightSample& light_sample,
+      const BsdfSample& bsdf_sample)
+  {
+    float num_lights = float(scene.lights.size());
+    uint32_t light_idx = clamp(floor_int32(num_lights * u_select),
+        0, int32_t(scene.lights.size()) - 1);
+    return num_lights * estimate_direct(scene, geom, bsdf,
+        *scene.lights.at(light_idx), BxdfFlags(BSDF_ALL & ~(BSDF_SPECULAR)),
+        light_sample, bsdf_sample);
+  }
+
   Spectrum estimate_direct(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf,
       const Light& light, BxdfFlags bxdf_flags,

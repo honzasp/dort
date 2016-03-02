@@ -80,7 +80,6 @@ namespace dort {
     Vector wi_local;
     Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf,
       sample.uv_pos.x, sample.uv_pos.y);
-    assert(is_finite(f) && is_nonnegative(f));
     out_flags = sampled_bxdf->flags;
     out_wi = this->local_to_world(wi_local);
     return f;

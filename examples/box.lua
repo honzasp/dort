@@ -85,22 +85,22 @@ local scene = define_scene(function()
     }
     for _, index in ipairs({0, 3}) do
       add_light(diffuse_light {
-        radiance = rgb(1, 1, 1) * 80,
+        radiance = rgb(1, 1, 1) * 70,
         shape = triangle(m, index),
         num_samples = 8,
       })
-      material(red)
     end
   end)
 end)
 
 write_png_image("box.png", render(scene, {
-  x_res = 400, y_res = 400,
+  x_res = 512, y_res = 512,
+  max_depth = 10,
   sampler = stratified_sampler {
-    samples_per_x = 4,
-    samples_per_y = 4,
+    samples_per_x = 8,
+    samples_per_y = 8,
   },
   filter = mitchell_filter {
     radius = 1.5,
-  }
+  },
 }))
