@@ -19,11 +19,11 @@ namespace dort {
     if(!reflection.is_black()) {
       float alpha_b = roughness;
       bsdf->add(std::make_unique<MicrofacetBrdf<
-          BeckmanD, FresnelDielectric, SmithG<BeckmanApproxG1>>>(
+          BeckmannD, FresnelDielectric, SmithG<BeckmannApproxG1>>>(
         reflection,
-        BeckmanD(alpha_b),
-        FresnelDielectric(eta, 1.f),
-        SmithG<BeckmanApproxG1>(BeckmanApproxG1(alpha_b))));
+        BeckmannD(alpha_b),
+        FresnelDielectric(1.f, eta),
+        SmithG<BeckmannApproxG1>(BeckmannApproxG1(alpha_b))));
     }
     return bsdf;
   }

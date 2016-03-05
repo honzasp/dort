@@ -14,11 +14,11 @@ namespace dort {
     auto bsdf = std::make_unique<Bsdf>(diff_geom);
     float alpha_b = roughness;
     bsdf->add(std::make_unique<MicrofacetBrdf<
-        BeckmanD, FresnelConductor, SmithG<BeckmanApproxG1>>>(
+        BeckmannD, FresnelConductor, SmithG<BeckmannApproxG1>>>(
       reflection,
-      BeckmanD(alpha_b),
+      BeckmannD(alpha_b),
       FresnelConductor(eta, k),
-      SmithG<BeckmanApproxG1>(BeckmanApproxG1(alpha_b))));
+      SmithG<BeckmannApproxG1>(BeckmannApproxG1(alpha_b))));
     return bsdf;
   }
 }

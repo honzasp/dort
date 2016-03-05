@@ -78,11 +78,45 @@ namespace dort {
 
     Vector wo_local = this->world_to_local(wo);
     Vector wi_local;
-    Spectrum f = sampled_bxdf->sample_f(wo_local, wi_local, out_pdf,
+    float sampled_pdf;
+    Spectrum sampled_f = sampled_bxdf->sample_f(wo_local, wi_local, sampled_pdf,
       sample.uv_pos.x, sample.uv_pos.y);
-    out_flags = sampled_bxdf->flags;
+
     out_wi = this->local_to_world(wi_local);
-    return f;
+    out_flags = sampled_bxdf->flags;
+
+    if(sampled_bxdf->flags & BSDF_SPECULAR || num_bxdfs == 1) {
+      out_pdf = sampled_pdf;
+      return sampled_f;
+    }
+
+    BxdfFlags eval_flags;
+    if(Bsdf::same_hemisphere(wo_local, wi_local)) {
+      eval_flags = BxdfFlags(flags & ~BSDF_TRANSMISSION);
+    } else {
+      eval_flags = BxdfFlags(flags & ~BSDF_REFLECTION);
+    }
+
+    float sum_pdfs = sampled_pdf;
+    Spectrum sum_f = sampled_f;
+    for(const auto& bxdf: this->bxdfs) {
+      if(bxdf.get() == sampled_bxdf) {
+        continue;
+      }
+      if(bxdf->matches(eval_flags)) {
+        Spectrum f = bxdf->f(wo_local, wi_local);
+        assert(is_finite(f) && is_nonnegative(f));
+        sum_f += f;
+      }
+      if(bxdf->matches(flags)) {
+        float pdf = bxdf->f_pdf(wo_local, wi_local);
+        assert(is_finite(pdf) && pdf >= 0.f);
+        sum_pdfs += pdf;
+      }
+    }
+
+    out_pdf = sum_pdfs / float(num_bxdfs);
+    return sum_f;
   }
 
   float Bsdf::f_pdf(const Vector& wo, const Vector& wi, BxdfFlags flags) const {

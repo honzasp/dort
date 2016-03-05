@@ -1,5 +1,5 @@
-#include "dort/microfacet_brdf.hpp"
 #include "dort/fresnel.hpp"
+#include "dort/microfacet_brdf.hpp"
 #include "dort/microfacet_distrib.hpp"
 
 namespace dort {
@@ -16,7 +16,7 @@ namespace dort {
     Vector m = this->distrib.sample_m(u1, u2, m_pdf);
     Vector wi = 2.f * dot(wo, m) * m - wo;
     out_wi = wi;
-    out_pdf = m_pdf / (4.f * dot(wi, m));
+    out_pdf = m_pdf / (4.f * abs_dot(wi, m));
     return this->f(wo, wi, m);
   }
 
@@ -24,7 +24,7 @@ namespace dort {
   float MicrofacetBrdf<D, F, G>::f_pdf(const Vector& wo, const Vector& wi) const {
     Vector m = normalize(wo + wi);
     float m_pdf = this->distrib.m_pdf(m);
-    return m_pdf / (4.f * dot(wi, m));
+    return m_pdf / (4.f * abs_dot(wi, m));
   }
 
   template<class D, class F, class G>
@@ -40,7 +40,7 @@ namespace dort {
   }
 
   template class MicrofacetBrdf<
-    BeckmanD, FresnelDielectric, SmithG<BeckmanApproxG1>>;
+    BeckmannD, FresnelDielectric, SmithG<BeckmannApproxG1>>;
   template class MicrofacetBrdf<
-    BeckmanD, FresnelConductor, SmithG<BeckmanApproxG1>>;
+    BeckmannD, FresnelConductor, SmithG<BeckmannApproxG1>>;
 }

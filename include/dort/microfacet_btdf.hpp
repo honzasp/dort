@@ -23,6 +23,6 @@ namespace dort {
     virtual float f_pdf(const Vector& wo, const Vector& wi) const override final;
   private:
     Spectrum f(const Vector& wo, const Vector& wi, const Vector& m) const;
-    void get_eta(const Vector& wo, float& out_eta_t, float& out_eta_i);
+    float get_eta_o(const Vector& wo) const;
   };
 }

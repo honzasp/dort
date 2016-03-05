@@ -11,16 +11,16 @@ namespace dort {
     }
   };
 
-  struct BeckmanD {
+  struct BeckmannD {
     float alpha_b;
 
-    BeckmanD(float alpha_b): alpha_b(alpha_b) { }
+    BeckmannD(float alpha_b): alpha_b(alpha_b) { }
 
     float d(const Vector& m) const {
       if(Bsdf::cos_theta(m) <= 0.f) {
         return 0.f;
       }
-      float tmp_1 = PI * square(this->alpha_b * square(Bsdf::cos_theta(m)));
+      float tmp_1 = PI * square(this->alpha_b * Bsdf::cos_theta_square(m));
       float tmp_2 = Bsdf::sin_theta_square(m) /
         (Bsdf::cos_theta_square(m) * square(this->alpha_b));
       return 1.f / tmp_1 * exp(-tmp_2);
@@ -39,11 +39,11 @@ namespace dort {
     }
   };
 
-  struct BeckmanG1 {
+  struct BeckmannG1 {
     float alpha_b;
-    BeckmanG1(float alpha_b): alpha_b(alpha_b) { }
+    BeckmannG1(float alpha_b): alpha_b(alpha_b) { }
     float g1(const Vector& v, const Vector& m) const {
-      if(!Bsdf::same_hemisphere(v, m)) {
+      if(dot(v, m) * Bsdf::cos_theta(v) <= 0.f) {
         return 0.f;
       }
       float a = Bsdf::cos_theta(v) / (this->alpha_b * Bsdf::sin_theta(v));
@@ -51,14 +51,14 @@ namespace dort {
     }
   };
 
-  struct BeckmanApproxG1 {
+  struct BeckmannApproxG1 {
     float alpha_b;
-    BeckmanApproxG1(float alpha_b): alpha_b(alpha_b) { }
+    BeckmannApproxG1(float alpha_b): alpha_b(alpha_b) { }
     float g1(const Vector& v, const Vector& m) const {
-      if(!Bsdf::same_hemisphere(v, m)) {
+      if(dot(v, m) * Bsdf::cos_theta(v) <= 0.f) {
         return 0.f;
       }
-      float a = Bsdf::cos_theta(v) / (this->alpha_b * Bsdf::sin_theta(v));
+      float a = Bsdf::abs_cos_theta(v) / (this->alpha_b * Bsdf::sin_theta(v));
       if(a < 1.6f) {
         return (3.535f*a + 2.181*a*a) / (1.f + 2.276f*a + 2.577f*a*a);
       } else {
