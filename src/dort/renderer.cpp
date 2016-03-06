@@ -11,7 +11,7 @@
 namespace dort {
   void Renderer::preprocess(CtxG&) {
     this->pixel_pos_idx = this->sampler->request_sample_2d();
-    this->preprocess_(*this->scene, *this->sampler);
+    this->do_preprocess(*this->scene, *this->sampler);
   }
 
   void Renderer::render(CtxG& ctx) {

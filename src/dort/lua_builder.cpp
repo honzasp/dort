@@ -68,6 +68,7 @@ namespace dort {
     lua_register(l, "add_ply_mesh_as_bvh", lua_build_add_ply_mesh_as_bvh);
 
     lua_register(l, "render", lua_scene_render);
+
     lua_register(l, "random_sampler", lua_sampler_make_random);
     lua_register(l, "stratified_sampler", lua_sampler_make_stratified);
 
@@ -369,19 +370,32 @@ namespace dort {
     int p = 2;
     uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", 800);
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
-    uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
         std::make_shared<RandomSampler>(1, 42));
+    auto method = lua_param_string_opt(l, p, "renderer", "direct");
+
+    auto film = std::make_shared<Film>(x_res, y_res, filter);
+
+    std::shared_ptr<Renderer> renderer;
+    if(method == "direct") {
+      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      renderer = std::make_shared<DirectRenderer>(
+          scene, film, sampler, max_depth);
+    } else if(method == "path") {
+      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      renderer = std::make_shared<PathRenderer>(
+          scene, film, sampler, max_depth);
+    } else {
+      return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
+    }
+
     lua_params_check_unused(l, p);
 
     CtxG& ctx = *lua_get_ctx(l);
-    auto film = std::make_shared<Film>(x_res, y_res, filter);
-    //DirectRenderer renderer(scene, film, sampler, max_depth);
-    PathRenderer renderer(scene, film, sampler, max_depth);
-    renderer.preprocess(ctx);
-    renderer.render(ctx);
+    renderer->preprocess(ctx);
+    renderer->render(ctx);
 
     auto image = std::make_shared<Image<PixelRgb8>>(film->to_image());
     lua_push_image(l, image);
@@ -431,7 +445,6 @@ namespace dort {
           samples_per_x, samples_per_y, Rng(seed)));
     return 1;
   }
-
 
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame)

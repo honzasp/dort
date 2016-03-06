@@ -48,7 +48,7 @@ namespace dort {
     return radiance;
   }
 
-  void DirectRenderer::preprocess_(const Scene& scene, Sampler& sampler) {
+  void DirectRenderer::do_preprocess(const Scene& scene, Sampler& sampler) {
     for(const auto& light: scene.lights) {
       uint32_t num_samples = max(1u, sampler.round_count(light->num_samples));
       this->light_samples_idxs.push_back(LightSample::request(sampler, num_samples));

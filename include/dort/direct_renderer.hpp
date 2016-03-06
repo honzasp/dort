@@ -18,6 +18,6 @@ namespace dort {
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
         uint32_t depth, Sampler& sampler) const override final;
   private:
-    virtual void preprocess_(const Scene& scene, Sampler& sampler) override final;
+    virtual void do_preprocess(const Scene& scene, Sampler& sampler) override final;
   };
 }

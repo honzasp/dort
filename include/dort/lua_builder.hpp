@@ -57,6 +57,8 @@ namespace dort {
 
   int lua_sampler_make_random(lua_State* l);
   int lua_sampler_make_stratified(lua_State* l);
+  int lua_renderer_make_direct(lua_State* l);
+  int lua_renderer_make_path(lua_State* l);
 
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame);

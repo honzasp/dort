@@ -151,6 +151,14 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return sampler;
   }
+  std::string lua_param_string_opt(lua_State* l,
+      int params_idx, const char* param_name, const std::string& def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto string = lua_isnil(l, -1) ? def : luaL_checkstring(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return string;
+  }
 
   bool lua_param_is_set(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);

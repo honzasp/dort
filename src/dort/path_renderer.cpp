@@ -82,7 +82,7 @@ namespace dort {
     return radiance;
   }
 
-  void PathRenderer::preprocess_(const Scene&, Sampler& sampler) {
+  void PathRenderer::do_preprocess(const Scene&, Sampler& sampler) {
     for(uint32_t i = 0; i < this->max_depth && i < MAX_SAMPLES; ++i) {
       this->light_idxs.push_back(sampler.request_sample_1d());
       this->light_samples_idxs.push_back(LightSample::request(sampler, 1));

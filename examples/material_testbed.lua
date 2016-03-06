@@ -1,7 +1,7 @@
-local quality = false
+local quality = true
 local buddha_ply = read_ply_mesh('data/happy_vrip.ply')
 
-function test_scene(name, make_material)
+function test_scene(name, make_material, render_opts)
   local scene = define_scene(function()
     local white_color = rgb(0.8, 0.8, 0.8)
     local red_color = rgb(0.8, 0.4, 0.4)
@@ -135,17 +135,25 @@ function test_scene(name, make_material)
     name_prefix = "mat_"
   end
 
-  write_png_image(name_prefix .. name .. ".png", render(scene, {
+  opts = {
     sampler = stratified_sampler {
       samples_per_x = samples,
       samples_per_y = samples,
     },
     filter = mitchell_filter {
-      radius = 2,
+      radius = 1.5,
     },
     x_res = res / 2,
     y_res = res,
-  }))
+  }
+
+  if render_opts then
+    for k,v in pairs(render_opts) do
+      opts[k] = v
+    end
+  end
+
+  write_png_image(name_prefix .. name .. ".png", render(scene, opts))
 end
 
 for _, sigma in pairs({0, 1, 0.1}) do
@@ -188,4 +196,29 @@ for _, roughness in pairs({0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8}) do
       roughness = roughness,
     }
   end)
+end
+
+for _, roughness in pairs({0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8}) do
+  opts = {}
+  opts["renderer"] = "path"
+  if quality then
+    opts["sampler"] = stratified_sampler {
+      samples_per_x = 6,
+      samples_per_y = 6,
+    }
+  else
+    opts["sampler"] = stratified_sampler {
+      samples_per_x = 2,
+      samples_per_y = 2,
+    }
+  end
+
+  test_scene("rough_glass_" .. roughness*100, function()
+    return rough_glass_material {
+      color = rgb(1,1,1) * 0.9,
+      transmit_color = rgb(1,1,1) * 0.9,
+      eta = 1.5,
+      roughness = roughness,
+    }
+  end, opts)
 end
