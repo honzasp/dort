@@ -83,9 +83,9 @@ namespace dort {
         geom.ray_epsilon, wi, light_pdf, shadow, light_sample);
       if(!light_radiance.is_black() && light_pdf > 0.f) {
         Spectrum bsdf_f = bsdf.f(geom.wo, wi, bxdf_flags);
-        if(!bsdf_f.is_black() && shadow.visible(scene)) {
+        if(!bsdf_f.is_black() && (shadow.visible(scene))) {
           float weight = 1.f;
-          if(!light.is_delta()) {
+          if(!(light.flags & LIGHT_DELTA)) {
             float bsdf_pdf = bsdf.f_pdf(geom.wo, wi, bxdf_flags);
             weight = mis_power_heuristic(1, light_pdf, 1, bsdf_pdf);
           }
@@ -96,7 +96,7 @@ namespace dort {
       }
     }
 
-    if(!light.is_delta()) {
+    if(!(light.flags & LIGHT_DELTA)) {
       Vector wi;
       float bsdf_pdf;
       BxdfFlags sampled_flags;
@@ -111,16 +111,23 @@ namespace dort {
 
         Spectrum light_radiance(0.f);
         Ray light_ray(geom.p, wi, geom.ray_epsilon, INFINITY);
-        Intersection light_isect;
-        if(scene.intersect(light_ray, light_isect)) {
-          const AreaLight* area_light =
-            light_isect.primitive->get_area_light(light_isect.world_diff_geom);
-          if(area_light == &light) {
-            light_radiance = area_light->emitted_radiance(
-                light_isect.world_diff_geom.p, light_isect.world_diff_geom.nn, -wi);
+
+        if(light.flags & LIGHT_AREA) {
+          Intersection light_isect;
+          if(scene.intersect(light_ray, light_isect)) {
+            const AreaLight* area_light =
+              light_isect.primitive->get_area_light(light_isect.world_diff_geom);
+            if(area_light == &light) {
+              light_radiance = area_light->emitted_radiance(
+                  light_isect.world_diff_geom.p, light_isect.world_diff_geom.nn, -wi);
+            }
+          } else if(light.flags & LIGHT_BACKGROUND) {
+            light_radiance = light.background_radiance(light_ray);
           }
-        } else {
-          light_radiance = light.background_radiance(light_ray);
+        } else if(light.flags & LIGHT_BACKGROUND) {
+          if(!scene.intersect_p(light_ray)) {
+            light_radiance = light.background_radiance(light_ray);
+          }
         }
 
         bsdf_contrib = bsdf_f * light_radiance * (abs_dot(wi, geom.nn)

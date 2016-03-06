@@ -19,8 +19,4 @@ namespace dort {
   Spectrum InfiniteLight::background_radiance(const Ray&) const {
     return this->radiance;
   }
-
-  bool InfiniteLight::is_delta() const {
-    return false;
-  }
 }

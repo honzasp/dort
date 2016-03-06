@@ -432,7 +432,7 @@ namespace dort {
       traversed += 1;
 
       stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P);
-      if(fast_box_hit_p(linear_node.bounds, ray, inv_dir, dir_is_neg)) {
+      if(linear_node.bounds.fast_hit_p(ray, inv_dir, dir_is_neg)) {
         stat_count(COUNTER_BVH_FAST_BOX_INTERSECT_P_HIT);
         if(linear_node.elem_count_or_zero == 0) {
           uint32_t left_child = linear_node.elem_offset_or_left_child;

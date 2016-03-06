@@ -35,13 +35,13 @@ namespace dort {
           max(box.p_max.v.z, pt.v.z)));
   }
 
-  bool box_hit_p(const Box& box, const Ray& ray) {
+  bool Box::hit(const Ray& ray, float& out_t) const {
     float t0 = ray.t_min;
     float t1 = ray.t_max;
     for(uint32_t i = 0; i < 3; ++i) {
       float inv_dir = 1.f / ray.dir.v[i];
-      float t_near = (box.p_min.v[i] - ray.orig.v[i]) * inv_dir;
-      float t_far = (box.p_max.v[i] - ray.orig.v[i]) * inv_dir;
+      float t_near = (this->p_min.v[i] - ray.orig.v[i]) * inv_dir;
+      float t_far = (this->p_max.v[i] - ray.orig.v[i]) * inv_dir;
       if(t_near > t_far) {
         std::swap(t_near, t_far);
       }
@@ -54,17 +54,23 @@ namespace dort {
         return false;
       }
     }
+    out_t = t0;
     return true;
   }
 
-  bool fast_box_hit_p(const Box& bounds, const Ray& ray,
-      const Vector& inv_dir, bool dir_is_neg[3])
-  {
-    float t_min =  (bounds[  dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
-    float t_max =  (bounds[1-dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
+  bool Box::hit_p(const Ray& ray) const {
+    float unused_t;
+    return this->hit(ray, unused_t);
+  }
 
-    float ty_min = (bounds[  dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
-    float ty_max = (bounds[1-dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
+  bool Box::fast_hit_p(const Ray& ray,
+      const Vector& inv_dir, bool dir_is_neg[3]) const
+  {
+    float t_min =  ((*this)[  dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
+    float t_max =  ((*this)[1-dir_is_neg[0]].v.x - ray.orig.v.x) * inv_dir.v.x;
+
+    float ty_min = ((*this)[  dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
+    float ty_max = ((*this)[1-dir_is_neg[1]].v.y - ray.orig.v.y) * inv_dir.v.y;
     if(t_min > ty_max || ty_min > t_max) {
       return false;
     }
@@ -76,8 +82,8 @@ namespace dort {
       t_max = ty_max;
     }
 
-    float tz_min = (bounds[  dir_is_neg[2]].v.z - ray.orig.v.z) * inv_dir.v.z;
-    float tz_max = (bounds[1-dir_is_neg[2]].v.z - ray.orig.v.z) * inv_dir.v.z;
+    float tz_min = ((*this)[  dir_is_neg[2]].v.z - ray.orig.v.z) * inv_dir.v.z;
+    float tz_max = ((*this)[1-dir_is_neg[2]].v.z - ray.orig.v.z) * inv_dir.v.z;
     if(t_min > tz_max || t_max < tz_min) {
       return false;
     }

@@ -87,5 +87,14 @@ namespace dort {
     return x + 1;
   }
 
+  template<class T>
+  uint8_t arg_max_3(T a0, T a1, T a2) {
+    uint32_t bit_0 = a0 < a1;
+    uint32_t bit_1 = a0 < a2;
+    uint32_t bit_2 = a1 < a2;
+    const uint8_t opts[8] = { 0, 1, 255, 1, 0, 255, 2, 2 };
+    return opts[bit_0 | (bit_1 << 1) | (bit_2 << 2)];
+  }
+
   bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2);
 }

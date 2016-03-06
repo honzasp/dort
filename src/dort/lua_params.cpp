@@ -17,6 +17,18 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return num;
   }
+  uint32_t lua_param_uint32(lua_State* l, int params_idx, const char* param_name) {
+    lua_getfield(l, params_idx, param_name);
+    if(!lua_isinteger(l, -1)) {
+      luaL_error(l, "Parameter '%s' must be an integer", param_name);
+    }
+    int32_t num = lua_tointeger(l, -1);
+    if(num < 0) {
+      luaL_error(l, "Parameter '%s' must be unsigned", param_name);
+    }
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return num;
+  }
   Point lua_param_point(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);
     Point pt = lua_check_point(l, -1);

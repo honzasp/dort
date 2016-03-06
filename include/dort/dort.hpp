@@ -23,6 +23,7 @@ namespace dort {
   class TextureMap2d;
   class ThreadPool;
   class Transform;
+  class VoxelGrid;
 
   struct Bxdf;
   struct CtxG;
@@ -40,6 +41,7 @@ namespace dort {
   struct ShadowTest;
   struct Tex2;
   struct Vector;
+  struct VoxelLump;
 
   template<class T> class Texture;
   template<class Pixel> struct Image;

@@ -19,8 +19,4 @@ namespace dort {
   Spectrum PointLight::background_radiance(const Ray&) const {
     return Spectrum(0.f);
   }
-
-  bool PointLight::is_delta() const {
-    return true;
-  }
 }

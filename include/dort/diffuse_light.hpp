@@ -19,7 +19,6 @@ namespace dort {
         LightSample sample) const override final;
     virtual float radiance_pdf(const Point& eye, const Vector& wi) const override final;
     virtual Spectrum background_radiance(const Ray& ray) const override final;
-    virtual bool is_delta() const override final;
     virtual Spectrum emitted_radiance(const Point& pt,
         const Normal& n, const Vector& wo) const override final;
   };

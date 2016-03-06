@@ -6,6 +6,14 @@
 #include "dort/spectrum.hpp"
 
 namespace dort {
+  enum LightFlags: uint8_t {
+    LIGHT_DELTA = 1 << 0,
+    LIGHT_AREA = 1 << 1,
+    LIGHT_BACKGROUND = 1 << 2,
+  };
+  constexpr LightFlags LIGHT_ALL = LightFlags(
+      LIGHT_DELTA | LIGHT_AREA | LIGHT_BACKGROUND);
+
   struct ShadowTest {
     Ray ray;
 
@@ -32,22 +40,28 @@ namespace dort {
 
   class Light {
   public:
+    LightFlags flags;
     uint32_t num_samples;
 
-    Light(uint32_t num_samples): num_samples(num_samples) { }
+    Light(LightFlags flags, uint32_t num_samples):
+      flags(flags), num_samples(num_samples) { }
     virtual ~Light() {}
+
+    bool matches(LightFlags test) {
+      return (this->flags & test) == this->flags;
+    }
 
     virtual Spectrum sample_radiance(const Point& eye, float eye_epsilon,
         Vector& out_wi, float& out_pdf, ShadowTest& out_shadow, 
         LightSample sample) const = 0;
     virtual float radiance_pdf(const Point& pt, const Vector& wi) const = 0;
     virtual Spectrum background_radiance(const Ray& ray) const = 0;
-    virtual bool is_delta() const = 0;
   };
 
   class AreaLight: public Light {
   public:
-    AreaLight(uint32_t num_samples): Light(num_samples) { }
+    AreaLight(LightFlags flags, uint32_t num_samples):
+      Light(flags, num_samples) { }
 
     virtual Spectrum emitted_radiance(const Point& pt,
         const Normal& n, const Vector& wo) const = 0;

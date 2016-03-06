@@ -161,21 +161,30 @@ namespace dort {
   };
 
   struct Box {
-    Point p_min;
-    Point p_max;
+    union {
+      struct {
+        Point p_min;
+        Point p_max;
+      };
+      Point p[2];
+    };
 
     Box(): 
       p_min(INFINITY, INFINITY, INFINITY),
       p_max(-INFINITY, -INFINITY, -INFINITY) { }
+    Box(const Box& box):
+      p_min(box.p_min), p_max(box.p_max) { }
     Box(const Point& p_min, const Point& p_max):
       p_min(p_min), p_max(p_max) { }
+    Box& operator=(const Box& box) {
+      this->p_min = box.p_min;
+      this->p_max = box.p_max;
+      return *this;
+    }
 
     const Point& operator[](uint32_t i) const {
-      if(i == 0) {
-        return this->p_min;
-      } else {
-        return this->p_max;
-      }
+      assert(i <= 1);
+      return this->p[i];
     }
 
     float area() const {
@@ -188,20 +197,24 @@ namespace dort {
     }
 
     uint8_t max_axis() const {
-      Vector extent = this->p_max - this->p_min;
-      if(extent.v.x < extent.v.y) {
-        return (extent.v.y < extent.v.z) ? 2 : 1;
-      } else {
-        return (extent.v.x < extent.v.z) ? 2 : 0;
-      }
+      return (this->p_max - this->p_min).v.max_axis();
     }
+
+    bool contains(const Point& pt) const {
+      return 
+        this->p_min.v.x <= pt.v.x && pt.v.x <= this->p_max.v.x &&
+        this->p_min.v.y <= pt.v.y && pt.v.y <= this->p_max.v.y &&
+        this->p_min.v.z <= pt.v.z && pt.v.z <= this->p_max.v.z;
+    }
+
+    bool hit(const Ray& ray, float& out_t) const;
+    bool hit_p(const Ray& ray) const;
+    bool fast_hit_p(const Ray& ray,
+        const Vector& inv_dir, bool dir_is_neg[3]) const;
   };
 
   Box union_box(const Box& b1, const Box& b2);
   Box union_box(const Box& box, const Point& pt);
-  bool box_hit_p(const Box& box, const Ray& ray);
-  bool fast_box_hit_p(const Box& bounds, const Ray& ray,
-      const Vector& inv_dir, bool dir_is_neg[3]);
 
   inline bool is_finite(const Box& box) {
     return is_finite(box.p_min) && is_finite(box.p_max);

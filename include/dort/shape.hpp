@@ -8,6 +8,12 @@ namespace dort {
     Normal nn;
     float u, v;
     Vector dpdu, dpdv;
+
+    union {
+      uint32_t aux_uint32[4];
+      int32_t aux_int32[4];
+      float aux_float[4];
+    };
   };
 
   class Shape {

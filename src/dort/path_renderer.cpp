@@ -20,7 +20,9 @@ namespace dort {
           radiance += isect.emitted_radiance(-next_ray.dir);
         } else {
           for(const auto& light: scene.lights) {
-            radiance += light->background_radiance(next_ray);
+            if(light->flags & LIGHT_BACKGROUND) {
+              radiance += light->background_radiance(next_ray);
+            }
           }
         }
       }

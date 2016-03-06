@@ -4,6 +4,7 @@
 
 namespace dort {
   float lua_param_float(lua_State* l, int params_idx, const char* param_name);
+  uint32_t lua_param_uint32(lua_State* l, int params_idx, const char* param_name);
   Point lua_param_point(lua_State* l, int params_idx, const char* param_name);
   Spectrum lua_param_spectrum(lua_State* l, int params_idx, const char* param_name);
   Transform lua_param_transform(lua_State* l, int params_idx, const char* param_name);

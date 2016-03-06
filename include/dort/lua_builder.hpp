@@ -50,6 +50,7 @@ namespace dort {
   int lua_build_add_read_ply_mesh_as_bvh(lua_State* l);
   int lua_build_add_ply_mesh(lua_State* l);
   int lua_build_add_ply_mesh_as_bvh(lua_State* l);
+  int lua_build_add_voxel_grid(lua_State* l);
 
   int lua_scene_render(lua_State* l);
   int lua_scene_eq(lua_State* l);
@@ -57,8 +58,6 @@ namespace dort {
 
   int lua_sampler_make_random(lua_State* l);
   int lua_sampler_make_stratified(lua_State* l);
-  int lua_renderer_make_direct(lua_State* l);
-  int lua_renderer_make_path(lua_State* l);
 
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame);

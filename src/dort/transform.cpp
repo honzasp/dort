@@ -12,7 +12,7 @@ namespace dort {
   }
 
   DiffGeom Transform::apply(bool inv, const DiffGeom& dg) const {
-    DiffGeom ret = dg;
+    DiffGeom ret(dg);
     ret.p = this->apply(inv, dg.p);
     ret.nn = normalize(this->apply(inv, dg.nn));
     ret.dpdu = this->apply(inv, dg.dpdu);

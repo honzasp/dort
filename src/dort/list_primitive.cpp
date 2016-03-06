@@ -18,7 +18,7 @@ namespace dort {
     bool any_hit = false;
 
     for(uint32_t i = 0; i < this->prims.size(); ++i) {
-      if(fast_box_hit_p(this->prim_bounds.at(i), ray, inv_dir, dir_is_neg)) {
+      if(this->prim_bounds.at(i).fast_hit_p(ray, inv_dir, dir_is_neg)) {
         any_hit |= this->prims.at(i)->intersect(ray, out_isect);
       }
     }
@@ -30,7 +30,7 @@ namespace dort {
     bool dir_is_neg[] = { ray.dir.v.x < 0.f, ray.dir.v.y < 0.f, ray.dir.v.z < 0.f };
 
     for(uint32_t i = 0; i < this->prims.size(); ++i) {
-      if(fast_box_hit_p(this->prim_bounds.at(i), ray, inv_dir, dir_is_neg)) {
+      if(this->prim_bounds.at(i).fast_hit_p(ray, inv_dir, dir_is_neg)) {
         if(this->prims.at(i)->intersect_p(ray)) {
           return true;
         }

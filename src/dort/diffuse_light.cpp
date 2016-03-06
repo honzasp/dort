@@ -5,7 +5,7 @@ namespace dort {
       const Transform& shape_to_world,
       Spectrum radiance,
       uint32_t num_samples):
-    AreaLight(num_samples),
+    AreaLight(LIGHT_AREA, num_samples),
     shape(std::move(shape)),
     shape_to_world(shape_to_world),
     radiance(radiance)
@@ -43,10 +43,6 @@ namespace dort {
 
   Spectrum DiffuseLight::background_radiance(const Ray&) const {
     return Spectrum(0.f);
-  }
-
-  bool DiffuseLight::is_delta() const {
-    return false;
   }
 
   Spectrum DiffuseLight::emitted_radiance(const Point&,
