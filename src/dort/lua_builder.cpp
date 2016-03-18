@@ -20,7 +20,6 @@
 #include "dort/random_sampler.hpp"
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
-#include "dort/stratified_sampler.hpp"
 #include "dort/thread_pool.hpp"
 #include "dort/voxel_grid.hpp"
 #include "dort/voxel_grid_primitive.hpp"
@@ -30,11 +29,6 @@ namespace dort {
     const luaL_Reg scene_methods[] = {
       {"__eq", lua_scene_eq},
       {"__gc", lua_gc_shared_obj<Scene, SCENE_TNAME>},
-      {0, 0},
-    };
-
-    const luaL_Reg sampler_methods[] = {
-      {"__gc", lua_gc_shared_obj<Sampler, SAMPLER_TNAME>},
       {0, 0},
     };
 
@@ -50,35 +44,31 @@ namespace dort {
     };
 
     lua_register_type(l, SCENE_TNAME, scene_methods);
-    lua_register_type(l, SAMPLER_TNAME, sampler_methods);
     lua_register_type(l, PRIMITIVE_TNAME, primitive_methods);
     lua_register_type(l, BUILDER_TNAME, builder_methods);
 
-    lua_register(l, "define_scene", lua_build_define_scene);
-    lua_register(l, "block", lua_build_block);
-    lua_register(l, "instance", lua_build_instance);
-    lua_register(l, "transform", lua_build_set_transform);
-    lua_register(l, "material", lua_build_set_material);
-    lua_register(l, "camera", lua_build_set_camera);
-    lua_register(l, "option", lua_build_set_option);
-    lua_register(l, "add_shape", lua_build_add_shape);
-    lua_register(l, "add_primitive", lua_build_add_primitive);
-    lua_register(l, "add_light", lua_build_add_light);
-    lua_register(l, "add_read_ply_mesh", lua_build_add_read_ply_mesh);
-    lua_register(l, "add_read_ply_mesh_as_bvh", lua_build_add_read_ply_mesh_as_bvh);
-    lua_register(l, "add_ply_mesh", lua_build_add_ply_mesh);
-    lua_register(l, "add_ply_mesh_as_bvh", lua_build_add_ply_mesh_as_bvh);
-    lua_register(l, "add_voxel_grid", lua_build_add_voxel_grid);
+    lua_register(l, "define_scene", lua_builder_define_scene);
+    lua_register(l, "block", lua_builder_define_block);
+    lua_register(l, "instance", lua_builder_define_instance);
+    lua_register(l, "transform", lua_builder_set_transform);
+    lua_register(l, "material", lua_builder_set_material);
+    lua_register(l, "camera", lua_builder_set_camera);
+    lua_register(l, "option", lua_builder_set_option);
+    lua_register(l, "add_shape", lua_builder_add_shape);
+    lua_register(l, "add_primitive", lua_builder_add_primitive);
+    lua_register(l, "add_light", lua_builder_add_light);
+    lua_register(l, "add_read_ply_mesh", lua_builder_add_read_ply_mesh);
+    lua_register(l, "add_read_ply_mesh_as_bvh", lua_builder_add_read_ply_mesh_as_bvh);
+    lua_register(l, "add_ply_mesh", lua_builder_add_ply_mesh);
+    lua_register(l, "add_ply_mesh_as_bvh", lua_builder_add_ply_mesh_as_bvh);
+    lua_register(l, "add_voxel_grid", lua_builder_add_voxel_grid);
 
     lua_register(l, "render", lua_scene_render);
-
-    lua_register(l, "random_sampler", lua_sampler_make_random);
-    lua_register(l, "stratified_sampler", lua_sampler_make_stratified);
 
     return 0;
   }
 
-  int lua_build_define_scene(lua_State* l) {
+  int lua_builder_define_scene(lua_State* l) {
     lua_set_current_builder(l, Builder());
     lua_pushvalue(l, 1);
     lua_call(l, 0, 0);
@@ -113,7 +103,7 @@ namespace dort {
     return 1;
   }
 
-  int lua_build_block(lua_State* l) {
+  int lua_builder_define_block(lua_State* l) {
     {
       Builder& builder = lua_get_current_builder(l);
       builder.state_stack.push_back(builder.state);
@@ -132,7 +122,7 @@ namespace dort {
     }
   }
 
-  int lua_build_instance(lua_State* l) {
+  int lua_builder_define_instance(lua_State* l) {
     {
       Builder& builder = lua_get_current_builder(l);
       BuilderFrame new_frame;
@@ -168,28 +158,28 @@ namespace dort {
     }
   }
 
-  int lua_build_set_transform(lua_State* l) {
+  int lua_builder_set_transform(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     const Transform& trans = lua_check_transform(l, 1);
     builder.state.local_to_frame = builder.state.local_to_frame * trans;
     return 0;
   }
 
-  int lua_build_set_material(lua_State* l) {
+  int lua_builder_set_material(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     auto material = lua_check_material(l, 1);
     builder.state.material = material;
     return 0;
   }
 
-  int lua_build_set_camera(lua_State* l) {
+  int lua_builder_set_camera(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     auto camera = lua_check_camera(l, 1);
     builder.camera = camera;
     return 0;
   }
 
-  int lua_build_set_option(lua_State* l) {
+  int lua_builder_set_option(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     std::string option = luaL_checkstring(l, 1);
     if(option == "bvh split method") {
@@ -211,7 +201,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_shape(lua_State* l) {
+  int lua_builder_add_shape(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     auto shape = lua_check_shape(l, 1);
     auto material = builder.state.material;
@@ -227,7 +217,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_primitive(lua_State* l) {
+  int lua_builder_add_primitive(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     auto primitive = lua_check_primitive(l, 1);
     auto transform = builder.state.local_to_frame;
@@ -236,7 +226,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_light(lua_State* l) {
+  int lua_builder_add_light(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     if(!builder.frame_stack.empty()) {
       luaL_error(l, "lights can only be added in the root frame");
@@ -246,7 +236,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_read_ply_mesh(lua_State* l) {
+  int lua_builder_add_read_ply_mesh(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     FILE* file = std::fopen(file_name, "r");
     if(!file) {
@@ -278,7 +268,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_read_ply_mesh_as_bvh(lua_State* l) {
+  int lua_builder_add_read_ply_mesh_as_bvh(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     FILE* file = std::fopen(file_name, "r");
     if(!file) {
@@ -310,7 +300,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_ply_mesh(lua_State* l) {
+  int lua_builder_add_ply_mesh(lua_State* l) {
     auto ply_mesh = lua_check_ply_mesh(l, 1);
 
     Builder& builder = lua_get_current_builder(l);
@@ -337,7 +327,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_ply_mesh_as_bvh(lua_State* l) {
+  int lua_builder_add_ply_mesh_as_bvh(lua_State* l) {
     auto ply_mesh = lua_check_ply_mesh(l, 1);
 
     Builder& builder = lua_get_current_builder(l);
@@ -367,7 +357,7 @@ namespace dort {
     return 0;
   }
 
-  int lua_build_add_voxel_grid(lua_State* l) {
+  int lua_builder_add_voxel_grid(lua_State* l) {
     Builder& builder = lua_get_current_builder(l);
     auto transform = builder.state.local_to_frame;
 
@@ -467,30 +457,6 @@ namespace dort {
   }
 
 
-  int lua_sampler_make_random(lua_State* l) {
-    int p = 1;
-    uint32_t samples_per_pixel = lua_param_uint32_opt(l, p, "samples_per_pixel", 1);
-    uint32_t seed = lua_param_uint32_opt(l, p, "seed", 1);
-    lua_params_check_unused(l, p);
-    
-    lua_push_sampler(l, std::make_shared<RandomSampler>(
-          samples_per_pixel, Rng(seed)));
-    return 1;
-  }
-
-  int lua_sampler_make_stratified(lua_State* l) {
-    int p = 1;
-
-    uint32_t samples_per_x = lua_param_uint32_opt(l, p, "samples_per_x", 1);
-    uint32_t samples_per_y = lua_param_uint32_opt(l, p, "samples_per_y", 1);
-    uint32_t seed = lua_param_uint32_opt(l, p, "seed", 1);
-    lua_params_check_unused(l, p);
-
-    lua_push_sampler(l, std::make_shared<StratifiedSampler>(
-          samples_per_x, samples_per_y, Rng(seed)));
-    return 1;
-  }
-
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame)
   {
@@ -546,16 +512,6 @@ namespace dort {
   }
   void lua_push_scene(lua_State* l, std::shared_ptr<Scene> scene) {
     lua_push_shared_obj<Scene, SCENE_TNAME>(l, scene);
-  }
-
-  std::shared_ptr<Sampler> lua_check_sampler(lua_State* l, int idx) {
-    return lua_check_shared_obj<Sampler, SAMPLER_TNAME>(l, idx);
-  }
-  bool lua_test_sampler(lua_State* l, int idx) {
-    return lua_test_shared_obj<Sampler, SAMPLER_TNAME>(l, idx);
-  }
-  void lua_push_sampler(lua_State* l, std::shared_ptr<Sampler> sampler) {
-    lua_push_shared_obj<Sampler, SAMPLER_TNAME>(l, sampler);
   }
 
   std::shared_ptr<Primitive> lua_check_primitive(lua_State* l, int idx) {

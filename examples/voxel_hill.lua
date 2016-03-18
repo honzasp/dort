@@ -6,7 +6,7 @@ do local angle = 30
     })
 
     block(function()
-      local s = 16
+      local s = 1
       local ex = 32*s
       local ey = 16*s
       local ez = 32*s

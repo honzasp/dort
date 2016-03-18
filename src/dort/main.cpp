@@ -9,6 +9,7 @@
 #include "dort/lua_light.hpp"
 #include "dort/lua_material.hpp"
 #include "dort/lua_math.hpp"
+#include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/lua_stats.hpp"
 #include "dort/lua_texture.hpp"
@@ -29,16 +30,17 @@ namespace dort {
     
     try {
       luaL_requiref(l, "base", luaopen_base, true);
-      luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
-      luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
-      luaL_requiref(l, STATS_LIBNAME, lua_open_stats, true);
-      luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
-      luaL_requiref(l, TEXTURE_LIBNAME, lua_open_texture, true);
-      luaL_requiref(l, SHAPE_LIBNAME, lua_open_shape, true);
-      luaL_requiref(l, MATERIAL_LIBNAME, lua_open_material, true);
-      luaL_requiref(l, LIGHT_LIBNAME, lua_open_light, true);
-      luaL_requiref(l, CAMERA_LIBNAME, lua_open_camera, true);
       luaL_requiref(l, BUILDER_LIBNAME, lua_open_builder, true);
+      luaL_requiref(l, CAMERA_LIBNAME, lua_open_camera, true);
+      luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
+      luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
+      luaL_requiref(l, LIGHT_LIBNAME, lua_open_light, true);
+      luaL_requiref(l, MATERIAL_LIBNAME, lua_open_material, true);
+      luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
+      luaL_requiref(l, SAMPLER_LIBNAME, lua_open_sampler, true);
+      luaL_requiref(l, SHAPE_LIBNAME, lua_open_shape, true);
+      luaL_requiref(l, STATS_LIBNAME, lua_open_stats, true);
+      luaL_requiref(l, TEXTURE_LIBNAME, lua_open_texture, true);
 
       const char* input_file = argc == 1 ? 0 : argv[1];
 
