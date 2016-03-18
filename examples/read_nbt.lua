@@ -1,6 +1,7 @@
 require "minecraft/anvil"
 
-local map = minecraft.anvil.open_map("/home/jan/.minecraft/saves/Dev world")
+local home = os.getenv("HOME")
+local map = minecraft.anvil.open_map(home .. "/.minecraft/saves/Dev world")
 local nbt = minecraft.anvil.read_chunk(map, 2, 3)
 minecraft.anvil.close_map(map)
 

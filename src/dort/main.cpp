@@ -34,8 +34,9 @@ namespace dort {
     try {
       luaL_requiref(l, "base", luaopen_base, true);
       luaL_requiref(l, LUA_DBLIBNAME, luaopen_debug, true);
-      luaL_requiref(l, LUA_LOADLIBNAME, luaopen_package, true);
       luaL_requiref(l, LUA_IOLIBNAME, luaopen_io, true);
+      luaL_requiref(l, LUA_LOADLIBNAME, luaopen_package, true);
+      luaL_requiref(l, LUA_OSLIBNAME, luaopen_os, true);
       luaL_requiref(l, LUA_STRLIBNAME, luaopen_string, true);
       luaL_requiref(l, "zlib", luaopen_zlib, true);
 

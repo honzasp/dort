@@ -6,8 +6,13 @@ local function open_region(map, region_x, region_z)
   local region = {}
   region.path = map.path .. "/region/r." ..
     region_x .. "." .. region_z .. ".mca"
-  region.file = io.open(region.path, "r")
   region.chunk_offsets = {}
+
+  local file, err = io.open(region.path, "r")
+  if not file then
+    error("Could not read Anvil region: " .. err)
+  end
+  region.file = file
 
   local location_table = region.file:read(1024 * 4)
   for i = 0, 1024 - 1 do
