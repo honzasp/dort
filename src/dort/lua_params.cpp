@@ -1,10 +1,12 @@
 #include "dort/geometry.hpp"
 #include "dort/lua_builder.hpp"
+#include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
+#include "dort/lua_spectrum.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/spectrum.hpp"
 

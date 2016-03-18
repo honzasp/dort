@@ -1,3 +1,5 @@
+local _ENV = require "dort/dsl"
+
 --for angle = 0, 360, 30 do
 do local angle = 30
   local scene = define_scene(function()

@@ -11,10 +11,15 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg camera_funs[] = {
+      {"make_ortho", lua_camera_make_ortho},
+      {"make_perspective", lua_camera_make_perspective},
+      {0, 0},
+    };
+
     lua_register_type(l, CAMERA_TNAME, camera_methods);
-    lua_register(l, "ortho_camera", lua_camera_make_ortho);
-    lua_register(l, "perspective_camera", lua_camera_make_perspective);
-    return 0;
+    luaL_newlib(l, camera_funs);
+    return 1;
   }
 
   int lua_camera_make_ortho(lua_State* l) {

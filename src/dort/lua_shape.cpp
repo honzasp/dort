@@ -26,17 +26,20 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg shape_funs[] = {
+      {"make_sphere", lua_shape_make_sphere},
+      {"make_disk", lua_shape_make_disk},
+      {"make_triangle", lua_shape_make_triangle},
+      {"make_mesh", lua_shape_make_mesh},
+      {"read_ply_mesh", lua_ply_mesh_read},
+      {0, 0},
+    };
+
     lua_register_type(l, SHAPE_TNAME, shape_methods);
     lua_register_type(l, MESH_TNAME, mesh_methods);
     lua_register_type(l, PLY_MESH_TNAME, ply_mesh_methods);
-
-    lua_register(l, "sphere", lua_shape_make_sphere);
-    lua_register(l, "disk", lua_shape_make_disk);
-    lua_register(l, "triangle", lua_shape_make_triangle);
-    lua_register(l, "mesh", lua_shape_make_mesh);
-    lua_register(l, "read_ply_mesh", lua_ply_mesh_read);
-
-    return 0;
+    luaL_newlib(l, shape_funs);
+    return 1;
   }
 
   int lua_shape_make_sphere(lua_State* l) {

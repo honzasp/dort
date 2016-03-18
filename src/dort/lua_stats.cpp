@@ -5,9 +5,13 @@
 
 namespace dort {
   int lua_open_stats(lua_State* l) {
-    lua_register(l, "reset_stats", lua_stats_reset);
-    lua_register(l, "write_and_reset_stats", lua_stats_write_and_reset);
-    return 0;
+    const luaL_Reg stats_funs[] = {
+      {"reset", lua_stats_reset},
+      {"write_and_reset", lua_stats_write_and_reset},
+      {0, 0},
+    };
+    luaL_newlib(l, stats_funs);
+    return 1;
   }
 
   int lua_stats_reset(lua_State* l) {

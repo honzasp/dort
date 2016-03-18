@@ -6,6 +6,7 @@
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
+#include "dort/lua_spectrum.hpp"
 #include "dort/lua_texture.hpp"
 
 namespace dort {
@@ -32,22 +33,24 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg texture_funs[] = {
+      {"make_const", lua_texture_make_const},
+      {"make_lerp", lua_texture_make_lerp},
+      {"make_checkerboard", lua_texture_make_checkerboard},
+      {"make_map_debug", lua_texture_make_map_debug},
+      {"make_image", lua_texture_make_image},
+      {"make_map_uv", lua_texture_map_2d_make_uv},
+      {"make_map_xy", lua_texture_map_2d_make_xy},
+      {"make_map_spherical", lua_texture_map_2d_make_spherical},
+      {"make_map_cylindrical", lua_texture_map_2d_make_cylindrical},
+      {0, 0},
+    };
+
     lua_register_type(l, TEXTURE_FLOAT_TNAME, texture_float_methods);
     lua_register_type(l, TEXTURE_SPECTRUM_TNAME, texture_spectrum_methods);
     lua_register_type(l, TEXTURE_MAP_2D_TNAME, texture_map_2d_methods);
-
-    lua_register(l, "const_texture", lua_texture_make_const);
-    lua_register(l, "lerp_texture", lua_texture_make_lerp);
-    lua_register(l, "checkerboard_texture", lua_texture_make_checkerboard);
-    lua_register(l, "map_debug_texture", lua_texture_make_map_debug);
-    lua_register(l, "image_texture", lua_texture_make_image);
-
-    lua_register(l, "uv_texture_map", lua_texture_map_2d_make_uv);
-    lua_register(l, "xy_texture_map", lua_texture_map_2d_make_xy);
-    lua_register(l, "spherical_texture_map", lua_texture_map_2d_make_spherical);
-    lua_register(l, "cylindrical_texture_map", lua_texture_map_2d_make_cylindrical);
-
-    return 0;
+    luaL_newlib(l, texture_funs);
+    return 1;
   }
 
   int lua_texture_make_const(lua_State* l) {

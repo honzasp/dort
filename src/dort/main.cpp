@@ -4,6 +4,7 @@
 #include "dort/lua.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
+#include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_light.hpp"
@@ -11,6 +12,7 @@
 #include "dort/lua_math.hpp"
 #include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
+#include "dort/lua_spectrum.hpp"
 #include "dort/lua_stats.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/stats.hpp"
@@ -30,17 +32,37 @@ namespace dort {
     
     try {
       luaL_requiref(l, "base", luaopen_base, true);
-      luaL_requiref(l, BUILDER_LIBNAME, lua_open_builder, true);
-      luaL_requiref(l, CAMERA_LIBNAME, lua_open_camera, true);
-      luaL_requiref(l, GEOMETRY_LIBNAME, lua_open_geometry, true);
-      luaL_requiref(l, IMAGE_LIBNAME, lua_open_image, true);
-      luaL_requiref(l, LIGHT_LIBNAME, lua_open_light, true);
-      luaL_requiref(l, MATERIAL_LIBNAME, lua_open_material, true);
-      luaL_requiref(l, MATH_LIBNAME, lua_open_math, true);
-      luaL_requiref(l, SAMPLER_LIBNAME, lua_open_sampler, true);
-      luaL_requiref(l, SHAPE_LIBNAME, lua_open_shape, true);
-      luaL_requiref(l, STATS_LIBNAME, lua_open_stats, true);
-      luaL_requiref(l, TEXTURE_LIBNAME, lua_open_texture, true);
+      luaL_requiref(l, LUA_DBLIBNAME, luaopen_debug, true);
+      luaL_requiref(l, LUA_LOADLIBNAME, luaopen_package, true);
+
+      lua_getglobal(l, "package");
+      lua_createtable(l, 1, 0);
+      lua_pushcfunction(l, lua_searcher);
+      lua_rawseti(l, -2, 1);
+      lua_setfield(l, -2, "searchers");
+      lua_pop(l, 1);
+
+      auto load_sublib = [&](const char* libname, lua_CFunction open_fun) {
+        std::string global_libname(std::string("dort.") + libname);
+        luaL_requiref(l, global_libname.c_str(), open_fun, false);
+        lua_setfield(l, -2, libname);
+      };
+
+      lua_newtable(l);
+      load_sublib("builder", lua_open_builder);
+      load_sublib("camera", lua_open_camera);
+      load_sublib("filter", lua_open_filter);
+      load_sublib("geometry", lua_open_geometry);
+      load_sublib("image", lua_open_image);
+      load_sublib("light", lua_open_light);
+      load_sublib("material", lua_open_material);
+      load_sublib("math", lua_open_math);
+      load_sublib("sampler", lua_open_sampler);
+      load_sublib("shape", lua_open_shape);
+      load_sublib("spectrum", lua_open_spectrum);
+      load_sublib("stats", lua_open_stats);
+      load_sublib("texture", lua_open_texture);
+      lua_setglobal(l, "dort");
 
       const char* input_file = argc == 1 ? 0 : argv[1];
 

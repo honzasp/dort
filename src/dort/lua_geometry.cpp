@@ -36,21 +36,24 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg geometry_funs[] = {
+      {"vector", lua_vector_make},
+      {"point", lua_point_make},
+      {"identity", lua_transform_identity},
+      {"translate", lua_transform_translate},
+      {"scale", lua_transform_scale},
+      {"rotate_x", lua_transform_rotate_x},
+      {"rotate_y", lua_transform_rotate_y},
+      {"rotate_z", lua_transform_rotate_z},
+      {"look_at", lua_transform_look_at},
+      {0, 0},
+    };
+
     lua_register_type(l, VECTOR_TNAME, vector_methods);
     lua_register_type(l, POINT_TNAME, point_methods);
     lua_register_type(l, TRANSFORM_TNAME, transform_methods);
-
-    lua_register(l, "vector", lua_vector_make);
-    lua_register(l, "point", lua_point_make);
-    lua_register(l, "identity", lua_transform_identity);
-    lua_register(l, "translate", lua_transform_translate);
-    lua_register(l, "scale", lua_transform_scale);
-    lua_register(l, "rotate_x", lua_transform_rotate_x);
-    lua_register(l, "rotate_y", lua_transform_rotate_y);
-    lua_register(l, "rotate_z", lua_transform_rotate_z);
-    lua_register(l, "look_at", lua_transform_look_at);
-
-    return 0;
+    luaL_newlib(l, geometry_funs);
+    return 1;
   }
 
   int lua_vector_make(lua_State* l) {

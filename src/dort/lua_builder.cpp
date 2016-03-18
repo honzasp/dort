@@ -43,29 +43,31 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg builder_funs[] = {
+      {"define_scene", lua_builder_define_scene},
+      {"define_block", lua_builder_define_block},
+      {"define_instance", lua_builder_define_instance},
+      {"set_transform", lua_builder_set_transform},
+      {"set_material", lua_builder_set_material},
+      {"set_camera", lua_builder_set_camera},
+      {"set_option", lua_builder_set_option},
+      {"add_shape", lua_builder_add_shape},
+      {"add_primitive", lua_builder_add_primitive},
+      {"add_light", lua_builder_add_light},
+      {"add_read_ply_mesh", lua_builder_add_read_ply_mesh},
+      {"add_read_ply_mesh_as_bvh", lua_builder_add_read_ply_mesh_as_bvh},
+      {"add_ply_mesh", lua_builder_add_ply_mesh},
+      {"add_ply_mesh_as_bvh", lua_builder_add_ply_mesh_as_bvh},
+      {"add_voxel_grid", lua_builder_add_voxel_grid},
+      {"render", lua_scene_render},
+      {0, 0},
+    };
+
     lua_register_type(l, SCENE_TNAME, scene_methods);
     lua_register_type(l, PRIMITIVE_TNAME, primitive_methods);
     lua_register_type(l, BUILDER_TNAME, builder_methods);
-
-    lua_register(l, "define_scene", lua_builder_define_scene);
-    lua_register(l, "block", lua_builder_define_block);
-    lua_register(l, "instance", lua_builder_define_instance);
-    lua_register(l, "transform", lua_builder_set_transform);
-    lua_register(l, "material", lua_builder_set_material);
-    lua_register(l, "camera", lua_builder_set_camera);
-    lua_register(l, "option", lua_builder_set_option);
-    lua_register(l, "add_shape", lua_builder_add_shape);
-    lua_register(l, "add_primitive", lua_builder_add_primitive);
-    lua_register(l, "add_light", lua_builder_add_light);
-    lua_register(l, "add_read_ply_mesh", lua_builder_add_read_ply_mesh);
-    lua_register(l, "add_read_ply_mesh_as_bvh", lua_builder_add_read_ply_mesh_as_bvh);
-    lua_register(l, "add_ply_mesh", lua_builder_add_ply_mesh);
-    lua_register(l, "add_ply_mesh_as_bvh", lua_builder_add_ply_mesh_as_bvh);
-    lua_register(l, "add_voxel_grid", lua_builder_add_voxel_grid);
-
-    lua_register(l, "render", lua_scene_render);
-
-    return 0;
+    luaL_newlib(l, builder_funs);
+    return 1;
   }
 
   int lua_builder_define_scene(lua_State* l) {

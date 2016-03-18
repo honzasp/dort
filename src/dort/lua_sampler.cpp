@@ -11,10 +11,15 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg sampler_funs[] = {
+      {"make_random", lua_sampler_make_random},
+      {"make_stratified", lua_sampler_make_stratified},
+      {0, 0},
+    };
+
     lua_register_type(l, SAMPLER_TNAME, sampler_methods);
-    lua_register(l, "random_sampler", lua_sampler_make_random);
-    lua_register(l, "stratified_sampler", lua_sampler_make_stratified);
-    return 0;
+    luaL_newlib(l, sampler_funs);
+    return 1;
   }
 
   int lua_sampler_make_random(lua_State* l) {

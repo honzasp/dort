@@ -13,12 +13,6 @@ namespace dort {
     lua_pop(l, 1);
   }
 
-  inline
-  void lua_register_const(lua_State* l, const char* name, float value) {
-    lua_pushnumber(l, value);
-    lua_setglobal(l, name);
-  }
-
   template<float (*unary_fun)(float)>
   int lua_wrap_unary_fun(lua_State* l) {
     float a = luaL_checknumber(l, 1);

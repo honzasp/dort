@@ -17,5 +17,19 @@ namespace dort {
     assert(ptr != 0);
     return (CtxG*)ptr;
   }
+
+  int lua_searcher(lua_State* l) {
+    std::string library_name(luaL_checkstring(l, 1));
+    std::string library_path = "lua/" + library_name + ".lua";
+    int status = luaL_loadfile(l, library_path.c_str());
+    if(status == LUA_OK) {
+      lua_pushvalue(l, 1);
+      return 2;
+    } else if(status == LUA_ERRFILE) {
+      return 1;
+    } else {
+      return luaL_error(l, "Load error: %s", lua_tostring(l, -1));
+    }
+  }
 }
 

@@ -15,14 +15,20 @@ namespace dort {
       {"__gc", lua_gc_shared_obj<Material, MATERIAL_TNAME>},
       {0, 0},
     };
+
+    const luaL_Reg material_funs[] = {
+      {"make_matte", lua_material_make_matte},
+      {"make_plastic", lua_material_make_plastic},
+      {"make_metal", lua_material_make_metal},
+      {"make_mirror", lua_material_make_mirror},
+      {"make_glass", lua_material_make_glass},
+      {"make_rough_glass", lua_material_make_rough_glass},
+      {0, 0},
+    };
+
     lua_register_type(l, MATERIAL_TNAME, material_methods);
-    lua_register(l, "matte_material", lua_material_make_matte);
-    lua_register(l, "plastic_material", lua_material_make_plastic);
-    lua_register(l, "metal_material", lua_material_make_metal);
-    lua_register(l, "mirror_material", lua_material_make_mirror);
-    lua_register(l, "glass_material", lua_material_make_glass);
-    lua_register(l, "rough_glass_material", lua_material_make_rough_glass);
-    return 0;
+    luaL_newlib(l, material_funs);
+    return 1;
   }
 
   int lua_material_make_matte(lua_State* l) {

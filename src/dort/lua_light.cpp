@@ -14,11 +14,16 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg light_funs[] = {
+      {"make_point", lua_light_make_point},
+      {"make_diffuse", lua_light_make_diffuse},
+      {"make_infinite", lua_light_make_infinite},
+      {0, 0},
+    };
+
     lua_register_type(l, LIGHT_TNAME, light_methods);
-    lua_register(l, "point_light", lua_light_make_point);
-    lua_register(l, "diffuse_light", lua_light_make_diffuse);
-    lua_register(l, "infinite_light", lua_light_make_infinite);
-    return 0;
+    luaL_newlib(l, light_funs);
+    return 1;
   }
 
   int lua_light_make_point(lua_State* l) {
