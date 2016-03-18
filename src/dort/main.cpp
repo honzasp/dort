@@ -10,6 +10,7 @@
 #include "dort/lua_light.hpp"
 #include "dort/lua_material.hpp"
 #include "dort/lua_math.hpp"
+#include "dort/lua_nbt.hpp"
 #include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/lua_spectrum.hpp"
@@ -34,6 +35,9 @@ namespace dort {
       luaL_requiref(l, "base", luaopen_base, true);
       luaL_requiref(l, LUA_DBLIBNAME, luaopen_debug, true);
       luaL_requiref(l, LUA_LOADLIBNAME, luaopen_package, true);
+      luaL_requiref(l, LUA_IOLIBNAME, luaopen_io, true);
+      luaL_requiref(l, LUA_STRLIBNAME, luaopen_string, true);
+      luaL_requiref(l, "zlib", luaopen_zlib, true);
 
       lua_getglobal(l, "package");
       lua_createtable(l, 1, 0);
@@ -57,12 +61,14 @@ namespace dort {
       load_sublib("light", lua_open_light);
       load_sublib("material", lua_open_material);
       load_sublib("math", lua_open_math);
+      load_sublib("nbt", lua_open_nbt);
       load_sublib("sampler", lua_open_sampler);
       load_sublib("shape", lua_open_shape);
       load_sublib("spectrum", lua_open_spectrum);
       load_sublib("stats", lua_open_stats);
       load_sublib("texture", lua_open_texture);
       lua_setglobal(l, "dort");
+
 
       const char* input_file = argc == 1 ? 0 : argv[1];
 
