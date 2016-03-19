@@ -367,7 +367,7 @@ namespace dort {
       RayEntry& out_entry, RayEntry& out_exit) 
   {
     auto f_min = [](float x) { return x < INFINITY ? x : -INFINITY; };
-    auto f_max = [](float x) { return x < INFINITY ? x : INFINITY; };
+    auto f_max = [](float x) { return x > -INFINITY ? x : INFINITY; };
 
     float t0_entry = f_min((float(box[  ray.dir_is_neg[0]][0]) 
           - ray.orig[0]) * ray.dir_inv[0]);

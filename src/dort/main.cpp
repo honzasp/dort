@@ -38,6 +38,7 @@ namespace dort {
       luaL_requiref(l, LUA_LOADLIBNAME, luaopen_package, true);
       luaL_requiref(l, LUA_OSLIBNAME, luaopen_os, true);
       luaL_requiref(l, LUA_STRLIBNAME, luaopen_string, true);
+      luaL_requiref(l, LUA_TABLIBNAME, luaopen_table, true);
       luaL_requiref(l, "zlib", luaopen_zlib, true);
 
       lua_getglobal(l, "package");

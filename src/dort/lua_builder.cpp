@@ -373,7 +373,8 @@ namespace dort {
       lua_getfield(l, p, "voxels");
       uint32_t array_len = lua_rawlen(l, -1);
       if(array_len != voxel_count) {
-        return luaL_error(l, "Expected exactly %d voxels", int32_t(voxel_count));
+        return luaL_error(l, "Expected exactly %d voxels, got %d voxels",
+            int32_t(voxel_count), int32_t(array_len));
       }
 
       uint32_t i = 1;

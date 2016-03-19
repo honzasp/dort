@@ -33,6 +33,9 @@ end
 local function read_chunk_from_region(region, chunk_x, chunk_z)
   local chunk_idx = chunk_x + 32 * chunk_z
   local sector_begin = region.chunk_offsets[chunk_idx + 1]
+  if sector_begin == 0 then
+    return nil
+  end
 
   region.file:seek("set", sector_begin * 4096)
   local header = region.file:read(5)
@@ -41,8 +44,19 @@ local function read_chunk_from_region(region, chunk_x, chunk_z)
     error("Chunk is suspiciously long: " .. length .. " bytes")
   end
 
-  local zipped_bytes = region.file:read(length - 1)
-  local unzipped_bytes = zlib.inflate()(zipped_bytes)
+  local unzipped_chunks = {}
+  local remaining_bytes = length - 1
+  local inflater = zlib.inflate()
+  while remaining_bytes > 0 do
+    local chunk_size = 4*1024
+    local zipped_chunk = region.file:read(chunk_size)
+    local unzipped_chunk, eof = inflater(zipped_chunk)
+    unzipped_chunks[#unzipped_chunks + 1] = unzipped_chunk
+    remaining_bytes = remaining_bytes - chunk_size
+    if eof then break end
+  end
+
+  local unzipped_bytes = table.concat(unzipped_chunks)
   return dort.nbt.read(unzipped_bytes)
 end
 
