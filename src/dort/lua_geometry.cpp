@@ -1,6 +1,9 @@
+#include "dort/box_i.hpp"
+#include "dort/geometry.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
-#include "dort/geometry.hpp"
+#include "dort/transform.hpp"
+#include "dort/vec_3i.hpp"
 
 namespace dort {
   int lua_open_geometry(lua_State* l) {
@@ -9,9 +12,9 @@ namespace dort {
       {"y", lua_vector_get_y},
       {"z", lua_vector_get_z},
       {"__tostring", lua_vector_tostring},
-      {"__add", lua_vector_add},
-      {"__sub", lua_vector_sub},
-      {"__eq", lua_vector_eq},
+      {"__add", lua_geometry_add},
+      {"__sub", lua_geometry_sub},
+      {"__eq", lua_geometry_eq},
       {0, 0},
     };
 
@@ -20,9 +23,9 @@ namespace dort {
       {"y", lua_point_get_y},
       {"z", lua_point_get_z},
       {"__tostring", lua_point_tostring},
-      {"__add", lua_vector_add},
-      {"__sub", lua_vector_sub},
-      {"__eq", lua_point_eq},
+      {"__add", lua_geometry_add},
+      {"__sub", lua_geometry_sub},
+      {"__eq", lua_geometry_eq},
       {0, 0},
     };
 
@@ -36,6 +39,25 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg vec3i_methods[] = {
+      {"x", lua_vec3i_get_x},
+      {"y", lua_vec3i_get_y},
+      {"z", lua_vec3i_get_z},
+      {"__tostring", lua_vec3i_tostring},
+      {"__add", lua_geometry_add},
+      {"__sub", lua_geometry_sub},
+      {"__eq", lua_geometry_eq},
+      {0, 0},
+    };
+
+    const luaL_Reg boxi_methods[] = {
+      {"min", lua_boxi_get_min},
+      {"max", lua_boxi_get_max},
+      {"contains", lua_boxi_contains},
+      {"__tostring", lua_boxi_tostring},
+      {0, 0},
+    };
+
     const luaL_Reg geometry_funs[] = {
       {"vector", lua_vector_make},
       {"point", lua_point_make},
@@ -46,13 +68,58 @@ namespace dort {
       {"rotate_y", lua_transform_rotate_y},
       {"rotate_z", lua_transform_rotate_z},
       {"look_at", lua_transform_look_at},
+      {"vec3i", lua_vec3i_make},
+      {"boxi", lua_boxi_make},
       {0, 0},
     };
 
     lua_register_type(l, VECTOR_TNAME, vector_methods);
     lua_register_type(l, POINT_TNAME, point_methods);
     lua_register_type(l, TRANSFORM_TNAME, transform_methods);
+    lua_register_type(l, VEC3I_TNAME, vec3i_methods);
+    lua_register_type(l, BOXI_TNAME, boxi_methods);
     luaL_newlib(l, geometry_funs);
+    return 1;
+  }
+
+  int lua_geometry_add(lua_State* l) {
+    if(lua_test_vector(l, 1) && lua_test_point(l, 2)) {
+      lua_push_point(l, lua_check_vector(l, 1) + lua_check_point(l, 2));
+    } else if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
+      lua_push_point(l, lua_check_point(l, 1) + lua_check_vector(l, 2));
+    } else if(lua_test_vector(l, 1) && lua_test_vector(l, 2)) {
+      lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
+    } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
+      lua_push_vec3i(l, lua_check_vec3i(l, 1) + lua_check_vec3i(l, 2));
+    } else {
+      luaL_error(l, "Wrong combination of arguments to +");
+    }
+    return 1;
+  }
+  int lua_geometry_sub(lua_State* l) {
+    if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
+      lua_push_point(l, lua_check_point(l, 1) - lua_check_vector(l, 2));
+    } else if(lua_test_point(l, 1) && lua_test_point(l, 2)) {
+      lua_push_vector(l, lua_check_point(l, 1) - lua_check_point(l, 2));
+    } else if(lua_test_vector(l, 1) && lua_test_vector(l, 2)) {
+      lua_push_vector(l, lua_check_vector(l, 1) - lua_check_vector(l, 2));
+    } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
+      lua_push_vec3i(l, lua_check_vec3i(l, 1) - lua_check_vec3i(l, 2));
+    } else {
+      luaL_error(l, "Wrong combination of arguments to -");
+    }
+    return 1;
+  }
+  int lua_geometry_eq(lua_State* l) {
+    if(lua_test_vector(l, 1) && lua_test_vector(l, 2)) {
+      lua_pushboolean(l, lua_check_vector(l, 1) == lua_check_vector(l, 2));
+    } else if(lua_test_point(l, 1) && lua_test_point(l, 2)) {
+      lua_pushboolean(l, lua_check_point(l, 1) == lua_check_point(l, 2));
+    } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
+      lua_pushboolean(l, lua_check_vec3i(l, 1) == lua_check_vec3i(l, 2));
+    } else {
+      lua_pushboolean(l, false);
+    }
     return 1;
   }
 
@@ -76,36 +143,8 @@ namespace dort {
     return 1;
   }
   int lua_vector_tostring(lua_State* l) {
-    const Vector& vec = lua_check_vector(l, 1);
+    Vector vec = lua_check_vector(l, 1);
     lua_pushfstring(l, "vector(%f, %f, %f)", vec.v.x, vec.v.y, vec.v.z);
-    return 1;
-  }
-  int lua_vector_add(lua_State* l) {
-    if(lua_test_vector(l, 1) && lua_test_point(l, 2)) {
-      lua_push_point(l, lua_check_vector(l, 1) + lua_check_point(l, 2));
-    } else if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
-      lua_push_point(l, lua_check_point(l, 1) + lua_check_vector(l, 2));
-    } else {
-      lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
-    }
-    return 1;
-  }
-  int lua_vector_sub(lua_State* l) {
-    if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
-      lua_push_point(l, lua_check_point(l, 1) - lua_check_vector(l, 2));
-    } else if(lua_test_point(l, 1) && lua_test_point(l, 2)) {
-      lua_push_vector(l, lua_check_point(l, 1) - lua_check_point(l, 2));
-    } else {
-      lua_push_vector(l, lua_check_vector(l, 1) - lua_check_vector(l, 2));
-    }
-    return 1;
-  }
-  int lua_vector_eq(lua_State* l) {
-    if(lua_test_vector(l, 1) ^ lua_test_vector(l, 2)) {
-      lua_pushboolean(l, false);
-    } else {
-      lua_pushboolean(l, lua_check_vector(l, 1) == lua_check_vector(l, 2));
-    }
     return 1;
   }
 
@@ -129,16 +168,8 @@ namespace dort {
     return 1;
   }
   int lua_point_tostring(lua_State* l) {
-    const Point& pt = lua_check_point(l, 1);
+    Point pt = lua_check_point(l, 1);
     lua_pushfstring(l, "point(%f, %f, %f)", pt.v.x, pt.v.y, pt.v.z);
-    return 1;
-  }
-  int lua_point_eq(lua_State* l) {
-    if(lua_test_point(l, 1) ^ lua_test_point(l, 2)) {
-      lua_pushboolean(l, false);
-    } else {
-      lua_pushboolean(l, lua_check_point(l, 1) == lua_check_point(l, 2));
-    }
     return 1;
   }
 
@@ -231,6 +262,73 @@ namespace dort {
     return 1;
   }
 
+  int lua_vec3i_make(lua_State* l) {
+    int32_t x = luaL_checkinteger(l, 1);
+    int32_t y = luaL_checkinteger(l, 2);
+    int32_t z = luaL_checkinteger(l, 3);
+    lua_push_vec3i(l, Vec3i(x, y, z));
+    return 1;
+  }
+  int lua_vec3i_get_x(lua_State* l) {
+    lua_pushinteger(l, lua_check_vec3i(l, 1).x);
+    return 1;
+  }
+  int lua_vec3i_get_y(lua_State* l) {
+    lua_pushinteger(l, lua_check_vec3i(l, 1).y);
+    return 1;
+  }
+  int lua_vec3i_get_z(lua_State* l) {
+    lua_pushinteger(l, lua_check_vec3i(l, 1).z);
+    return 1;
+  }
+  int lua_vec3i_tostring(lua_State* l) {
+    Vec3i vec = lua_check_vec3i(l, 1);
+    lua_pushfstring(l, "vec3i(%d, %d, %d)", vec.x, vec.y, vec.z);
+    return 1;
+  }
+
+  int lua_boxi_make(lua_State* l) {
+    if(lua_gettop(l) == 0) {
+      lua_push_boxi(l, Boxi());
+    } else if(lua_gettop(l) == 2) {
+      Vec3i min = lua_check_vec3i(l, 1);
+      Vec3i max = lua_check_vec3i(l, 2);
+      lua_push_boxi(l, Boxi(min, max));
+    } else {
+      int32_t x1 = luaL_checkinteger(l, 1);
+      int32_t y1 = luaL_checkinteger(l, 2);
+      int32_t z1 = luaL_checkinteger(l, 3);
+      int32_t x2 = luaL_checkinteger(l, 4);
+      int32_t y2 = luaL_checkinteger(l, 5);
+      int32_t z2 = luaL_checkinteger(l, 6);
+      lua_push_boxi(l, Boxi(Vec3i(x1, y1, z1), Vec3i(x2, y2, z2)));
+    }
+    return 1;
+  }
+  int lua_boxi_get_min(lua_State* l) {
+    const Boxi& box = lua_check_boxi(l, 1);
+    lua_push_vec3i(l, box.p_min);
+    return 1;
+  }
+  int lua_boxi_get_max(lua_State* l) {
+    const Boxi& box = lua_check_boxi(l, 1);
+    lua_push_vec3i(l, box.p_max);
+    return 1;
+  }
+  int lua_boxi_tostring(lua_State* l) {
+    Boxi box = lua_check_boxi(l, 1);
+    lua_pushfstring(l, "boxi(vec3i(%d, %d, %d), vec3i(%d, %d, %d))",
+        box.p_min.x, box.p_min.y, box.p_min.z,
+        box.p_max.x, box.p_max.y, box.p_max.z);
+    return 1;
+  }
+  int lua_boxi_contains(lua_State* l) {
+    const Boxi& box = lua_check_boxi(l, 1);
+    const Vec3i& vec = lua_check_vec3i(l, 2);
+    lua_pushboolean(l, box.contains(vec));
+    return 1;
+  }
+
   const Vector& lua_check_vector(lua_State* l, int idx) {
     return lua_check_managed_obj<Vector, VECTOR_TNAME>(l, idx);
   }
@@ -259,5 +357,25 @@ namespace dort {
   }
   void lua_push_transform(lua_State* l, const Transform& trans) {
     return lua_push_managed_obj<Transform, TRANSFORM_TNAME>(l, trans);
+  }
+
+  const Vec3i& lua_check_vec3i(lua_State* l, int idx) {
+    return lua_check_managed_obj<Vec3i, VEC3I_TNAME>(l, idx);
+  }
+  bool lua_test_vec3i(lua_State* l, int idx) {
+    return lua_test_managed_obj<Vec3i, VEC3I_TNAME>(l, idx);
+  }
+  void lua_push_vec3i(lua_State* l, const Vec3i& vec) {
+    return lua_push_managed_obj<Vec3i, VEC3I_TNAME>(l, vec);
+  }
+
+  const Boxi& lua_check_boxi(lua_State* l, int idx) {
+    return lua_check_managed_obj<Boxi, BOXI_TNAME>(l, idx);
+  }
+  bool lua_test_boxi(lua_State* l, int idx) {
+    return lua_test_managed_obj<Boxi, BOXI_TNAME>(l, idx);
+  }
+  void lua_push_boxi(lua_State* l, const Boxi& vec) {
+    return lua_push_managed_obj<Boxi, BOXI_TNAME>(l, vec);
   }
 }

@@ -3,7 +3,6 @@
 #include "dort/lua.hpp"
 
 namespace dort {
-  constexpr const char CAMERA_LIBNAME[] = "dort.camera";
   constexpr const char CAMERA_TNAME[] = "dort.Camera";
 
   int lua_open_camera(lua_State* l);

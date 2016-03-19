@@ -6,6 +6,7 @@
 #include "dort/lua_camera.hpp"
 #include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
+#include "dort/lua_grid.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_light.hpp"
 #include "dort/lua_material.hpp"
@@ -36,6 +37,7 @@ namespace dort {
       luaL_requiref(l, LUA_DBLIBNAME, luaopen_debug, true);
       luaL_requiref(l, LUA_IOLIBNAME, luaopen_io, true);
       luaL_requiref(l, LUA_LOADLIBNAME, luaopen_package, true);
+      luaL_requiref(l, LUA_MATHLIBNAME, luaopen_math, true);
       luaL_requiref(l, LUA_OSLIBNAME, luaopen_os, true);
       luaL_requiref(l, LUA_STRLIBNAME, luaopen_string, true);
       luaL_requiref(l, LUA_TABLIBNAME, luaopen_table, true);
@@ -59,6 +61,7 @@ namespace dort {
       load_sublib("camera", lua_open_camera);
       load_sublib("filter", lua_open_filter);
       load_sublib("geometry", lua_open_geometry);
+      load_sublib("grid", lua_open_grid);
       load_sublib("image", lua_open_image);
       load_sublib("light", lua_open_light);
       load_sublib("material", lua_open_material);

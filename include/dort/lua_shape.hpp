@@ -3,7 +3,6 @@
 #include "dort/lua.hpp"
 
 namespace dort {
-  constexpr const char SHAPE_LIBNAME[] = "dort.shape";
   constexpr const char SHAPE_TNAME[] = "dort.Shape";
   constexpr const char MESH_TNAME[] = "dort.Mesh";
   constexpr const char PLY_MESH_TNAME[] = "dort.PlyMesh";

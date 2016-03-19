@@ -6,7 +6,6 @@
 #include "dort/transform.hpp"
 
 namespace dort {
-  constexpr const char BUILDER_LIBNAME[] = "dort.builder";
   constexpr const char SCENE_TNAME[] = "dort.Scene";
   constexpr const char PRIMITIVE_TNAME[] = "dort.Primitive";
   constexpr const char BUILDER_TNAME[] = "dort.Builder";

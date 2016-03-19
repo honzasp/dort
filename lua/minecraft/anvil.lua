@@ -75,8 +75,8 @@ function anvil.close_map(map)
 end
 
 function anvil.read_chunk(map, chunk_x, chunk_z)
-  local region_x = chunk_x >> 5
-  local region_z = chunk_z >> 5
+  local region_x = chunk_x // 32
+  local region_z = chunk_z // 32
   local region_id = {region_x, region_z}
   local region = map.regions[region_id]
 

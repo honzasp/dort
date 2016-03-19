@@ -3,7 +3,6 @@
 #include "dort/lua.hpp"
 
 namespace dort {
-  constexpr const char MATERIAL_LIBNAME[] = "dort.material";
   constexpr const char MATERIAL_TNAME[] = "dort.Material";
 
   int lua_open_material(lua_State* l);

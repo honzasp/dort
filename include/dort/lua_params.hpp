@@ -1,4 +1,5 @@
 #pragma once
+#include "dort/box_i.hpp"
 #include "dort/geometry.hpp"
 #include "dort/lua.hpp"
 
@@ -8,6 +9,7 @@ namespace dort {
   Point lua_param_point(lua_State* l, int params_idx, const char* param_name);
   Spectrum lua_param_spectrum(lua_State* l, int params_idx, const char* param_name);
   Transform lua_param_transform(lua_State* l, int params_idx, const char* param_name);
+  Boxi lua_param_boxi(lua_State* l, int params_idx, const char* param_name);
   std::shared_ptr<Texture<float>> lua_param_texture_float(lua_State* l,
       int params_idx, const char* param_name);
   std::shared_ptr<Texture<Spectrum>> lua_param_texture_spectrum(lua_State* l,
@@ -17,6 +19,8 @@ namespace dort {
   std::shared_ptr<Image<PixelRgb8>> lua_param_image(lua_State* l,
       int params_idx, const char* param_name);
   std::shared_ptr<Shape> lua_param_shape(lua_State* l,
+      int params_idx, const char* param_name);
+  std::shared_ptr<Grid> lua_param_grid(lua_State* l,
       int params_idx, const char* param_name);
 
   float lua_param_float_opt(lua_State* l, int params_idx,

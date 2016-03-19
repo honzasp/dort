@@ -3,8 +3,6 @@
 #include "dort/lua.hpp"
 
 namespace dort {
-  constexpr const char NBT_LIBNAME[] = "dort.nbt";
-
   int lua_open_nbt(lua_State* l);
   int lua_nbt_read(lua_State* l);
 

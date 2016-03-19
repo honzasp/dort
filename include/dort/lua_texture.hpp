@@ -2,7 +2,6 @@
 #include "dort/lua.hpp"
 
 namespace dort {
-  constexpr const char TEXTURE_LIBNAME[] = "dort.texture";
   constexpr const char TEXTURE_FLOAT_TNAME[] = "dort.Texture.float";
   constexpr const char TEXTURE_SPECTRUM_TNAME[] = "dort.Texture.Spectrum";
   constexpr const char TEXTURE_MAP_2D_TNAME[] = "dort.TextureMap2d";

@@ -1,17 +1,23 @@
 #include "dort/bsdf.hpp"
-#include "dort/voxel_grid.hpp"
+#include "dort/grid.hpp"
 #include "dort/voxel_grid_primitive.hpp"
 
 #include "dort/lambertian_brdf.hpp"
 
 namespace dort {
   VoxelGridPrimitive::VoxelGridPrimitive(
-      const Vec3i& offset, const Vec3i& extent,
-      const VoxelGrid& grid, const Transform& voxel_to_frame):
-    extent(extent),
+      const Boxi& grid_box, const Grid& grid,
+      const Transform& voxel_to_frame):
+    root_box(grid_box),
     voxel_to_frame(voxel_to_frame)
   {
-    this->build_node(grid, offset, Boxi(Vec3i(), extent));
+    auto ret = this->build_node(grid, this->root_box);
+    if(ret.is_leaf) {
+      assert(this->nodes.empty());
+      this->nodes.push_back(Node::make_leaf_leaf(0, ret.leaf_voxel, ret.leaf_voxel));
+    } else {
+      assert(!this->nodes.empty());
+    }
   }
 
   bool VoxelGridPrimitive::intersect(Ray& ray, Intersection& out_isect) const {
@@ -63,7 +69,8 @@ namespace dort {
   }
 
   Box VoxelGridPrimitive::bounds() const {
-    return this->voxel_to_frame.apply(Box(Point(), Point(Vec3(this->extent))));
+    Box box(Point(Vec3(this->root_box.p_min)), Point(Vec3(this->root_box.p_max)));
+    return this->voxel_to_frame.apply(box);
   }
 
   std::unique_ptr<Bsdf> VoxelGridPrimitive::get_bsdf(
@@ -91,11 +98,10 @@ namespace dort {
   }
 
   VoxelGridPrimitive::BranchOrLeaf VoxelGridPrimitive::build_node(
-      const VoxelGrid& grid, const Vec3i& grid_offset, const Boxi& box) 
+      const Grid& grid, const Boxi& box) 
   {
     BranchOrLeaf ret;
-    Boxi grid_box(box + grid_offset);
-    if(grid.homogeneous(grid_box, ret.leaf_voxel)) {
+    if(VoxelGridPrimitive::is_box_homogeneous(grid, box, ret.leaf_voxel)) {
       ret.is_leaf = true;
       return ret;
     }
@@ -109,8 +115,8 @@ namespace dort {
     uint32_t idx = this->nodes.size();
     this->nodes.emplace_back();
 
-    BranchOrLeaf left = this->build_node(grid, grid_offset, left_box);
-    BranchOrLeaf right = this->build_node(grid, grid_offset, right_box);
+    BranchOrLeaf left = this->build_node(grid, left_box);
+    BranchOrLeaf right = this->build_node(grid, right_box);
 
     bool full;
     if(left.is_leaf && right.is_leaf) {
@@ -156,12 +162,11 @@ namespace dort {
 
     RayEntry entry;
     RayEntry exit;
-    Boxi extent_box(Vec3i(), this->extent);
-    if(!VoxelGridPrimitive::ray_box_hit(voxel_ray, extent_box, entry, exit)) {
+    if(!VoxelGridPrimitive::ray_box_hit(voxel_ray, this->root_box, entry, exit)) {
       return true;
     }
 
-    return this->traverse_walk(voxel_ray, 0, extent_box, entry, exit, callback);
+    return this->traverse_walk(voxel_ray, 0, this->root_box, entry, exit, callback);
   }
 
   template<class F>
@@ -453,6 +458,23 @@ namespace dort {
 
     out_entry.p_hit = ray.orig + ray.dir * out_entry.t_hit;
     out_exit.p_hit = ray.orig + ray.dir * out_exit.t_hit;
+    return true;
+  }
+
+  bool VoxelGridPrimitive::is_box_homogeneous(const Grid& grid,
+      const Boxi& box, Voxel& out_voxel)
+  {
+    Voxel voxel = grid.get(box.p_min);
+    for(int32_t z = box.p_min.z; z < box.p_max.z; ++z) {
+      for(int32_t y = box.p_min.y; y < box.p_max.y; ++y) {
+        for(int32_t x = box.p_min.x; x < box.p_max.x; ++x) {
+          if(!unify_voxels(voxel, grid.get(Vec3i(x, y, z)), voxel)) {
+            return false;
+          }
+        }
+      }
+    }
+    out_voxel = voxel;
     return true;
   }
 }

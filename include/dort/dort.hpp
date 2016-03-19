@@ -11,6 +11,7 @@ namespace dort {
   class Filter;
   class FramePrimitive;
   class GeometricPrimitive;
+  class Grid;
   class Light;
   class Material;
   class Primitive;
@@ -23,8 +24,9 @@ namespace dort {
   class TextureMap2d;
   class ThreadPool;
   class Transform;
-  class VoxelGrid;
 
+  struct Box;
+  struct Boxi;
   struct Bxdf;
   struct CtxG;
   struct DiffGeom;
@@ -40,6 +42,10 @@ namespace dort {
   struct Scene;
   struct ShadowTest;
   struct Tex2;
+  struct Vec2;
+  struct Vec2i;
+  struct Vec3;
+  struct Vec3i;
   struct Vector;
   struct VoxelLump;
 

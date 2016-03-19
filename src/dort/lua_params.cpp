@@ -2,6 +2,7 @@
 #include "dort/lua_builder.hpp"
 #include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
+#include "dort/lua_grid.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_sampler.hpp"
@@ -50,6 +51,12 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return trans;
   }
+  Boxi lua_param_boxi(lua_State* l, int params_idx, const char* param_name) {
+    lua_getfield(l, params_idx, param_name);
+    Boxi box = lua_check_boxi(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return box;
+  }
   std::shared_ptr<Texture<float>> lua_param_texture_float(lua_State* l,
       int params_idx, const char* param_name)
   {
@@ -89,6 +96,14 @@ namespace dort {
     auto shape = lua_check_shape(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return shape;
+  }
+  std::shared_ptr<Grid> lua_param_grid(lua_State* l,
+      int params_idx, const char* param_name)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto grid = lua_check_grid(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return grid;
   }
 
   float lua_param_float_opt(lua_State* l, int params_idx,

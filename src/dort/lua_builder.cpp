@@ -3,6 +3,7 @@
 #include "dort/direct_renderer.hpp"
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
+#include "dort/grid.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
@@ -21,7 +22,6 @@
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
 #include "dort/thread_pool.hpp"
-#include "dort/voxel_grid.hpp"
 #include "dort/voxel_grid_primitive.hpp"
 
 namespace dort {
@@ -364,41 +364,12 @@ namespace dort {
     auto transform = builder.state.local_to_frame;
 
     int p = 1;
-    uint32_t extent_x = lua_param_uint32(l, p, "extent_x");
-    uint32_t extent_y = lua_param_uint32(l, p, "extent_y");
-    uint32_t extent_z = lua_param_uint32(l, p, "extent_z");
-    uint32_t voxel_count = extent_x * extent_y * extent_z;
-
-    VoxelGrid grid; {
-      lua_getfield(l, p, "voxels");
-      uint32_t array_len = lua_rawlen(l, -1);
-      if(array_len != voxel_count) {
-        return luaL_error(l, "Expected exactly %d voxels, got %d voxels",
-            int32_t(voxel_count), int32_t(array_len));
-      }
-
-      uint32_t i = 1;
-      for(uint32_t z = 0; z < extent_z; ++z) {
-        for(uint32_t y = 0; y < extent_y; ++y) {
-          for(uint32_t x = 0; x < extent_x; ++x) {
-            lua_rawgeti(l, -1, i);
-            grid.set_voxel(Vec3i(x, y, z), luaL_checkinteger(l, -1));
-            lua_pop(l, 1);
-            ++i;
-          }
-        }
-      }
-
-      lua_pushnil(l);
-      lua_setfield(l, 1, "voxels");
-      lua_pop(l, 1);
-    }
-
-    lua_params_check_unused(l, 1);
+    std::shared_ptr<Grid> grid = lua_param_grid(l, p, "grid");
+    Boxi box = lua_param_boxi(l, p, "box");
+    lua_params_check_unused(l, p);
 
     builder.frame.prims.push_back(std::make_unique<VoxelGridPrimitive>(
-        Vec3i(0, 0, 0), Vec3i(extent_x, extent_y, extent_z),
-        grid, transform));
+        box, *grid, transform));
     return 0;
   }
 

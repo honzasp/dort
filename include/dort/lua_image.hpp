@@ -4,7 +4,6 @@
 #include "dort/vec_2.hpp"
 
 namespace dort {
-  constexpr const char IMAGE_LIBNAME[] = "dort.image";
   constexpr const char IMAGE_RGB8_TNAME[] = "dort.Image.Rgb8";
 
   int lua_open_image(lua_State* l);

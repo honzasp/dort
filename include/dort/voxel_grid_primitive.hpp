@@ -70,12 +70,12 @@ namespace dort {
       };
     };
 
-    Vec3i extent;
+    Boxi root_box;
     std::vector<Node> nodes;
     Transform voxel_to_frame;
   public:
-    VoxelGridPrimitive(const Vec3i& offset, const Vec3i& extent,
-        const VoxelGrid& grid, const Transform& voxel_to_frame);
+    VoxelGridPrimitive(const Boxi& grid_box, const Grid& grid,
+        const Transform& voxel_to_frame);
 
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const override final;
@@ -86,8 +86,7 @@ namespace dort {
     virtual const AreaLight* get_area_light(
         const DiffGeom& frame_diff_geom) const override final;
   private:
-    BranchOrLeaf build_node(const VoxelGrid& grid,
-        const Vec3i& grid_offset, const Boxi& box);
+    BranchOrLeaf build_node(const Grid& grid, const Boxi& box);
 
     struct VoxelRay {
       Vec3 orig;
@@ -125,5 +124,7 @@ namespace dort {
 
     static bool ray_box_hit(const VoxelRay& ray, const Boxi& box,
         RayEntry& out_entry, RayEntry& out_exit);
+    static bool is_box_homogeneous(const Grid& grid,
+        const Boxi& box, Voxel& out_voxel);
   };
 }

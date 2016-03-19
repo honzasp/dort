@@ -4,7 +4,6 @@
 #include "dort/vec_2.hpp"
 
 namespace dort {
-  constexpr const char FILTER_LIBNAME[] = "dort.filter";
   constexpr const char FILTER_TNAME[] = "dort.Filter";
 
   int lua_open_filter(lua_State* l);

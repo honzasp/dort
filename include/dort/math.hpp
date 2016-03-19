@@ -87,6 +87,10 @@ namespace dort {
     return x + 1;
   }
 
+  inline int32_t floor_div(int32_t a, int32_t b) {
+    return a >= 0 ? a / b : -((b - a - 1) / b);
+  }
+
   template<class T>
   uint8_t arg_max_3(T a0, T a1, T a2) {
     uint32_t bit_0 = a0 < a1;

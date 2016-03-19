@@ -3,7 +3,6 @@
 #include "dort/lua.hpp"
 
 namespace dort {
-  constexpr const char SAMPLER_LIBNAME[] = "dort.sampler";
   constexpr const char SAMPLER_TNAME[] = "dort.Sampler";
 
   int lua_open_sampler(lua_State* l);
