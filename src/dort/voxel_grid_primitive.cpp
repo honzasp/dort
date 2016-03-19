@@ -1,15 +1,16 @@
 #include "dort/bsdf.hpp"
 #include "dort/grid.hpp"
+#include "dort/material.hpp"
 #include "dort/voxel_grid_primitive.hpp"
-
-#include "dort/lambertian_brdf.hpp"
 
 namespace dort {
   VoxelGridPrimitive::VoxelGridPrimitive(
       const Boxi& grid_box, const Grid& grid,
-      const Transform& voxel_to_frame):
+      const Transform& voxel_to_frame,
+      std::vector<VoxelMaterial> voxel_materials):
     root_box(grid_box),
-    voxel_to_frame(voxel_to_frame)
+    voxel_to_frame(voxel_to_frame),
+    voxel_materials(std::move(voxel_materials))
   {
     auto ret = this->build_node(grid, this->root_box);
     if(ret.is_leaf) {
@@ -76,21 +77,16 @@ namespace dort {
   std::unique_ptr<Bsdf> VoxelGridPrimitive::get_bsdf(
       const DiffGeom& frame_diff_geom) const
   {
-    assert(frame_diff_geom.aux_int32[0] != VOXEL_EMPTY);
-    assert(frame_diff_geom.aux_uint32[1] <= 6);
+    Voxel voxel = frame_diff_geom.aux_int32[0];
+    uint32_t face = frame_diff_geom.aux_uint32[1];
+    assert(voxel != VOXEL_EMPTY);
+    assert(face <= 6);
 
-    auto bsdf = std::make_unique<Bsdf>(frame_diff_geom);
-    Spectrum colors[7] = {
-      Spectrum(1.f, 0.f, 0.f),
-      Spectrum(0.f, 1.f, 0.f),
-      Spectrum(0.f, 0.f, 1.f),
-      Spectrum(0.f, 1.f, 1.f),
-      Spectrum(1.f, 0.f, 1.f),
-      Spectrum(1.f, 1.f, 0.f),
-      Spectrum(1.f, 1.f, 1.f),
-    };
-    bsdf->add(std::make_unique<LambertianBrdf>(colors[frame_diff_geom.aux_uint32[1]]));
-    return bsdf;
+    if(face == 6) {
+      return std::make_unique<Bsdf>(frame_diff_geom);
+    }
+    const auto& voxel_material = this->voxel_materials.at(voxel);
+    return voxel_material.faces.at(face)->get_bsdf(frame_diff_geom);
   }
 
   const AreaLight* VoxelGridPrimitive::get_area_light(const DiffGeom&) const {

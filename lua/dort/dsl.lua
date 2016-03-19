@@ -43,6 +43,8 @@ dsl.rotate_x = dort.geometry.rotate_x
 dsl.rotate_y = dort.geometry.rotate_y
 dsl.rotate_z = dort.geometry.rotate_z
 dsl.look_at = dort.geometry.look_at
+dsl.vec3i = dort.geometry.vec3i
+dsl.boxi = dort.geometry.boxi
 
 dsl.read_image = dort.image.read
 dsl.write_png_image = dort.image.write_png

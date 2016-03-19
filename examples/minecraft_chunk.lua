@@ -1,48 +1,53 @@
-require "minecraft/anvil"
-require "minecraft/read"
-require "minecraft/decode"
+require "minecraft"
+local _ENV = require "dort/dsl"
 
-local box = dort.geometry.boxi(
-  dort.geometry.vec3i(-200, 0, -200),
-  dort.geometry.vec3i(200, 256, 200))
+local box = boxi(vec3i(-20, 0, -20), vec3i(20, 30, 20))
 
-local home = os.getenv("HOME")
-local map = minecraft.anvil.open_map(home .. "/.minecraft/saves/Dev world")
-local block_grid = minecraft.read.box(map, box)
-minecraft.anvil.close_map(map)
-
-local voxel_grid = minecraft.decode.box(block_grid, box)
-
-local scene = dort.builder.define_scene(function()
-  dort.builder.add_voxel_grid {
-    grid = voxel_grid,
+local scene = define_scene(function()
+  minecraft.add_world {
+    map = os.getenv("HOME") .. "/.minecraft/saves/Flat",
     box = box,
   }
 
-  dort.builder.add_light(dort.light.make_infinite {
-    radiance = dort.spectrum.rgb(1, 1, 1) * 0.5,
-    num_samples = 4,
-  })
+  if false then
+    local points = {
+      point(-50, 30, -50),
+      point( 50, 30, -50),
+      point(-50, 30,  50),
+      point( 50, 30,  50),
+    }
 
-  dort.builder.set_camera(dort.camera.make_perspective {
-    transform = dort.geometry.look_at(
-        dort.geometry.point(-200, 200, -200),
-        dort.geometry.point(0, 64, 0),
-        dort.geometry.vector(0, 1, 0)) *
-      dort.geometry.scale(-1, 1, 1) ,
-    fov = dort.math.pi / 3,
+    for _, point in ipairs(points) do
+      add_light(point_light {
+        intensity = rgb(1, 1, 1) * 8e3,
+        point = point,
+      })
+    end
+  else
+    add_light(infinite_light {
+      radiance = rgb(1, 1, 1),
+      num_samples = 12,
+    })
+  end
+
+  camera(perspective_camera {
+    transform = look_at(
+        point(25, 20, 20),
+        point(0, 0, 0),
+        vector(0, 1, 0)) *
+      scale(-1, 1, 1),
+    fov = pi / 3,
   })
 end)
-minecraft.anvil.close_map(map)
 
-dort.image.write_png("minecraft_chunk.png", dort.builder.render(scene, {
-  x_res = 800,
-  y_res = 800,
-  sampler = dort.sampler.make_stratified {
+write_png_image("minecraft_chunk.png", render(scene, {
+  x_res = 900,
+  y_res = 900,
+  sampler = stratified_sampler {
     samples_per_x = 2,
     samples_per_y = 2,
   },
-  filter = dort.filter.make_lanczos_sinc {
-    radius = 1.2,
+  filter = mitchell_filter {
+    radius = 1.5,
   },
 }))

@@ -9,9 +9,9 @@ WARNINGS = -Wall -Wextra -Wstrict-aliasing
 CXXFLAGS = -x c++ -std=c++1y $(INCLUDES) $(WARNINGS) -pthread
 CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
 LDFLAGS  = -pthread -lz
-DEBUG    = -g -O2
+DEBUG    = -g -O2 -DLUA_USE_APICHECK
 PROFILE  = -g -O2
-SLOW     = -g3 -O0
+SLOW     = -g3 -O0 -DLUA_USE_APICHECK
 FAST     = -g -O3 -DNDEBUG -DDORT_DISABLE_STAT
 
 CXXFLAGS_DEBUG   = $(CXXFLAGS) $(DEBUG)

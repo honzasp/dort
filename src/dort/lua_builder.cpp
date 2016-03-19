@@ -366,10 +366,39 @@ namespace dort {
     int p = 1;
     std::shared_ptr<Grid> grid = lua_param_grid(l, p, "grid");
     Boxi box = lua_param_boxi(l, p, "box");
+
+    std::vector<VoxelMaterial> voxel_materials; {
+      if(lua_getfield(l, p, "voxel_materials") != LUA_TTABLE) {
+        luaL_error(l, "Expected an array of voxel materials");
+      }
+      int32_t array_len = lua_rawlen(l, -1);
+
+      voxel_materials.push_back(VoxelMaterial());
+      for(int32_t i = 0; i < array_len; ++i) {
+        if(lua_rawgeti(l, -1, i + 1) != LUA_TTABLE) {
+          luaL_error(l, "Voxel material must be a table");
+        }
+
+        VoxelMaterial material;
+        for(int32_t j = 0; j < 6; ++j) {
+          lua_rawgeti(l, -1, j + 1);
+          material.faces.at(j) = lua_check_material(l, -1);
+          lua_pop(l, 1);
+        }
+
+        voxel_materials.push_back(std::move(material));
+        lua_pop(l, 1);
+      }
+      lua_pop(l, 1);
+
+      lua_pushnil(l);
+      lua_setfield(l, p, "voxel_materials");
+    }
+
     lua_params_check_unused(l, p);
 
     builder.frame.prims.push_back(std::make_unique<VoxelGridPrimitive>(
-        box, *grid, transform));
+        box, *grid, transform, voxel_materials));
     return 0;
   }
 

@@ -65,12 +65,7 @@ local function read_chunk(block_grid, anvil_map, chunk_x, chunk_z)
   end
 end
 
-function read.box(anvil_map, box)
-  local block_grid = dort.grid.make()
-  return read.box_to_grid(block_grid, anvil_map, box)
-end
-
-function read.box_to_grid(block_grid, anvil_map, box)
+function read.map_to_blocks(block_grid, anvil_map, box)
   local min_chunk_x = math.floor(box:min():x() / 16)
   local min_chunk_z = math.floor(box:min():z() / 16)
   local max_chunk_x = math.ceil(box:max():x() / 16)

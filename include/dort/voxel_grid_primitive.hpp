@@ -1,10 +1,15 @@
 #pragma once
+#include <array>
 #include <vector>
 #include "dort/box_i.hpp"
 #include "dort/primitive.hpp"
 #include "dort/voxel.hpp"
 
 namespace dort {
+  struct VoxelMaterial {
+    std::array<std::shared_ptr<Material>, 6> faces;
+  };
+
   class VoxelGridPrimitive final: public GeometricPrimitive {
     enum class NodeType: uint8_t {
       LEAF_LEAF = 0,
@@ -73,9 +78,11 @@ namespace dort {
     Boxi root_box;
     std::vector<Node> nodes;
     Transform voxel_to_frame;
+    std::vector<VoxelMaterial> voxel_materials;
   public:
     VoxelGridPrimitive(const Boxi& grid_box, const Grid& grid,
-        const Transform& voxel_to_frame);
+        const Transform& voxel_to_frame,
+        std::vector<VoxelMaterial> voxel_materials);
 
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const override final;
