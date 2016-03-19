@@ -76,14 +76,15 @@ local scene = dort.builder.define_scene(function()
 
   dort.builder.add_light(dort.light.make_infinite {
     radiance = dort.spectrum.rgb(1, 1, 1) * 0.5,
-    num_samples = 8,
+    num_samples = 1,
   })
 
   dort.builder.set_camera(dort.camera.make_perspective {
     transform = dort.geometry.look_at(
-      dort.geometry.point(-40, 100, 16 * 4 + 40),
-      dort.geometry.point(16 * 2.5, 64, 16 * 2.5),
-      dort.geometry.vector(0, 1, 0)),
+        dort.geometry.point(-40, 100, 16 * 4 + 40),
+        dort.geometry.point(16 * 2.5, 64, 16 * 2.5),
+        dort.geometry.vector(0, 1, 0)) *
+      dort.geometry.scale(-1, 1, 1) ,
     fov = dort.math.pi / 3,
   })
 end)
