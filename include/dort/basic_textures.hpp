@@ -48,9 +48,9 @@ namespace dort {
   {
     float inv_check_size = 1.f / check_size;
     return make_texture<T>([=](const DiffGeom& diff_geom) {
-        Tex2 st = texture_map->map(diff_geom);
-        int32_t check_s = floor_int32(inv_check_size * st.s);
-        int32_t check_t = floor_int32(inv_check_size * st.t);
+        Vec2 st = texture_map->map(diff_geom);
+        int32_t check_s = floor_int32(inv_check_size * st.x);
+        int32_t check_t = floor_int32(inv_check_size * st.y);
         int32_t check = check_s + check_t;
         return (check % 2 == 0) ? even_check : odd_check;
       });
@@ -61,8 +61,8 @@ namespace dort {
       std::shared_ptr<TextureMap2d> texture_map)
   {
     return make_texture<Spectrum>([=](const DiffGeom& diff_geom) {
-        Tex2 st = texture_map->map(diff_geom);
-        return Spectrum(clamp(st.s), clamp(st.t), 0.f);
+        Vec2 st = texture_map->map(diff_geom);
+        return Spectrum(clamp(st.x), clamp(st.y), 0.f);
       });
   }
 }

@@ -5,7 +5,7 @@
 namespace dort {
   std::shared_ptr<TextureMap2d> uv_texture_map_2d() {
     return make_texture_map_2d([](const DiffGeom& diff_geom) {
-      return Tex2(diff_geom.u, diff_geom.v);
+      return Vec2(diff_geom.u, diff_geom.v);
     });
   }
 
@@ -14,7 +14,7 @@ namespace dort {
   {
     return make_texture_map_2d([=](const DiffGeom& diff_geom) {
       Vec3 tex_p = texture_to_world.apply_inv(diff_geom.p).v;
-      return Tex2(tex_p.x, tex_p.y);
+      return Vec2(tex_p.x, tex_p.y);
     });
   }
 
@@ -25,12 +25,12 @@ namespace dort {
       Vec3 tex_p = texture_to_world.apply_inv(diff_geom.p).v;
       float r = length(tex_p);
       if(r == 0.f) {
-        return Tex2(0.f, 0.f);
+        return Vec2(0.f, 0.f);
       }
 
       float phi = atan(tex_p.y, tex_p.x);
       float theta = acos(tex_p.z / r);
-      return Tex2(phi * INV_TWO_PI + 0.5f, theta * INV_PI);
+      return Vec2(phi * INV_TWO_PI + 0.5f, theta * INV_PI);
     });
   }
 
@@ -41,12 +41,12 @@ namespace dort {
       Vec3 tex_p = texture_to_world.apply_inv(diff_geom.p).v;
       float r = length(tex_p);
       if(r == 0.f) {
-        return Tex2(0.f, 0.f);
+        return Vec2(0.f, 0.f);
       }
 
       float phi = atan(tex_p.y, tex_p.x);
       float z = tex_p.z / r;
-      return Tex2(phi * INV_TWO_PI + 0.5f, z);
+      return Vec2(phi * INV_TWO_PI + 0.5f, z);
     });
   }
 }

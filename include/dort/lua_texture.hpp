@@ -13,6 +13,7 @@ namespace dort {
   int lua_texture_make_checkerboard(lua_State* l);
   int lua_texture_make_map_debug(lua_State* l);
   int lua_texture_make_image(lua_State* l);
+  int lua_texture_make_noise(lua_State* l);
   int lua_texture_eq(lua_State* l);
   int lua_texture_add(lua_State* l);
   int lua_texture_mul(lua_State* l);

@@ -1,6 +1,7 @@
 #include "dort/basic_texture_maps.hpp"
 #include "dort/basic_textures.hpp"
 #include "dort/image_texture.hpp"
+#include "dort/noise_texture.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
@@ -39,6 +40,7 @@ namespace dort {
       {"make_checkerboard", lua_texture_make_checkerboard},
       {"make_map_debug", lua_texture_make_map_debug},
       {"make_image", lua_texture_make_image},
+      {"make_noise", lua_texture_make_noise},
       {"make_map_uv", lua_texture_map_2d_make_uv},
       {"make_map_xy", lua_texture_map_2d_make_xy},
       {"make_map_spherical", lua_texture_map_2d_make_spherical},
@@ -124,10 +126,45 @@ namespace dort {
 
   int lua_texture_make_image(lua_State* l) {
     int p = 1;
-    lua_push_texture_spectrum(l, image_texture(
+    lua_push_texture_spectrum(l, std::make_shared<ImageTexture>(
           lua_param_texture_map_2d_opt(l, p, "map", uv_texture_map_2d()),
           lua_param_image(l, p, "image")));
     lua_params_check_unused(l, p);
+    return 1;
+  }
+
+  int lua_texture_make_noise(lua_State* l) {
+    int p = 1;
+    std::vector<NoiseLayer> layers; {
+      if(lua_getfield(l, p, "layers") != LUA_TTABLE) {
+        luaL_error(l, "Expected an array of layers");
+      }
+
+      int32_t count = lua_rawlen(l, -1);
+      for(int32_t i = 1; i <= count; ++i) {
+        NoiseLayer layer;
+        lua_rawgeti(l, -1, i);
+
+        lua_getfield(l, -1, "scale");
+        layer.scale = luaL_checknumber(l, -1);
+        lua_pop(l, 1);
+
+        lua_getfield(l, -1, "weight");
+        layer.weight = luaL_checknumber(l, -1);
+        lua_pop(l, 1);
+
+        layers.push_back(layer);
+        lua_pop(l, 1);
+      }
+
+      lua_pop(l, 1);
+      lua_pushnil(l);
+      lua_setfield(l, p, "layers");
+    }
+    lua_params_check_unused(l, p);
+
+    lua_push_texture_float(l, std::make_shared<NoiseTexture>(
+          nullptr, std::move(layers)));
     return 1;
   }
 

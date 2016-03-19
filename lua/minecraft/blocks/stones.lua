@@ -25,5 +25,16 @@ b.define("cobblestone", 4, m.make_matte {
   color = rgb(0.3, 0.3, 0.3)
 })
 b.define("bedrock", 7, m.make_matte {
-  color = rgb(0.1, 0.1, 0.1)
+  color = t.make_lerp {
+    tex_0 = rgb(1,1,1) * 0.2,
+    tex_1 = rgb(1,1,1) * 0.8,
+    t = t.make_noise {
+      layers = {
+        { scale = 37.2, weight = 2 },
+        { scale = 14.3, weight = 2 },
+        { scale = 8.34, weight = 1 },
+        { scale = 2.21, weight = 1 },
+      },
+    },
+  },
 })
