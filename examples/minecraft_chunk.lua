@@ -1,5 +1,6 @@
 require "minecraft"
 local _ENV = require "dort/dsl"
+local quality = true
 
 local box = boxi(vec3i(-20, 0, -20), vec3i(20, 30, 20))
 
@@ -9,7 +10,7 @@ local scene = define_scene(function()
     box = box,
   }
 
-  if true then
+  if not quality then
     local points = {
       point(-50, 30, -50),
       point( 50, 30, -50),
@@ -26,7 +27,7 @@ local scene = define_scene(function()
   else
     add_light(infinite_light {
       radiance = rgb(1, 1, 1),
-      num_samples = 2,
+      num_samples = 16,
     })
   end
 
@@ -40,12 +41,19 @@ local scene = define_scene(function()
   })
 end)
 
+local samples
+if quality then
+  samples = 4
+else
+  samples = 1
+end
+
 write_png_image("minecraft_chunk.png", render(scene, {
   x_res = 800,
   y_res = 800,
   sampler = stratified_sampler {
-    samples_per_x = 2,
-    samples_per_y = 2,
+    samples_per_x = samples,
+    samples_per_y = samples,
   },
   filter = mitchell_filter {
     radius = 1.5,
