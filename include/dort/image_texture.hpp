@@ -2,15 +2,10 @@
 #include "dort/texture.hpp"
 
 namespace dort {
-  class ImageTexture final: public Texture<Spectrum> {
-    std::shared_ptr<TextureMap2d> texture_map;
+  class ImageTexture final: public Texture<Spectrum, Vec2> {
     std::shared_ptr<Image<PixelRgb8>> image;
   public:
-    ImageTexture(std::shared_ptr<TextureMap2d> texture_map,
-        std::shared_ptr<Image<PixelRgb8>> image):
-      texture_map(texture_map), image(image)
-    { }
-
-    virtual Spectrum evaluate(const DiffGeom& diff_geom) const override final;
+    ImageTexture(std::shared_ptr<Image<PixelRgb8>> image): image(image) { }
+    virtual Spectrum evaluate(Vec2 v) const override final;
   };
 }

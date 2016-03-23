@@ -57,29 +57,11 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return box;
   }
-  std::shared_ptr<Texture<float>> lua_param_texture_float(lua_State* l,
-      int params_idx, const char* param_name)
-  {
+  LuaTexture lua_param_texture(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);
-    auto tex = lua_cast_texture_float(l, -1);
+    LuaTexture box = lua_cast_texture(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return tex;
-  }
-  std::shared_ptr<Texture<Spectrum>> lua_param_texture_spectrum(lua_State* l,
-      int params_idx, const char* param_name)
-  {
-    lua_getfield(l, params_idx, param_name);
-    auto tex = lua_cast_texture_spectrum(l, -1);
-    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return tex;
-  }
-  std::shared_ptr<TextureMap2d> lua_param_texture_map_2d(lua_State* l,
-      int params_idx, const char* param_name)
-  {
-    lua_getfield(l, params_idx, param_name);
-    auto map = lua_check_texture_map_2d(l, -1);
-    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return map;
+    return box;
   }
   std::shared_ptr<Image<PixelRgb8>> lua_param_image(lua_State* l,
       int params_idx, const char* param_name)
@@ -141,29 +123,13 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return trans;
   }
-  std::shared_ptr<Texture<float>> lua_param_texture_float_opt(lua_State* l,
-      int params_idx, const char* param_name, std::shared_ptr<Texture<float>> def)
+  LuaTexture lua_param_texture_opt(lua_State* l, int params_idx,
+      const char* param_name, const LuaTexture& def)
   {
     lua_getfield(l, params_idx, param_name);
-    auto tex = lua_isnil(l, -1) ? def : lua_cast_texture_float(l, -1);
+    auto tex = lua_isnil(l, -1) ? def : lua_cast_texture(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return tex;
-  }
-  std::shared_ptr<Texture<Spectrum>> lua_param_texture_spectrum_opt(lua_State* l,
-      int params_idx, const char* param_name, std::shared_ptr<Texture<Spectrum>> def)
-  {
-    lua_getfield(l, params_idx, param_name);
-    auto tex = lua_isnil(l, -1) ? def : lua_cast_texture_spectrum(l, -1);
-    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return tex;
-  }
-  std::shared_ptr<TextureMap2d> lua_param_texture_map_2d_opt(lua_State* l,
-      int params_idx, const char* param_name, std::shared_ptr<TextureMap2d> def)
-  {
-    lua_getfield(l, params_idx, param_name);
-    auto map = lua_isnil(l, -1) ? def : lua_check_texture_map_2d(l, -1);
-    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return map;
+    return tex ;
   }
   std::shared_ptr<Filter> lua_param_filter_opt(lua_State* l,
       int params_idx, const char* param_name, std::shared_ptr<Filter> def)
@@ -201,16 +167,6 @@ namespace dort {
   bool lua_param_is_spectrum(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);
     bool is = lua_test_spectrum(l, -1); lua_pop(l, 1); return is;
-  }
-  bool lua_param_is_texture_float(lua_State* l, int params_idx, const char* param_name) {
-    lua_getfield(l, params_idx, param_name);
-    bool is = lua_test_texture_float(l, -1); lua_pop(l, 1); return is;
-  }
-  bool lua_param_is_texture_spectrum(lua_State* l,
-      int params_idx, const char* param_name) 
-  {
-    lua_getfield(l, params_idx, param_name);
-    bool is = lua_test_texture_spectrum(l, -1); lua_pop(l, 1); return is;
   }
 
   void lua_params_check_unused(lua_State* l, int params_idx) {

@@ -3,15 +3,15 @@
 
 namespace dort {
   class RoughGlassMaterial final: public Material {
-    std::shared_ptr<Texture<Spectrum>> reflectance;
-    std::shared_ptr<Texture<Spectrum>> transmittance;
-    std::shared_ptr<Texture<float>> roughness;
-    std::shared_ptr<Texture<float>> eta;
+    std::shared_ptr<TextureGeom<Spectrum>> reflectance;
+    std::shared_ptr<TextureGeom<Spectrum>> transmittance;
+    std::shared_ptr<TextureGeom<float>> roughness;
+    std::shared_ptr<TextureGeom<float>> eta;
   public:
-    RoughGlassMaterial(std::shared_ptr<Texture<Spectrum>> reflectance,
-        std::shared_ptr<Texture<Spectrum>> transmittance,
-        std::shared_ptr<Texture<float>> roughness,
-        std::shared_ptr<Texture<float>> eta):
+    RoughGlassMaterial(std::shared_ptr<TextureGeom<Spectrum>> reflectance,
+        std::shared_ptr<TextureGeom<Spectrum>> transmittance,
+        std::shared_ptr<TextureGeom<float>> roughness,
+        std::shared_ptr<TextureGeom<float>> eta):
       reflectance(reflectance),
       transmittance(transmittance),
       roughness(roughness), eta(eta)

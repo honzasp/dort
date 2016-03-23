@@ -30,8 +30,6 @@ namespace dort {
 
   template<class T, const char* tname>
   void lua_push_managed_obj(lua_State* l, const T& obj) {
-    static_assert(std::is_trivially_destructible<T>::value,
-        "Implement finalizers for T's with destructor");
     T* lua_obj = (T*)lua_newuserdata(l, sizeof(T));
     new (lua_obj) T(obj);
     luaL_getmetatable(l, tname);

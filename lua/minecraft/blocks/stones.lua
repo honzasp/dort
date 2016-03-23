@@ -25,7 +25,7 @@ b.define("cobblestone", 4, m.make_matte {
   color = rgb(0.3, 0.3, 0.3)
 })
 b.define("bedrock", 7, m.make_matte {
-  color = t.make_lerp {
+  --[[color = t.make_lerp {
     tex_0 = rgb(1,1,1) * 0.2,
     tex_1 = rgb(1,1,1) * 0.8,
     t = t.make_noise {
@@ -37,4 +37,6 @@ b.define("bedrock", 7, m.make_matte {
       },
     },
   },
+  --]]
+  color = rgb(1,1,1) * 0.5,
 })

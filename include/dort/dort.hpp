@@ -5,6 +5,7 @@
 #include <memory>
 
 namespace dort {
+  class AnyTexture;
   class AreaLight;
   class Bsdf;
   class Camera;
@@ -21,7 +22,6 @@ namespace dort {
   class Sampler;
   class Shape;
   class ShapePrimitive;
-  class TextureMap2d;
   class ThreadPool;
   class Transform;
 
@@ -49,10 +49,20 @@ namespace dort {
   struct Vector;
   struct VoxelLump;
 
-  template<class T> class Texture;
+  template<class Out, class In> class Texture;
+  template<class Out> class TextureMao;
   template<class Pixel> struct Image;
 
   using Spectrum = RgbSpectrum;
+
+  template<class T>
+  using TextureGeom = Texture<T, const DiffGeom&>;
+  template<class T>
+  using Texture1d = Texture<T, float>;
+  template<class T>
+  using Texture2d = Texture<T, Vec2>;
+  template<class T>
+  using Texture3d = Texture<T, Vec3>;
 }
 
 #ifndef __cpp_lib_make_unique

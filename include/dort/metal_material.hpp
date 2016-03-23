@@ -3,16 +3,16 @@
 
 namespace dort {
   class MetalMaterial final: public Material {
-    std::shared_ptr<Texture<Spectrum>> reflection;
-    std::shared_ptr<Texture<float>> roughness;
-    std::shared_ptr<Texture<float>> eta;
-    std::shared_ptr<Texture<float>> k;
+    std::shared_ptr<TextureGeom<Spectrum>> reflection;
+    std::shared_ptr<TextureGeom<float>> roughness;
+    std::shared_ptr<TextureGeom<float>> eta;
+    std::shared_ptr<TextureGeom<float>> k;
   public:
     MetalMaterial(
-        std::shared_ptr<Texture<Spectrum>> reflection,
-        std::shared_ptr<Texture<float>> roughness,
-        std::shared_ptr<Texture<float>> eta,
-        std::shared_ptr<Texture<float>> k):
+        std::shared_ptr<TextureGeom<Spectrum>> reflection,
+        std::shared_ptr<TextureGeom<float>> roughness,
+        std::shared_ptr<TextureGeom<float>> eta,
+        std::shared_ptr<TextureGeom<float>> k):
       reflection(reflection), roughness(roughness), eta(eta), k(k)
     { }
 

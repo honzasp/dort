@@ -2,6 +2,7 @@
 #include "dort/box_i.hpp"
 #include "dort/geometry.hpp"
 #include "dort/lua.hpp"
+#include "dort/lua_texture.hpp"
 
 namespace dort {
   float lua_param_float(lua_State* l, int params_idx, const char* param_name);
@@ -10,11 +11,7 @@ namespace dort {
   Spectrum lua_param_spectrum(lua_State* l, int params_idx, const char* param_name);
   Transform lua_param_transform(lua_State* l, int params_idx, const char* param_name);
   Boxi lua_param_boxi(lua_State* l, int params_idx, const char* param_name);
-  std::shared_ptr<Texture<float>> lua_param_texture_float(lua_State* l,
-      int params_idx, const char* param_name);
-  std::shared_ptr<Texture<Spectrum>> lua_param_texture_spectrum(lua_State* l,
-      int params_idx, const char* param_name);
-  std::shared_ptr<TextureMap2d> lua_param_texture_map_2d(lua_State* l,
+  LuaTexture lua_param_texture(lua_State* l,
       int params_idx, const char* param_name);
   std::shared_ptr<Image<PixelRgb8>> lua_param_image(lua_State* l,
       int params_idx, const char* param_name);
@@ -31,12 +28,8 @@ namespace dort {
       const char* param_name, const Spectrum& def);
   Transform lua_param_transform_opt(lua_State* l, int params_idx,
       const char* param_name, const Transform& def);
-  std::shared_ptr<Texture<float>> lua_param_texture_float_opt(lua_State* l,
-      int params_idx, const char* param_name, std::shared_ptr<Texture<float>> def);
-  std::shared_ptr<Texture<Spectrum>> lua_param_texture_spectrum_opt(lua_State* l,
-      int params_idx, const char* param_name, std::shared_ptr<Texture<Spectrum>> def);
-  std::shared_ptr<TextureMap2d> lua_param_texture_map_2d_opt(lua_State* l,
-      int params_idx, const char* param_name, std::shared_ptr<TextureMap2d> def);
+  LuaTexture lua_param_texture_opt(lua_State* l, int params_idx,
+      const char* param_name, const LuaTexture& def);
   std::shared_ptr<Filter> lua_param_filter_opt(lua_State* l,
       int params_idx, const char* param_name, std::shared_ptr<Filter> def);
   std::shared_ptr<Sampler> lua_param_sampler_opt(lua_State* l,
@@ -47,8 +40,6 @@ namespace dort {
   bool lua_param_is_set(lua_State* l, int params_idx, const char* param_name);
   bool lua_param_is_float(lua_State* l, int params_idx, const char* param_name);
   bool lua_param_is_spectrum(lua_State* l, int params_idx, const char* param_name);
-  bool lua_param_is_texture_float(lua_State* l, int params_idx, const char* param_name);
-  bool lua_param_is_texture_spectrum(lua_State* l, int params_idx, const char* param_name);
 
   void lua_params_check_unused(lua_State* l, int params_idx);
 }
