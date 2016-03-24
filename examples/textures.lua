@@ -4,11 +4,26 @@ local function const_rgb(r, g, b)
   return const_texture_2d(rgb(r, g, b))
 end
 
-local tex = 
-  checkerboard_texture_2d {
-    even = const_rgb(1, 1, 1),
-    odd = const_rgb(0, 0, 0),
-    check_size = 1 / 8,
-  }
+local function render(name, tex, opts)
+  opts = opts or {}
+  write_png_image("tex_" .. name .. ".png", render_texture_2d(tex, opts))
+end
 
-write_png_image("texture.png", render_texture_2d(tex, { }))
+render("noise", compose_texture(
+  value_noise_texture_2d {
+    { weight = 1, frequency = 512 },
+    { weight = 1, frequency = 256 },
+    { weight = 2, frequency = 128 },
+    { weight = 2, frequency = 64 },
+    { weight = 2, frequency = 32 },
+    { weight = 1, frequency = 16 },
+    { weight = 1, frequency = 8 },
+  },
+  identity_texture_2d() + const_texture_2d(0.8) * value_noise_texture_2d_of_2d {
+    { weight = 1, frequency = 64 },
+    { weight = 3, frequency = 32 },
+    { weight = 1, frequency = 16 },
+    { weight = 4, frequency = 8 },
+    { weight = 6, frequency = 4 },
+  }
+), { x_res = 1366, y_res = 768 })

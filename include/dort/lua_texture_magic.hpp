@@ -7,6 +7,10 @@ namespace dort {
     <float>() { return LuaTextureOut::Float; };
   template<> constexpr LuaTextureOut lua_texture_out_v
     <Spectrum>() { return LuaTextureOut::Spectrum; };
+  template<> constexpr LuaTextureOut lua_texture_out_v
+    <Vec2>() { return LuaTextureOut::Vec2; };
+  template<> constexpr LuaTextureOut lua_texture_out_v
+    <Vec3>() { return LuaTextureOut::Vec3; };
 
   template<class In> constexpr LuaTextureIn lua_texture_in_v();
   template<> constexpr LuaTextureIn lua_texture_in_v
@@ -37,9 +41,26 @@ namespace dort {
   {
     bool handled =
       lua_texture_handle_out_in<Fun, float, const DiffGeom&>(out_type, in_type, args...) ||
-      lua_texture_handle_out_in<Fun, float, const DiffGeom&>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Spectrum, const DiffGeom&>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec2, const DiffGeom&>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec3, const DiffGeom&>(out_type, in_type, args...) ||
+
+      lua_texture_handle_out_in<Fun, float, float>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Spectrum, float>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec2, float>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec3, float>(out_type, in_type, args...) ||
+
+      lua_texture_handle_out_in<Fun, float, Vec2>(out_type, in_type, args...) ||
       lua_texture_handle_out_in<Fun, Spectrum, Vec2>(out_type, in_type, args...) ||
-      lua_texture_handle_out_in<Fun, Spectrum, Vec2>(out_type, in_type, args...);
+      lua_texture_handle_out_in<Fun, Vec2, Vec2>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec3, Vec2>(out_type, in_type, args...) ||
+
+      lua_texture_handle_out_in<Fun, float, Vec3>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Spectrum, Vec3>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec2, Vec3>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec3, Vec3>(out_type, in_type, args...) ||
+
+      false;
     assert(handled);
   }
 
@@ -57,7 +78,9 @@ namespace dort {
   void lua_texture_dispatch_out(LuaTextureOut out_type, Args&&... args) {
     bool handled =
       lua_texture_handle_out<Fun, float>(out_type, args...) ||
-      lua_texture_handle_out<Fun, Spectrum>(out_type, args...);
+      lua_texture_handle_out<Fun, Spectrum>(out_type, args...) ||
+      lua_texture_handle_out<Fun, Vec2>(out_type, args...) ||
+      lua_texture_handle_out<Fun, Vec3>(out_type, args...);
     assert(handled);
   }
 

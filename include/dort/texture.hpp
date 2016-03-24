@@ -53,7 +53,7 @@ namespace dort {
       std::shared_ptr<Texture<T2, T1>> tex_2,
       std::shared_ptr<Texture<T1, T0>> tex_1)
   {
-    return make_texture<T1, T0>([=](T0 x0) {
+    return make_texture<T2, T0>([=](T0 x0) {
       return tex_2->evaluate(tex_1->evaluate(x0));
     });
   }
@@ -61,6 +61,12 @@ namespace dort {
   template<class Out, class In = const DiffGeom&>
   std::shared_ptr<Texture<Out, In>> const_texture(Out value) {
     return make_texture<Out, In>([=](In) { return value; });
+  }
+
+
+  template<class OutIn>
+  std::shared_ptr<Texture<OutIn, OutIn>> identity_texture() {
+    return make_texture<OutIn, OutIn>([](OutIn x) { return x; });
   }
 
   template<class Out, class In>

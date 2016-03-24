@@ -7,9 +7,12 @@ namespace dort {
 
   int lua_open_texture(lua_State* l);
 
+  int lua_texture_compose(lua_State* l);
   template<class In> int lua_texture_make_const(lua_State* l);
-  int lua_texture_make_lerp(lua_State* l);
+  template<class OutIn> int lua_texture_make_identity(lua_State* l);
   template<class In> int lua_texture_make_checkerboard(lua_State* l);
+  template<class Out, class In> int lua_texture_make_value_noise(lua_State* l);
+  int lua_texture_make_lerp(lua_State* l);
   int lua_texture_make_image(lua_State* l);
   int lua_texture_add(lua_State* l);
   int lua_texture_mul(lua_State* l);
@@ -25,6 +28,8 @@ namespace dort {
   enum class LuaTextureOut {
     Float,
     Spectrum,
+    Vec2,
+    Vec3,
   };
 
   enum class LuaTextureIn {

@@ -104,4 +104,7 @@ namespace dort {
   inline Vec3 abs(const Vec3& v) {
     return Vec3(abs(v.x), abs(v.y), abs(v.z));
   }
+  inline Vec3 floor(const Vec3& v) {
+    return Vec3(floor(v.x), floor(v.y), floor(v.z));
+  }
 }

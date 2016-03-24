@@ -74,14 +74,27 @@ dsl.rgb = dort.spectrum.rgb
 dsl.reset_stats = dort.stats.reset
 dsl.write_and_reset_stats = dort.stats.write_and_reset
 
+dsl.compose_texture = dort.texture.compose
 dsl.const_texture = dort.texture.make_const_geom
 dsl.const_texture_1d = dort.texture.make_const_1d
 dsl.const_texture_2d = dort.texture.make_const_2d
 dsl.const_texture_3d = dort.texture.make_const_3d
+dsl.identity_texture_1d = dort.texture.make_identity_1d
+dsl.identity_texture_2d = dort.texture.make_identity_2d
+dsl.identity_texture_3d = dort.texture.make_identity_3d
 dsl.lerp_texture = dort.texture.make_lerp
 dsl.checkerboard_texture_1d = dort.texture.make_checkerboard_1d
 dsl.checkerboard_texture_2d = dort.texture.make_checkerboard_2d
 dsl.checkerboard_texture_3d = dort.texture.make_checkerboard_3d
+dsl.value_noise_texture_1d = dort.texture.make_value_noise_1d
+dsl.value_noise_texture_2d = dort.texture.make_value_noise_2d
+dsl.value_noise_texture_3d = dort.texture.make_value_noise_3d
+dsl.value_noise_texture_1d_of_2d = dort.texture.make_value_noise_1d_of_2d
+dsl.value_noise_texture_2d_of_2d = dort.texture.make_value_noise_2d_of_2d
+dsl.value_noise_texture_3d_of_2d = dort.texture.make_value_noise_3d_of_2d
+dsl.value_noise_texture_1d_of_3d = dort.texture.make_value_noise_1d_of_3d
+dsl.value_noise_texture_2d_of_3d = dort.texture.make_value_noise_2d_of_3d
+dsl.value_noise_texture_3d_of_3d = dort.texture.make_value_noise_3d_of_3d
 dsl.image_texture = dort.texture.make_image
 dsl.render_texture_2d = dort.texture.render_2d
 

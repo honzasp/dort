@@ -9,6 +9,7 @@
 #include "dort/lua_spectrum.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/lua_texture_magic.hpp"
+#include "dort/noise_texture.hpp"
 #include "dort/render_texture.hpp"
 
 namespace dort {
@@ -21,14 +22,27 @@ namespace dort {
     };
 
     const luaL_Reg texture_funs[] = {
+      {"compose", lua_texture_compose},
       {"make_const_geom", lua_texture_make_const<const DiffGeom&>},
       {"make_const_1d", lua_texture_make_const<float>},
       {"make_const_2d", lua_texture_make_const<Vec2>},
       {"make_const_3d", lua_texture_make_const<Vec3>},
+      {"make_identity_1d", lua_texture_make_identity<float>},
+      {"make_identity_2d", lua_texture_make_identity<Vec2>},
+      {"make_identity_3d", lua_texture_make_identity<Vec3>},
       {"make_lerp", lua_texture_make_lerp},
       {"make_checkerboard_1d", lua_texture_make_checkerboard<float>},
       {"make_checkerboard_2d", lua_texture_make_checkerboard<Vec2>},
       {"make_checkerboard_3d", lua_texture_make_checkerboard<Vec3>},
+      {"make_value_noise_1d", lua_texture_make_value_noise<float, float>},
+      {"make_value_noise_2d", lua_texture_make_value_noise<float, Vec2>},
+      {"make_value_noise_3d", lua_texture_make_value_noise<float, Vec3>},
+      {"make_value_noise_1d_of_2d", lua_texture_make_value_noise<Vec2, float>},
+      {"make_value_noise_2d_of_2d", lua_texture_make_value_noise<Vec2, Vec2>},
+      {"make_value_noise_3d_of_2d", lua_texture_make_value_noise<Vec2, Vec3>},
+      {"make_value_noise_1d_of_3d", lua_texture_make_value_noise<Vec3, float>},
+      {"make_value_noise_2d_of_3d", lua_texture_make_value_noise<Vec3, Vec2>},
+      {"make_value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
       {"make_image", lua_texture_make_image},
       /*{"make_noise", lua_texture_make_noise},
       {"make_map_uv", lua_texture_map_make_uv},
@@ -45,6 +59,55 @@ namespace dort {
     return 1;
   }
 
+  template<class Middle>
+  struct LuaTextureComposeHandler {
+    template<class Out, class In>
+    struct H {
+      static void handle(LuaTexture& lua_tex, 
+          const LuaTexture& lua_tex_1, const LuaTexture& lua_tex_2)
+      {
+        auto tex_1 = lua_tex_1.get<Out, Middle>();
+        auto tex_2 = lua_tex_2.get<Middle, In>();
+        lua_tex.texture = compose_texture<Out, Middle, In>(tex_1, tex_2);
+      }
+    };
+  };
+
+  int lua_texture_compose(lua_State* l) {
+    LuaTexture lua_tex_1 = lua_check_texture(l, 1);
+    LuaTexture lua_tex_2 = lua_check_texture(l, 2);
+
+    LuaTexture lua_tex;
+    lua_tex.in_type = lua_tex_2.in_type;
+    lua_tex.out_type = lua_tex_1.out_type;
+
+    if(lua_tex_1.in_type == LuaTextureIn::Float &&
+        lua_tex_2.out_type == LuaTextureOut::Float) 
+    {
+      lua_texture_dispatch_out_in<LuaTextureComposeHandler<float>::template H>(
+          lua_tex.out_type, lua_tex.in_type,
+          lua_tex, lua_tex_1, lua_tex_2);
+    } else if(lua_tex_1.in_type == LuaTextureIn::Vec2 &&
+        lua_tex_2.out_type == LuaTextureOut::Vec2) 
+    {
+      lua_texture_dispatch_out_in<LuaTextureComposeHandler<Vec2>::template H>(
+          lua_tex.out_type, lua_tex.in_type,
+          lua_tex, lua_tex_1, lua_tex_2);
+    } else if(lua_tex_1.in_type == LuaTextureIn::Vec3 &&
+        lua_tex_2.out_type == LuaTextureOut::Vec3) 
+    {
+      lua_texture_dispatch_out_in<LuaTextureComposeHandler<Vec3>::template H>(
+          lua_tex.out_type, lua_tex.in_type,
+          lua_tex, lua_tex_1, lua_tex_2);
+    } else {
+      return luaL_error(l, "The input type of the first texture "
+          "must match the output type of the second texture");
+    }
+
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
   template<class In> int lua_texture_make_const(lua_State* l) {
     LuaTexture lua_tex;
     lua_tex.in_type = lua_texture_in_v<In>();
@@ -57,6 +120,15 @@ namespace dort {
     } else {
       return luaL_argerror(l, 1, "Can only make textures from numbers or spectra");
     }
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+  template<class OutIn> int lua_texture_make_identity(lua_State* l) {
+    LuaTexture lua_tex;
+    lua_tex.in_type = lua_texture_in_v<OutIn>();
+    lua_tex.out_type = lua_texture_out_v<OutIn>();
+    lua_tex.texture = identity_texture<OutIn>();
     lua_push_texture(l, lua_tex);
     return 1;
   }
@@ -143,6 +215,34 @@ namespace dort {
         lua_tex.out_type,
         lua_tex, even_lua_tex, odd_lua_tex, check_size);
 
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+  template<class Out, class In> int lua_texture_make_value_noise(lua_State* l) {
+    std::vector<ValueNoiseLayer> layers; {
+      int32_t count = lua_rawlen(l, 1);
+      for(int32_t i = 1; i <= count; ++i) {
+        ValueNoiseLayer layer;
+        lua_rawgeti(l, 1, i);
+
+        lua_getfield(l, -1, "frequency");
+        layer.frequency = luaL_checknumber(l, -1);
+        lua_pop(l, 1);
+
+        lua_getfield(l, -1, "weight");
+        layer.weight = luaL_checknumber(l, -1);
+        lua_pop(l, 1);
+
+        layers.push_back(layer);
+        lua_pop(l, 1);
+      }
+    }
+
+    LuaTexture lua_tex;
+    lua_tex.in_type = lua_texture_in_v<In>();
+    lua_tex.out_type = lua_texture_out_v<Out>();
+    lua_tex.texture = value_noise_texture<Out, In>(std::move(layers));
     lua_push_texture(l, lua_tex);
     return 1;
   }

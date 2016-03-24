@@ -87,4 +87,7 @@ namespace dort {
   inline bool is_nonnegative(const Vec2& v) {
     return v.x >= 0.f && v.y >= 0.f;
   }
+  inline Vec2 floor(const Vec2& v) {
+    return Vec2(floor(v.x), floor(v.y));
+  }
 }

@@ -41,7 +41,7 @@ namespace dort {
 
   template<class T>
   T lerp(float t, T x0, T x1) {
-    return t * x0 + (1.f - t) * x1;
+    return (1.f - t) * x0 + t * x1;
   }
 
   inline float sqrt(float a) { return std::sqrt(a); }
