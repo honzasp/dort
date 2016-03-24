@@ -74,15 +74,16 @@ dsl.rgb = dort.spectrum.rgb
 dsl.reset_stats = dort.stats.reset
 dsl.write_and_reset_stats = dort.stats.write_and_reset
 
-dsl.const_texture = dort.texture.make_const
+dsl.const_texture = dort.texture.make_const_geom
+dsl.const_texture_1d = dort.texture.make_const_1d
+dsl.const_texture_2d = dort.texture.make_const_2d
+dsl.const_texture_3d = dort.texture.make_const_3d
 dsl.lerp_texture = dort.texture.make_lerp
-dsl.checkerboard_texture = dort.texture.make_checkerboard
-dsl.map_debug_texture = dort.texture.make_map_debug
+dsl.checkerboard_texture_1d = dort.texture.make_checkerboard_1d
+dsl.checkerboard_texture_2d = dort.texture.make_checkerboard_2d
+dsl.checkerboard_texture_3d = dort.texture.make_checkerboard_3d
 dsl.image_texture = dort.texture.make_image
-dsl.map_uv = dort.texture_make_map_uv
-dsl.map_xy = dort.texture_make_map_xy
-dsl.map_spherical = dort.texture_make_map_spherical
-dsl.map_cylindrical = dort.texture_make_map_cylindrical
+dsl.render_texture_2d = dort.texture.render_2d
 
 dort.dsl = dsl
 return dsl

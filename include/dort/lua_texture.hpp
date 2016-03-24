@@ -20,6 +20,8 @@ namespace dort {
   int lua_texture_map_make_cylindrical(lua_State* l);
   int lua_texture_map_make_xyz(lua_State* l);
 
+  int lua_texture_render_2d(lua_State* l);
+
   enum class LuaTextureOut {
     Float,
     Spectrum,

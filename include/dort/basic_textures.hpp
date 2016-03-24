@@ -36,10 +36,20 @@ namespace dort {
   }
 
   inline bool checkerboard_even_check(Vec2 v, float inv_check_size) {
-    return int32_t((v.x + v.y) * inv_check_size) % 2 == 0;
+    return (int32_t(v.x * inv_check_size) + int32_t(v.y * inv_check_size)) % 2 == 0;
   }
 
   inline bool checkerboard_even_check(Vec3 v, float inv_check_size) {
-    return int32_t((v.x + v.y + v.z) * inv_check_size) % 2 == 0;
+    return (int32_t(v.x * inv_check_size) + int32_t(v.y * inv_check_size) +
+        int32_t(v.z * inv_check_size)) % 2 == 0;
+  }
+
+  template<class In>
+  std::shared_ptr<Texture<Spectrum, In>> grayscale_texture(
+      std::shared_ptr<Texture<float, In>> tex)
+  {
+    return make_texture<Spectrum, In>([=](In x) {
+      return Spectrum(tex->evaluate(x));
+    });
   }
 }

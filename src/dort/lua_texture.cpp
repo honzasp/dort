@@ -1,4 +1,5 @@
 #include "dort/basic_textures.hpp"
+#include "dort/image.hpp"
 #include "dort/image_texture.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
@@ -8,6 +9,7 @@
 #include "dort/lua_spectrum.hpp"
 #include "dort/lua_texture.hpp"
 #include "dort/lua_texture_magic.hpp"
+#include "dort/render_texture.hpp"
 
 namespace dort {
   int lua_open_texture(lua_State* l) {
@@ -34,6 +36,7 @@ namespace dort {
       {"make_map_spherical", lua_texture_map_make_spherical},
       {"make_map_cylindrical", lua_texture_map_make_cylindrical},
       {"make_map_xyz", lua_texture_map_make_xyz},*/
+      {"render_2d", lua_texture_render_2d},
       {0, 0},
     };
 
@@ -211,7 +214,6 @@ namespace dort {
     }
   };
 
-
   int lua_texture_mul(lua_State* l) {
     LuaTexture lua_tex_0 = lua_check_texture(l, 1);
     LuaTexture lua_tex_1 = lua_check_texture(l, 2);
@@ -246,6 +248,38 @@ namespace dort {
         lua_tex, lua_tex_float, lua_tex_other);
 
     lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+  int lua_texture_render_2d(lua_State* l) {
+    LuaTexture lua_tex = lua_check_texture(l, 1);
+
+    int p = 2;
+    uint32_t res = lua_param_uint32_opt(l, p, "res", 400);
+    uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", res);
+    uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", res);
+    float scale = lua_param_float_opt(l, p, "scale", float(res));
+    float x_scale = lua_param_float_opt(l, p, "scale", scale);
+    float y_scale = lua_param_float_opt(l, p, "scale", scale);
+    lua_params_check_unused(l, p);
+
+    if(lua_tex.in_type != LuaTextureIn::Vec2) {
+      return luaL_argerror(l, 1, "Only textures with Vec2 input can be rendered");
+    }
+
+    std::shared_ptr<Texture2d<Spectrum>> tex;
+    if(lua_tex.out_type == LuaTextureOut::Float) {
+      tex = grayscale_texture(lua_tex.get<float, Vec2>());
+    } else if(lua_tex.out_type == LuaTextureOut::Spectrum) {
+      tex = lua_tex.get<Spectrum, Vec2>();
+    } else {
+      return luaL_argerror(l, 1,
+          "Only textures with float or spectrum output can be rendered");
+    }
+
+    auto image = std::make_shared<Image<PixelRgb8>>(render_texture_2d(
+          tex, Vec2i(x_res, y_res), Vec2(x_scale, y_scale)));
+    lua_push_image(l, image);
     return 1;
   }
 
