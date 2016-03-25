@@ -47,9 +47,24 @@ namespace dort {
   }
 
   template<class Out> Out value_noise_layer(int32_t layer, Vec3 x) {
-    assert(false && "Not implemented");
-    (void)layer, (void)x;
-    return Out{};
+    Vec3i ix = floor_vec3i(x);
+    Vec3 dx = x - floor(x);
+    Out f000 = value_noise_lattice<Out>(layer, ix);
+    Out f001 = value_noise_lattice<Out>(layer, ix + Vec3i(0, 0, 1));
+    Out f010 = value_noise_lattice<Out>(layer, ix + Vec3i(0, 1, 0));
+    Out f100 = value_noise_lattice<Out>(layer, ix + Vec3i(1, 0, 0));
+    Out f011 = value_noise_lattice<Out>(layer, ix + Vec3i(0, 1, 1));
+    Out f101 = value_noise_lattice<Out>(layer, ix + Vec3i(1, 0, 1));
+    Out f110 = value_noise_lattice<Out>(layer, ix + Vec3i(1, 1, 0));
+    Out f111 = value_noise_lattice<Out>(layer, ix + Vec3i(1, 1, 1));
+    Out f00 = value_noise_interp(dx[2], f000, f001);
+    Out f01 = value_noise_interp(dx[2], f010, f011);
+    Out f10 = value_noise_interp(dx[2], f100, f101);
+    Out f11 = value_noise_interp(dx[2], f110, f111);
+    Out f0 = value_noise_interp(dx[1], f00, f01);
+    Out f1 = value_noise_interp(dx[1], f10, f11);
+    Out f = value_noise_interp(dx[0], f0, f1);
+    return f;
   }
 
   template<> float value_noise_lattice(int32_t layer, int32_t x) {

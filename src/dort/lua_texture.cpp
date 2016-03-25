@@ -11,8 +11,13 @@
 #include "dort/lua_texture_magic.hpp"
 #include "dort/noise_texture.hpp"
 #include "dort/render_texture.hpp"
+#include "dort/texture_maps.hpp"
 
 namespace dort {
+  template<class Out> struct LuaTextureXy;
+  template<class Out> struct LuaTextureSpherical;
+  template<class Out> struct LuaTextureCylindrical;
+
   int lua_open_texture(lua_State* l) {
     const luaL_Reg texture_methods[] = {
       {"__add", lua_texture_add},
@@ -44,12 +49,12 @@ namespace dort {
       {"make_value_noise_2d_of_3d", lua_texture_make_value_noise<Vec3, Vec2>},
       {"make_value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
       {"make_image", lua_texture_make_image},
-      /*{"make_noise", lua_texture_make_noise},
       {"make_map_uv", lua_texture_map_make_uv},
-      {"make_map_xy", lua_texture_map_make_xy},
-      {"make_map_spherical", lua_texture_map_make_spherical},
-      {"make_map_cylindrical", lua_texture_map_make_cylindrical},
-      {"make_map_xyz", lua_texture_map_make_xyz},*/
+      {"make_map_xy", lua_texture_map_make_2d<LuaTextureXy>},
+      {"make_map_spherical", lua_texture_map_make_2d<LuaTextureSpherical>},
+      {"make_map_cylindrical", lua_texture_map_make_2d<LuaTextureCylindrical>},
+      {"make_map_xyz", lua_texture_map_make_xyz},
+      {"make_grayscale", lua_texture_make_grayscale},
       {"render_2d", lua_texture_render_2d},
       {0, 0},
     };
@@ -60,9 +65,9 @@ namespace dort {
   }
 
   template<class Middle>
-  struct LuaTextureComposeHandler {
+  struct LuaTextureComposeLambda {
     template<class Out, class In>
-    struct H {
+    struct L {
       static void handle(LuaTexture& lua_tex, 
           const LuaTexture& lua_tex_1, const LuaTexture& lua_tex_2)
       {
@@ -84,19 +89,19 @@ namespace dort {
     if(lua_tex_1.in_type == LuaTextureIn::Float &&
         lua_tex_2.out_type == LuaTextureOut::Float) 
     {
-      lua_texture_dispatch_out_in<LuaTextureComposeHandler<float>::template H>(
+      lua_texture_dispatch_out_in<LuaTextureComposeLambda<float>::template L>(
           lua_tex.out_type, lua_tex.in_type,
           lua_tex, lua_tex_1, lua_tex_2);
     } else if(lua_tex_1.in_type == LuaTextureIn::Vec2 &&
         lua_tex_2.out_type == LuaTextureOut::Vec2) 
     {
-      lua_texture_dispatch_out_in<LuaTextureComposeHandler<Vec2>::template H>(
+      lua_texture_dispatch_out_in<LuaTextureComposeLambda<Vec2>::template L>(
           lua_tex.out_type, lua_tex.in_type,
           lua_tex, lua_tex_1, lua_tex_2);
     } else if(lua_tex_1.in_type == LuaTextureIn::Vec3 &&
         lua_tex_2.out_type == LuaTextureOut::Vec3) 
     {
-      lua_texture_dispatch_out_in<LuaTextureComposeHandler<Vec3>::template H>(
+      lua_texture_dispatch_out_in<LuaTextureComposeLambda<Vec3>::template L>(
           lua_tex.out_type, lua_tex.in_type,
           lua_tex, lua_tex_1, lua_tex_2);
     } else {
@@ -134,7 +139,7 @@ namespace dort {
   }
 
   template<class Out, class In>
-  struct LuaTextureLerpHandler {
+  struct LuaTextureLerpLambda {
     static void handle(LuaTexture& lua_tex, const LuaTexture& lua_tex_t,
         const LuaTexture& lua_tex_0, const LuaTexture& lua_tex_1)
     {
@@ -169,7 +174,7 @@ namespace dort {
     lua_tex.in_type = lua_tex_0.in_type;
     lua_tex.out_type = lua_tex_0.out_type;
 
-    lua_texture_dispatch_out_in<LuaTextureLerpHandler>(
+    lua_texture_dispatch_out_in<LuaTextureLerpLambda>(
         lua_tex.out_type, lua_tex.in_type,
         lua_tex, lua_tex_t, lua_tex_0, lua_tex_1);
 
@@ -178,9 +183,9 @@ namespace dort {
   }
 
   template<class In>
-  struct LuaTextureCheckerboardHandler {
+  struct LuaTextureCheckerboardLambda {
     template<class Out>
-    struct H {
+    struct L {
       static void handle(LuaTexture& lua_tex, const LuaTexture& even_lua_tex,
           const LuaTexture& odd_lua_tex, float check_size)
       {
@@ -211,7 +216,7 @@ namespace dort {
     lua_tex.in_type = lua_texture_in_v<In>();
     lua_tex.out_type = even_lua_tex.out_type;
 
-    lua_texture_dispatch_out<LuaTextureCheckerboardHandler<In>::template H>(
+    lua_texture_dispatch_out<LuaTextureCheckerboardLambda<In>::template L>(
         lua_tex.out_type,
         lua_tex, even_lua_tex, odd_lua_tex, check_size);
 
@@ -260,8 +265,34 @@ namespace dort {
     return 1;
   }
 
+  template<class In>
+  struct LuaTextureGrayscaleLambda {
+    static void handle(LuaTexture& lua_tex, const LuaTexture& lua_tex_float) {
+      auto tex_float = lua_tex_float.get<float, In>();
+      lua_tex.texture = grayscale_texture<In>(tex_float);
+    }
+  };
+
+  int lua_texture_make_grayscale(lua_State* l) {
+    LuaTexture lua_tex_float = lua_check_texture(l, 1);
+
+    if(lua_tex_float.out_type != LuaTextureOut::Float) {
+      return luaL_error(l, "Grayscale textures can be made "
+          "only from float-valued textures");
+    }
+
+    LuaTexture lua_tex;
+    lua_tex.in_type = lua_tex_float.in_type;
+    lua_tex.out_type = LuaTextureOut::Spectrum;
+
+    lua_texture_dispatch_in<LuaTextureGrayscaleLambda>(
+        lua_tex.in_type, lua_tex, lua_tex_float);
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
   template<class Out, class In>
-  struct LuaTextureAddHandler {
+  struct LuaTextureAddLambda {
     static void handle(LuaTexture& lua_tex,
         const LuaTexture& lua_tex_0, const LuaTexture& lua_tex_1)
     {
@@ -284,7 +315,7 @@ namespace dort {
     lua_tex.in_type = lua_tex_0.in_type;
     lua_tex.out_type = lua_tex_0.out_type;
 
-    lua_texture_dispatch_out_in<LuaTextureAddHandler>(
+    lua_texture_dispatch_out_in<LuaTextureAddLambda>(
         lua_tex.out_type, lua_tex.in_type,
         lua_tex, lua_tex_0, lua_tex_1);
 
@@ -293,7 +324,7 @@ namespace dort {
   }
 
   template<class Out, class In>
-  struct LuaTextureMulHandler {
+  struct LuaTextureMulLambda {
     static void handle(LuaTexture& lua_tex,
         const LuaTexture& lua_tex_0, const LuaTexture& lua_tex_1)
     {
@@ -304,7 +335,7 @@ namespace dort {
   };
 
   template<class Out, class In>
-  struct LuaTextureScaleHandler {
+  struct LuaTextureScaleLambda {
     static void handle(LuaTexture& lua_tex,
         const LuaTexture& lua_tex_float, const LuaTexture& lua_tex_other)
     {
@@ -333,7 +364,7 @@ namespace dort {
       LuaTexture lua_tex;
       lua_tex.out_type = lua_tex_0.out_type;
       lua_tex.in_type = lua_tex_0.in_type;
-      lua_texture_dispatch_out_in<LuaTextureMulHandler>(
+      lua_texture_dispatch_out_in<LuaTextureMulLambda>(
           lua_tex.out_type, lua_tex.in_type,
           lua_tex, lua_tex_0, lua_tex_1);
     } else {
@@ -343,10 +374,105 @@ namespace dort {
     LuaTexture lua_tex;
     lua_tex.out_type = lua_tex_other.out_type;
     lua_tex.in_type = lua_tex_other.in_type;
-    lua_texture_dispatch_out_in<LuaTextureScaleHandler>(
+    lua_texture_dispatch_out_in<LuaTextureScaleLambda>(
         lua_tex.out_type, lua_tex.in_type,
         lua_tex, lua_tex_float, lua_tex_other);
 
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+  template<class Out>
+  struct LuaTextureUvLambda {
+    static void handle(LuaTexture& lua_tex, const LuaTexture& lua_tex_2d) {
+      auto tex_2d = lua_tex_2d.get<Out, Vec2>();
+      lua_tex.texture = uv_texture_map(tex_2d);
+    }
+  };
+
+  int lua_texture_map_make_uv(lua_State* l) {
+    LuaTexture lua_tex_2d = lua_check_texture(l, 1);
+    if(lua_tex_2d.in_type != LuaTextureIn::Vec2) {
+      return luaL_error(l, "The texture must take 2d input");
+    }
+
+    LuaTexture lua_tex;
+    lua_tex.in_type = LuaTextureIn::Geom;
+    lua_tex.out_type = lua_tex_2d.out_type;
+    lua_texture_dispatch_out<LuaTextureUvLambda>(lua_tex.out_type, 
+        lua_tex, lua_tex_2d);
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+  template<class Out> struct LuaTextureXy {
+    static std::shared_ptr<TextureGeom<Out>> map(
+        std::shared_ptr<Texture2d<Out>> tex, const Transform& trans) {
+      return xy_texture_map(tex, trans);
+    }
+  };
+  template<class Out> struct LuaTextureSpherical {
+    static std::shared_ptr<TextureGeom<Out>> map(
+        std::shared_ptr<Texture2d<Out>> tex, const Transform& trans) {
+      return spherical_texture_map(tex, trans);
+    }
+  };
+  template<class Out> struct LuaTextureCylindrical {
+    static std::shared_ptr<TextureGeom<Out>> map(
+        std::shared_ptr<Texture2d<Out>> tex, const Transform& trans) {
+      return cylindrical_texture_map(tex, trans);
+    }
+  };
+
+  template<template<class T> class TexMap>
+  struct LuaTextureMap2dLambda {
+    template<class Out>
+    struct L {
+      static void handle(LuaTexture& lua_tex, const LuaTexture& lua_tex_2d,
+          const Transform& transform)
+      {
+        auto tex_2d = lua_tex_2d.get<Out, Vec2>();
+        lua_tex.texture = TexMap<Out>::map(tex_2d, transform);
+      }
+    };
+  };
+
+  template<template<class T> class TexMap>
+  int lua_texture_map_make_2d(lua_State* l) {
+    LuaTexture lua_tex_2d = lua_check_texture(l, 1);
+    if(lua_tex_2d.in_type != LuaTextureIn::Vec2) {
+      return luaL_error(l, "The texture must take 2d input");
+    }
+    Transform trans = lua_gettop(l) >= 2
+      ? lua_check_transform(l, 2) : identity();
+
+    LuaTexture lua_tex;
+    lua_tex.in_type = LuaTextureIn::Geom;
+    lua_tex.out_type = lua_tex_2d.out_type;
+    lua_texture_dispatch_out<LuaTextureMap2dLambda<TexMap>::template L>(
+        lua_tex.out_type, lua_tex, lua_tex_2d, trans);
+    lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+  template<class Out>
+  struct LuaTextureXyzLambda {
+    static void handle(LuaTexture& lua_tex,
+        const LuaTexture& lua_tex_3d, const Transform& transform) {
+      auto tex_3d = lua_tex_3d.get<Out, Vec3>();
+      lua_tex.texture = xyz_texture_map(tex_3d, transform);
+    }
+  };
+
+  int lua_texture_map_make_xyz(lua_State* l) {
+    LuaTexture lua_tex_3d = lua_check_texture(l, 1);
+    Transform trans = lua_gettop(l) >= 2 
+      ? lua_check_transform(l, 2) : identity();
+    LuaTexture lua_tex;
+    lua_tex.in_type = LuaTextureIn::Geom;
+    lua_tex.out_type = lua_tex_3d.out_type;
+    lua_texture_dispatch_out<LuaTextureXyzLambda>(lua_tex.out_type,
+        lua_tex, lua_tex_3d, trans);
     lua_push_texture(l, lua_tex);
     return 1;
   }

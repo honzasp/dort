@@ -84,6 +84,26 @@ namespace dort {
     assert(handled);
   }
 
+  template<template<class In> class Fun, class In, class... Args>
+  bool lua_texture_handle_in(LuaTextureIn in_type, Args&&... args) {
+    if(in_type == lua_texture_in_v<In>()) {
+      Fun<In>::handle(std::forward<Args>(args)...);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  template<template<class In> class Fun, class... Args>
+  void lua_texture_dispatch_in(LuaTextureIn in_type, Args&&... args) {
+    bool handled =
+      lua_texture_handle_in<Fun, float>(in_type, args...) ||
+      lua_texture_handle_in<Fun, const DiffGeom&>(in_type, args...) ||
+      lua_texture_handle_in<Fun, Vec2>(in_type, args...) ||
+      lua_texture_handle_in<Fun, Vec3>(in_type, args...);
+    assert(handled);
+  }
+
   template<class Out, class In>
   LuaTexture::LuaTexture(std::shared_ptr<Texture<Out, In>> tex):
     out_type(lua_texture_out_v<Out>()),

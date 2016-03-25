@@ -1,10 +1,11 @@
 #!/bin/sh
+loc_regex='[a-zA-Z0-9].*[a-zA-Z0-9]'
 printf "lines of code   "
-find src/ include/ -type f | xargs egrep -h '[^ ].*[^ ]' | wc -l
+find src/ include/ -type f | xargs egrep -h "$loc_regex" | wc -l
 printf "  headers         "
-find include/ -type f | xargs egrep -h '[^ ].*[^ ]' | wc -l
+find include/ -type f | xargs egrep -h "$loc_regex" | wc -l
 printf "  sources         "
-find src/ -type f | xargs egrep -h '[^ ].*[^ ]' | wc -l
+find src/ -type f | xargs egrep -h "$loc_regex" | wc -l
 
 printf "physical lines  "
 find src/ include/ -type f | xargs cat | wc -l

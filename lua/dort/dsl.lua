@@ -96,6 +96,12 @@ dsl.value_noise_texture_1d_of_3d = dort.texture.make_value_noise_1d_of_3d
 dsl.value_noise_texture_2d_of_3d = dort.texture.make_value_noise_2d_of_3d
 dsl.value_noise_texture_3d_of_3d = dort.texture.make_value_noise_3d_of_3d
 dsl.image_texture = dort.texture.make_image
+dsl.texture_map_uv = dort.texture.make_map_uv
+dsl.texture_map_xy = dort.texture.make_map_xy
+dsl.texture_map_spherical = dort.texture.make_map_spherical
+dsl.texture_map_cylindrical = dort.texture.make_map_cylindrical
+dsl.texture_map_xyz = dort.texture.make_map_xyz
+dsl.grayscale_texture = dort.texture.make_grayscale
 dsl.render_texture_2d = dort.texture.render_2d
 
 dort.dsl = dsl

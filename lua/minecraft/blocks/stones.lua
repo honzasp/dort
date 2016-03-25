@@ -25,18 +25,45 @@ b.define("cobblestone", 4, m.make_matte {
   color = rgb(0.3, 0.3, 0.3)
 })
 b.define("bedrock", 7, m.make_matte {
-  --[[color = t.make_lerp {
-    tex_0 = rgb(1,1,1) * 0.2,
-    tex_1 = rgb(1,1,1) * 0.8,
-    t = t.make_noise {
-      layers = {
-        { scale = 37.2, weight = 2 },
-        { scale = 14.3, weight = 2 },
-        { scale = 8.34, weight = 1 },
-        { scale = 2.21, weight = 1 },
-      },
+  --[[
+  color = t.make_map_xyz(t.make_grayscale(t.compose(
+    t.make_value_noise_3d {
+      { weight = 1, frequency = 32 },
+      { weight = 1, frequency = 16 },
+      { weight = 1, frequency = 8 },
+      { weight = 1, frequency = 4 },
+      { weight = 1, frequency = 2 },
+      { weight = 1, frequency = 1 },
+      { weight = 1, frequency = 0.5 },
+      { weight = 1, frequency = 0.25 },
+      { weight = 1, frequency = 0.125 },
     },
-  },
+    t.make_identity_3d() + t.make_const_3d(0.8) * t.make_value_noise_3d_of_3d {
+      { weight = 1, frequency = 4 },
+      { weight = 3, frequency = 2 },
+      { weight = 1, frequency = 1},
+      { weight = 4, frequency = 0.5 },
+      { weight = 6, frequency = 0.25 },
+    }
+  ))),
   --]]
-  color = rgb(1,1,1) * 0.5,
+  color = t.make_map_xyz(t.make_grayscale(t.compose(
+    t.make_value_noise_3d {
+      { weight = 6, frequency = 1/4 },
+      { weight = 2, frequency = 1/2 },
+      { weight = 1, frequency = 1 },
+      { weight = 1, frequency = 2 },
+      { weight = 1, frequency = 4 },
+      { weight = 3, frequency = 8 },
+      { weight = 4, frequency = 16 },
+      { weight = 3, frequency = 32 },
+    },
+    t.make_identity_3d() + t.make_const_3d(1.5) * t.make_value_noise_3d_of_3d {
+      { weight = 1, frequency = 1 },
+      { weight = 1, frequency = 2 },
+      { weight = 1, frequency = 4 },
+      { weight = 2, frequency = 8 },
+      { weight = 2, frequency = 16 },
+    }
+  )))
 })
