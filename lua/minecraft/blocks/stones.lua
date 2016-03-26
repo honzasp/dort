@@ -47,7 +47,8 @@ b.define("bedrock", 7, m.make_matte {
     }
   ))),
   --]]
-  color = t.make_map_xyz(t.make_grayscale(t.compose(
+  color = 
+    t.make_color_map_grayscale() ..
     t.make_value_noise_3d {
       { weight = 6, frequency = 1/4 },
       { weight = 2, frequency = 1/2 },
@@ -57,13 +58,13 @@ b.define("bedrock", 7, m.make_matte {
       { weight = 3, frequency = 8 },
       { weight = 4, frequency = 16 },
       { weight = 3, frequency = 32 },
-    },
+    } ..
     t.make_identity_3d() + t.make_const_3d(1.5) * t.make_value_noise_3d_of_3d {
       { weight = 1, frequency = 1 },
       { weight = 1, frequency = 2 },
       { weight = 1, frequency = 4 },
       { weight = 2, frequency = 8 },
       { weight = 2, frequency = 16 },
-    }
-  )))
+    } ..
+    t.make_map_xyz(g.identity()),
 })

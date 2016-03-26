@@ -6,5 +6,6 @@ end
 _env.b = minecraft.blocks
 _env.m = dort.material
 _env.t = dort.texture
+_env.g = dort.geometry
 _env.rgb = dort.spectrum.rgb
 return _env

@@ -21,8 +21,9 @@ namespace dort {
   int lua_texture_make_bias(lua_State* l);
 
   int lua_texture_map_make_uv(lua_State* l);
-  template<template<class> class TexMap>
-  int lua_texture_map_make_2d(lua_State* l);
+  int lua_texture_map_make_xy(lua_State* l);
+  int lua_texture_map_make_cylindrical(lua_State* l);
+  int lua_texture_map_make_spherical(lua_State* l);
   int lua_texture_map_make_xyz(lua_State* l);
 
   int lua_texture_color_map_make_grayscale(lua_State* l);
