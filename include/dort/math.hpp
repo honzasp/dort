@@ -76,6 +76,14 @@ namespace dort {
     float t = abs(x) * PI;
     return t < 1e-5 ? 1.f : sin(t) / t;
   }
+  inline float bias(float b, float x) {
+    return x / ((1.f/b - 2.f)*(1.f - x) + 1.f);
+  }
+  inline float gain(float g, float x) {
+    return (x < 0.5f) 
+      ? bias(1.f-g, 2.f*x) * 0.5f 
+      : 1.f - bias(1.f-g, 2.f - 2.f*x) * 0.5f;
+  }
 
   inline uint32_t round_up_power_of_two(uint32_t x) {
     x = x - 1;

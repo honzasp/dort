@@ -9,6 +9,7 @@ namespace dort {
   int lua_open_spectrum(lua_State* l);
 
   int lua_spectrum_rgb(lua_State* l);
+  int lua_spectrum_rgbh(lua_State* l);
   int lua_spectrum_red(lua_State* l);
   int lua_spectrum_green(lua_State* l);
   int lua_spectrum_blue(lua_State* l);

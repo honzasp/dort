@@ -70,6 +70,7 @@ dsl.mesh = dort.shape.make_mesh
 dsl.read_ply_mesh = dort.shape.read_ply_mesh
 
 dsl.rgb = dort.spectrum.rgb
+dsl.rgbh = dort.spectrum.rgbh
 
 dsl.reset_stats = dort.stats.reset
 dsl.write_and_reset_stats = dort.stats.write_and_reset
@@ -96,12 +97,16 @@ dsl.value_noise_texture_1d_of_3d = dort.texture.make_value_noise_1d_of_3d
 dsl.value_noise_texture_2d_of_3d = dort.texture.make_value_noise_2d_of_3d
 dsl.value_noise_texture_3d_of_3d = dort.texture.make_value_noise_3d_of_3d
 dsl.image_texture = dort.texture.make_image
-dsl.texture_map_uv = dort.texture.make_map_uv
-dsl.texture_map_xy = dort.texture.make_map_xy
-dsl.texture_map_spherical = dort.texture.make_map_spherical
-dsl.texture_map_cylindrical = dort.texture.make_map_cylindrical
-dsl.texture_map_xyz = dort.texture.make_map_xyz
-dsl.grayscale_texture = dort.texture.make_grayscale
+dsl.gain_texture = dort.texture.make_gain
+dsl.bias_texture = dort.texture.make_bias
+dsl.uv_texture_map = dort.texture.make_map_uv
+dsl.xy_texture_map = dort.texture.make_map_xy
+dsl.spherical_texture_map = dort.texture.make_map_spherical
+dsl.cylindrical_texture_map = dort.texture.make_map_cylindrical
+dsl.xyz_texture_map = dort.texture.make_map_xyz
+dsl.grayscale_color_map = dort.texture.make_color_map_grayscale
+dsl.lerp_color_map = dort.texture.make_color_map_lerp
+dsl.spline_color_map = dort.texture.make_color_map_spline
 dsl.render_texture_2d = dort.texture.render_2d
 
 dort.dsl = dsl

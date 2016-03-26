@@ -123,7 +123,7 @@ namespace dort {
     int32_t o = (a * d * 99623);
     int32_t p = (b * c * 104471);
     
-    return abs(((m + n) ^ (o + p)) / float(0xffffffff));
+    return abs(((m + n) ^ (o + p)) / float(0x7fffffff));
   }
 
   template<class T>

@@ -44,12 +44,6 @@ namespace dort {
         int32_t(v.z * inv_check_size)) % 2 == 0;
   }
 
-  template<class In>
-  std::shared_ptr<Texture<Spectrum, In>> grayscale_texture(
-      std::shared_ptr<Texture<float, In>> tex)
-  {
-    return make_texture<Spectrum, In>([=](In x) {
-      return Spectrum(tex->evaluate(x));
-    });
-  }
+  std::shared_ptr<Texture<float, float>> gain_texture(float g);
+  std::shared_ptr<Texture<float, float>> bias_texture(float b);
 }

@@ -1,4 +1,5 @@
 #include "dort/basic_textures.hpp"
+#include "dort/color_maps.hpp"
 #include "dort/image.hpp"
 #include "dort/image_texture.hpp"
 #include "dort/lua_builder.hpp"
@@ -20,6 +21,7 @@ namespace dort {
 
   int lua_open_texture(lua_State* l) {
     const luaL_Reg texture_methods[] = {
+      {"__concat", lua_texture_compose},
       {"__add", lua_texture_add},
       {"__mul", lua_texture_mul},
       {"__gc", lua_gc_managed_obj<LuaTexture, TEXTURE_TNAME>},
@@ -48,13 +50,17 @@ namespace dort {
       {"make_value_noise_1d_of_3d", lua_texture_make_value_noise<Vec3, float>},
       {"make_value_noise_2d_of_3d", lua_texture_make_value_noise<Vec3, Vec2>},
       {"make_value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
+      {"make_gain", lua_texture_make_gain},
+      {"make_bias", lua_texture_make_bias},
       {"make_image", lua_texture_make_image},
       {"make_map_uv", lua_texture_map_make_uv},
       {"make_map_xy", lua_texture_map_make_2d<LuaTextureXy>},
       {"make_map_spherical", lua_texture_map_make_2d<LuaTextureSpherical>},
       {"make_map_cylindrical", lua_texture_map_make_2d<LuaTextureCylindrical>},
       {"make_map_xyz", lua_texture_map_make_xyz},
-      {"make_grayscale", lua_texture_make_grayscale},
+      {"make_color_map_grayscale", lua_texture_color_map_make_grayscale},
+      {"make_color_map_lerp", lua_texture_color_map_make_lerp},
+      {"make_color_map_spline", lua_texture_color_map_make_spline},
       {"render_2d", lua_texture_render_2d},
       {0, 0},
     };
@@ -265,32 +271,6 @@ namespace dort {
     return 1;
   }
 
-  template<class In>
-  struct LuaTextureGrayscaleLambda {
-    static void handle(LuaTexture& lua_tex, const LuaTexture& lua_tex_float) {
-      auto tex_float = lua_tex_float.get<float, In>();
-      lua_tex.texture = grayscale_texture<In>(tex_float);
-    }
-  };
-
-  int lua_texture_make_grayscale(lua_State* l) {
-    LuaTexture lua_tex_float = lua_check_texture(l, 1);
-
-    if(lua_tex_float.out_type != LuaTextureOut::Float) {
-      return luaL_error(l, "Grayscale textures can be made "
-          "only from float-valued textures");
-    }
-
-    LuaTexture lua_tex;
-    lua_tex.in_type = lua_tex_float.in_type;
-    lua_tex.out_type = LuaTextureOut::Spectrum;
-
-    lua_texture_dispatch_in<LuaTextureGrayscaleLambda>(
-        lua_tex.in_type, lua_tex, lua_tex_float);
-    lua_push_texture(l, lua_tex);
-    return 1;
-  }
-
   template<class Out, class In>
   struct LuaTextureAddLambda {
     static void handle(LuaTexture& lua_tex,
@@ -379,6 +359,19 @@ namespace dort {
         lua_tex, lua_tex_float, lua_tex_other);
 
     lua_push_texture(l, lua_tex);
+    return 1;
+  }
+
+
+  int lua_texture_make_gain(lua_State* l) {
+    float g = luaL_checknumber(l, 1);
+    lua_push_texture(l, gain_texture(g));
+    return 1;
+  }
+
+  int lua_texture_make_bias(lua_State* l) {
+    float b = luaL_checknumber(l, 1);
+    lua_push_texture(l, bias_texture(b));
     return 1;
   }
 
@@ -477,6 +470,39 @@ namespace dort {
     return 1;
   }
 
+
+  int lua_texture_color_map_make_grayscale(lua_State* l) {
+    lua_push_texture(l, grayscale_color_map());
+    return 1;
+  }
+
+  int lua_texture_color_map_make_lerp(lua_State* l) {
+    Spectrum color_0 = lua_check_spectrum(l, 1);
+    Spectrum color_1 = lua_check_spectrum(l, 2);
+    lua_push_texture(l, lerp_color_map(color_0, color_1));
+    return 1;
+  }
+
+  int lua_texture_color_map_make_spline(lua_State* l) {
+    std::vector<Spectrum> knots; {
+      int32_t len = lua_rawlen(l, 1);
+      for(int32_t i = 1; i <= len; ++i) {
+        lua_rawgeti(l, 1, i);
+        knots.push_back(lua_check_spectrum(l, -1));
+        lua_pop(l, 1);
+      }
+    }
+
+    if(knots.size() < 4) {
+      return luaL_argerror(l, 1, "At least four knots must be given "
+          "(the first and last knots are not part of the spline, "
+          "but define the derivative at the end points)");
+    }
+
+    lua_push_texture(l, spline_color_map(knots));
+    return 1;
+  }
+
   int lua_texture_render_2d(lua_State* l) {
     LuaTexture lua_tex = lua_check_texture(l, 1);
 
@@ -484,9 +510,11 @@ namespace dort {
     uint32_t res = lua_param_uint32_opt(l, p, "res", 400);
     uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", res);
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", res);
-    float scale = lua_param_float_opt(l, p, "scale", float(res));
-    float x_scale = lua_param_float_opt(l, p, "scale", scale);
-    float y_scale = lua_param_float_opt(l, p, "scale", scale);
+    float scale = lua_param_float_opt(l, p, "scale", 1.f);
+    float x_scale = lua_param_float_opt(l, p, "scale", 
+        scale * float(y_res) / float(max(x_res, y_res)));
+    float y_scale = lua_param_float_opt(l, p, "scale", 
+        scale * float(x_res) / float(max(x_res, y_res)));
     lua_params_check_unused(l, p);
 
     if(lua_tex.in_type != LuaTextureIn::Vec2) {
@@ -495,7 +523,7 @@ namespace dort {
 
     std::shared_ptr<Texture2d<Spectrum>> tex;
     if(lua_tex.out_type == LuaTextureOut::Float) {
-      tex = grayscale_texture(lua_tex.get<float, Vec2>());
+      tex = compose_texture(grayscale_color_map(), lua_tex.get<float, Vec2>());
     } else if(lua_tex.out_type == LuaTextureOut::Spectrum) {
       tex = lua_tex.get<Spectrum, Vec2>();
     } else {
@@ -503,8 +531,8 @@ namespace dort {
           "Only textures with float or spectrum output can be rendered");
     }
 
-    auto image = std::make_shared<Image<PixelRgb8>>(render_texture_2d(
-          tex, Vec2i(x_res, y_res), Vec2(x_scale, y_scale)));
+    auto image = std::make_shared<Image<PixelRgb8>>(render_texture_2d(tex,
+          Vec2i(x_res, y_res), Vec2(float(x_res) * x_scale, float(y_res) * y_scale)));
     lua_push_image(l, image);
     return 1;
   }
