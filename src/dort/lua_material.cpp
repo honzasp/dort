@@ -1,4 +1,5 @@
 #include "dort/basic_textures.hpp"
+#include "dort/bump_material.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_material.hpp"
 #include "dort/lua_params.hpp"
@@ -24,6 +25,7 @@ namespace dort {
       {"make_mirror", lua_material_make_mirror},
       {"make_glass", lua_material_make_glass},
       {"make_rough_glass", lua_material_make_rough_glass},
+      {"make_bump", lua_material_make_bump},
       {0, 0},
     };
 
@@ -110,6 +112,17 @@ namespace dort {
     lua_params_check_unused(l, p);
     lua_push_material(l, std::make_shared<RoughGlassMaterial>(
           reflect, transmit, roughness, eta));
+    return 1;
+  }
+
+  int lua_material_make_bump(lua_State* l) {
+    int p = 1;
+    auto displac = lua_param_texture(l, p, "bump").check<float>(l);
+    auto material = lua_param_material(l, p, "material");
+    lua_params_check_unused(l, p);
+
+    lua_push_material(l, std::make_shared<BumpMaterial>(
+          displac, material));
     return 1;
   }
 

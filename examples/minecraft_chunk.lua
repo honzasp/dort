@@ -1,6 +1,6 @@
 require "minecraft"
 local _ENV = require "dort/dsl"
-local quality = false
+local quality = true
 
 local box = boxi(vec3i(-20, 0, -20), vec3i(20, 30, 20))
 

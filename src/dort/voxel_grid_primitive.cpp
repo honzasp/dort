@@ -28,11 +28,11 @@ namespace dort {
 
       DiffGeom voxel_geom;
       voxel_geom.p = Point(entry.p_hit);
-      voxel_geom.aux_int32[0] = voxel;
+      out_isect.aux_int32[0] = voxel;
       if(entry.on_surface) {
-        voxel_geom.aux_int32[1] = entry.surface_axis + (entry.surface_neg ? 3 : 0);
+        out_isect.aux_int32[1] = entry.surface_axis + (entry.surface_neg ? 3 : 0);
       } else {
-        voxel_geom.aux_int32[1] = 6;
+        out_isect.aux_int32[1] = 6;
       }
 
       if(entry.on_surface) {
@@ -74,19 +74,17 @@ namespace dort {
     return this->voxel_to_frame.apply(box);
   }
 
-  std::unique_ptr<Bsdf> VoxelGridPrimitive::get_bsdf(
-      const DiffGeom& frame_diff_geom) const
-  {
-    Voxel voxel = frame_diff_geom.aux_int32[0];
-    uint32_t face = frame_diff_geom.aux_uint32[1];
+  std::unique_ptr<Bsdf> VoxelGridPrimitive::get_bsdf(const Intersection& isect) const {
+    Voxel voxel = isect.aux_int32[0];
+    uint32_t face = isect.aux_uint32[1];
     assert(voxel != VOXEL_EMPTY);
     assert(face <= 6);
 
     if(face == 6) {
-      return std::make_unique<Bsdf>(frame_diff_geom);
+      return std::make_unique<Bsdf>(isect.frame_diff_geom, isect.frame_diff_geom.nn);
     }
     const auto& voxel_material = this->voxel_materials.at(voxel);
-    return voxel_material.faces.at(face)->get_bsdf(frame_diff_geom);
+    return voxel_material.faces.at(face)->get_bsdf(isect.frame_diff_geom);
   }
 
   const AreaLight* VoxelGridPrimitive::get_area_light(const DiffGeom&) const {

@@ -6,13 +6,15 @@
 #include "dort/texture.hpp"
 
 namespace dort {
-  std::unique_ptr<Bsdf> PlasticMaterial::get_bsdf(const DiffGeom& diff_geom) const {
-    Spectrum diffuse = this->diffuse->evaluate(diff_geom);
-    Spectrum reflection = this->reflection->evaluate(diff_geom);
-    float roughness = max(1e-3f, this->roughness->evaluate(diff_geom));
-    float eta = this->eta->evaluate(diff_geom);
+  std::unique_ptr<Bsdf> PlasticMaterial::get_bsdf(
+      const DiffGeom& shading_geom, const Normal& nn_geom) const 
+  {
+    Spectrum diffuse = this->diffuse->evaluate(shading_geom);
+    Spectrum reflection = this->reflection->evaluate(shading_geom);
+    float roughness = max(1e-3f, this->roughness->evaluate(shading_geom));
+    float eta = this->eta->evaluate(shading_geom);
 
-    auto bsdf = std::make_unique<Bsdf>(diff_geom);
+    auto bsdf = std::make_unique<Bsdf>(shading_geom, nn_geom);
     if(!diffuse.is_black()) {
       bsdf->add(std::make_unique<LambertianBrdf>(diffuse));
     }

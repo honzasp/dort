@@ -33,6 +33,7 @@ namespace dort {
   struct Film;
   struct Intersection;
   struct Mesh;
+  struct Normal;
   struct PixelRgb8;
   struct PlyMesh;
   struct Point;

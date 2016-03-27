@@ -48,10 +48,8 @@ namespace dort {
     return this->bvh.bounds();
   }
 
-  std::unique_ptr<Bsdf> MeshBvhPrimitive::get_bsdf(
-      const DiffGeom& frame_diff_geom) const
-  {
-    return this->material->get_bsdf(frame_diff_geom);
+  std::unique_ptr<Bsdf> MeshBvhPrimitive::get_bsdf(const Intersection& isect) const {
+    return this->material->get_bsdf(isect.frame_diff_geom);
   }
 
   const AreaLight* MeshBvhPrimitive::get_area_light(const DiffGeom&) const {

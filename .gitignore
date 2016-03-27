@@ -2,6 +2,7 @@
 *~
 build/
 data/
+.doxy/
 .tup/
 output.ppm
 output.png

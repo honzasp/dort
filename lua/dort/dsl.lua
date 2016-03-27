@@ -59,6 +59,7 @@ dsl.metal_material = dort.material.make_metal
 dsl.mirror_material = dort.material.make_mirror
 dsl.glass_material = dort.material.make_glass
 dsl.rough_glass_material = dort.material.make_rough_glass
+dsl.bump_material = dort.material.make_bump
 
 dsl.random_sampler = dort.sampler.make_random
 dsl.stratified_sampler = dort.sampler.make_stratified

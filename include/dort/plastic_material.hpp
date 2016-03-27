@@ -18,6 +18,6 @@ namespace dort {
     { }
 
     virtual std::unique_ptr<Bsdf> get_bsdf(
-        const DiffGeom& diff_geom) const override final;
+        const DiffGeom& shading_geom, const Normal& nn_geom) const override final;
   };
 }

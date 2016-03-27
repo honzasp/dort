@@ -21,8 +21,9 @@ namespace dort {
     return idxs;
   }
 
-  Bsdf::Bsdf(const DiffGeom& diff_geom):
-    nn(diff_geom.nn.v)
+  Bsdf::Bsdf(const DiffGeom& diff_geom, const Normal& nn_geom):
+    nn(diff_geom.nn.v),
+    nn_geom(nn_geom)
   {
     float len = length(diff_geom.dpdu);
     if(len < 1e-9) {
@@ -38,14 +39,14 @@ namespace dort {
   }
 
   Spectrum Bsdf::f(const Vector& wo, const Vector& wi, BxdfFlags flags) const {
-    Vector wo_local = this->world_to_local(wo);
-    Vector wi_local = this->world_to_local(wi);
-
-    if(Bsdf::same_hemisphere(wo_local, wi_local)) {
+    if(dot(wo, this->nn_geom) * dot(wi, this->nn_geom) > 0.f) {
       flags = BxdfFlags(flags & ~BSDF_TRANSMISSION);
     } else {
       flags = BxdfFlags(flags & ~BSDF_REFLECTION);
     }
+
+    Vector wo_local = this->world_to_local(wo);
+    Vector wi_local = this->world_to_local(wi);
 
     Spectrum f_sum;
     for(const auto& bxdf: this->bxdfs) {

@@ -10,6 +10,13 @@ namespace dort {
     DiffGeom world_diff_geom;
     const GeometricPrimitive* primitive;
 
+    union {
+      uint32_t aux_uint32[4];
+      int32_t aux_int32[4];
+      float aux_float[4];
+    };
+
+    std::unique_ptr<Bsdf> get_bsdf() const;
     Spectrum emitted_radiance(const Vector& wo) const;
   };
 
@@ -25,7 +32,7 @@ namespace dort {
   class GeometricPrimitive: public Primitive {
   public:
     virtual std::unique_ptr<Bsdf> get_bsdf(
-        const DiffGeom& frame_diff_geom) const = 0;
+        const Intersection& isect) const = 0;
     virtual const AreaLight* get_area_light(
         const DiffGeom& frame_diff_geom) const = 0;
   };
@@ -48,7 +55,7 @@ namespace dort {
     virtual bool intersect_p(const Ray& ray) const override final;
     virtual Box bounds() const override final;
     virtual std::unique_ptr<Bsdf> get_bsdf(
-        const DiffGeom& frame_diff_geom) const override final;
+        const Intersection& isect) const override final;
     virtual const AreaLight* get_area_light(
         const DiffGeom& frame_diff_geom) const override final;
   };

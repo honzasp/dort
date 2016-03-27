@@ -36,7 +36,7 @@ namespace dort {
       geom.nn = isect.world_diff_geom.nn;
       geom.wo = normalize(-next_ray.dir);
       geom.ray_epsilon = isect.ray_epsilon;
-      auto bsdf = isect.primitive->get_bsdf(isect.frame_diff_geom);
+      auto bsdf = isect.get_bsdf();
 
       Spectrum lighting;
       if(bounces < this->bsdf_samples_idxs.size()) {

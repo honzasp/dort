@@ -54,8 +54,9 @@ namespace dort {
     Vector nn;
     Vector sn;
     Vector tn;
+    Normal nn_geom;
   public:
-    Bsdf(const DiffGeom& diff_geom);
+    Bsdf(const DiffGeom& diff_geom, const Normal& nn_geom);
     void add(std::unique_ptr<Bxdf> bxdf);
 
     Spectrum f(const Vector& wo, const Vector& wi, BxdfFlags flags) const;

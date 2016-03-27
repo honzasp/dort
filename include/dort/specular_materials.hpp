@@ -9,8 +9,8 @@ namespace dort {
       reflectance(reflectance)
     { }
 
-    virtual std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& diff_geom) 
-      const override final;
+    virtual std::unique_ptr<Bsdf> get_bsdf(
+        const DiffGeom& shading_geom, const Normal& nn_geom) const override final;
   };
 
   class GlassMaterial final: public Material {
@@ -26,7 +26,7 @@ namespace dort {
       eta(eta)
     { }
 
-    virtual std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& diff_geom)
-      const override final;
+    virtual std::unique_ptr<Bsdf> get_bsdf(
+        const DiffGeom& shading_geom, const Normal& nn_geom) const override final;
   };
 }

@@ -9,15 +9,15 @@
 
 namespace dort {
   std::unique_ptr<Bsdf> RoughGlassMaterial::get_bsdf(
-      const DiffGeom& diff_geom) const 
+      const DiffGeom& shading_geom, const Normal& nn_geom) const 
   {
-    Spectrum reflect = this->reflectance->evaluate(diff_geom);
-    Spectrum transmit = this->transmittance->evaluate(diff_geom);
-    float roughness = max(0.f, this->roughness->evaluate(diff_geom));
-    float eta = this->eta->evaluate(diff_geom);
+    Spectrum reflect = this->reflectance->evaluate(shading_geom);
+    Spectrum transmit = this->transmittance->evaluate(shading_geom);
+    float roughness = max(0.f, this->roughness->evaluate(shading_geom));
+    float eta = this->eta->evaluate(shading_geom);
     float alpha_b = roughness;
 
-    auto bsdf = std::make_unique<Bsdf>(diff_geom);
+    auto bsdf = std::make_unique<Bsdf>(shading_geom, nn_geom);
     if(alpha_b > 1e-3f) {
       if(!reflect.is_black()) {
         bsdf->add(std::make_unique<MicrofacetBrdf<

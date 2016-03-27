@@ -31,7 +31,7 @@ namespace dort {
     geom.wo = normalize(-ray.dir);
     geom.ray_epsilon = isect.ray_epsilon;
 
-    std::unique_ptr<Bsdf> bsdf = isect.primitive->get_bsdf(isect.frame_diff_geom);
+    std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
     radiance += uniform_sample_all_lights(scene, geom, *bsdf, sampler,
         make_slice(this->light_samples_idxs),
         make_slice(this->bsdf_samples_idxs));

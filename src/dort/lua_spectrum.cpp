@@ -46,7 +46,7 @@ namespace dort {
   int lua_spectrum_rgbh(lua_State* l) {
     float red, green, blue;
 
-    if(lua_isstring(l, 1)) {
+    if(!lua_isnumber(l, 1) && lua_isstring(l, 1)) {
       const char* str = luaL_checkstring(l, 1);
       if(str[0] == '#') {
         str = str + 1;

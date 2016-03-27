@@ -4,6 +4,7 @@
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_grid.hpp"
 #include "dort/lua_image.hpp"
+#include "dort/lua_material.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
@@ -86,6 +87,14 @@ namespace dort {
     auto grid = lua_check_grid(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return grid;
+  }
+  std::shared_ptr<Material> lua_param_material(lua_State* l,
+      int params_idx, const char* param_name)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto material = lua_check_material(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return material;
   }
 
   float lua_param_float_opt(lua_State* l, int params_idx,

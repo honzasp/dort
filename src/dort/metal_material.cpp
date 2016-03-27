@@ -5,13 +5,15 @@
 #include "dort/texture.hpp"
 
 namespace dort {
-  std::unique_ptr<Bsdf> MetalMaterial::get_bsdf(const DiffGeom& diff_geom) const {
-    Spectrum reflection = this->reflection->evaluate(diff_geom);
-    float roughness = max(1e-3f, this->roughness->evaluate(diff_geom));
-    float eta = this->eta->evaluate(diff_geom);
-    float k = this->k->evaluate(diff_geom);
+  std::unique_ptr<Bsdf> MetalMaterial::get_bsdf(
+      const DiffGeom& shading_geom, const Normal& nn_geom) const 
+  {
+    Spectrum reflection = this->reflection->evaluate(shading_geom);
+    float roughness = max(1e-3f, this->roughness->evaluate(shading_geom));
+    float eta = this->eta->evaluate(shading_geom);
+    float k = this->k->evaluate(shading_geom);
 
-    auto bsdf = std::make_unique<Bsdf>(diff_geom);
+    auto bsdf = std::make_unique<Bsdf>(shading_geom, nn_geom);
     float alpha_b = roughness;
     bsdf->add(std::make_unique<MicrofacetBrdf<
         BeckmannD, FresnelConductor, SmithG<BeckmannApproxG1>>>(

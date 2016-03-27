@@ -6,6 +6,7 @@ namespace dort {
   public:
     virtual ~Material() { }
     virtual std::unique_ptr<Bsdf> get_bsdf(
-        const DiffGeom& frame_diff_geom) const = 0;
+        const DiffGeom& shading_geom, const Normal& nn_geom) const = 0;
+    std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& shading_geom) const;
   };
 }

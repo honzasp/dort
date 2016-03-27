@@ -30,6 +30,7 @@ namespace dort {
     Normal(float x, float y, float z): v(x, y, z) {}
     explicit Normal(const Vec3& v): v(v) {}
     explicit Normal(const Vector& vec): v(vec.v) {}
+    explicit operator Vector() const { return Vector(this->v); }
   };
 
   inline Point operator+(const Point& pt, const Vector& vec) {
@@ -59,6 +60,9 @@ namespace dort {
   inline Vector operator-(const Vector& vec) {
     return Vector(-vec.v);
   }
+  inline Normal operator-(const Normal& norm) {
+    return Normal(-norm.v);
+  }
   inline Vector operator*(const Vector& vec, float a) {
     return Vector(vec.v * a);
   }
@@ -67,6 +71,9 @@ namespace dort {
   }
   inline Normal operator*(const Normal& norm, float a) {
     return Normal(norm.v * a);
+  }
+  inline Normal operator*(float a, const Normal& norm) {
+    return Normal(a * norm.v);
   }
   inline Vector operator/(const Vector& vec, float a) {
     return Vector(vec.v / a);

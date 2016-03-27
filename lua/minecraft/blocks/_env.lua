@@ -8,4 +8,5 @@ _env.m = dort.material
 _env.t = dort.texture
 _env.g = dort.geometry
 _env.rgb = dort.spectrum.rgb
+_env.rgbh = dort.spectrum.rgbh
 return _env

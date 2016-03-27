@@ -4,6 +4,10 @@
 #include "dort/primitive.hpp"
 
 namespace dort {
+  std::unique_ptr<Bsdf> Intersection::get_bsdf() const {
+    return this->primitive->get_bsdf(*this);
+  }
+
   Spectrum Intersection::emitted_radiance(const Vector& wo) const {
     const AreaLight* area_light = this->primitive->get_area_light(
         this->frame_diff_geom);
@@ -38,10 +42,8 @@ namespace dort {
     return this->shape_to_frame.apply(this->shape->bounds());
   }
 
-  std::unique_ptr<Bsdf> ShapePrimitive::get_bsdf(
-      const DiffGeom& frame_diff_geom) const 
-  {
-    return this->material->get_bsdf(frame_diff_geom);
+  std::unique_ptr<Bsdf> ShapePrimitive::get_bsdf(const Intersection& isect) const {
+    return this->material->get_bsdf(isect.frame_diff_geom);
   }
 
   const AreaLight* ShapePrimitive::get_area_light(const DiffGeom&) const {
