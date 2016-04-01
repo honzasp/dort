@@ -61,7 +61,7 @@ namespace dort {
       lua_texture_handle_out_in<Fun, Vec3, Vec3>(out_type, in_type, args...) ||
 
       false;
-    assert(handled);
+    assert(handled); (void)handled;
   }
 
   template<template<class Out> class Fun, class Out, class... Args>
@@ -81,7 +81,7 @@ namespace dort {
       lua_texture_handle_out<Fun, Spectrum>(out_type, args...) ||
       lua_texture_handle_out<Fun, Vec2>(out_type, args...) ||
       lua_texture_handle_out<Fun, Vec3>(out_type, args...);
-    assert(handled);
+    assert(handled); (void)handled;
   }
 
   template<template<class In> class Fun, class In, class... Args>
@@ -101,7 +101,7 @@ namespace dort {
       lua_texture_handle_in<Fun, const DiffGeom&>(in_type, args...) ||
       lua_texture_handle_in<Fun, Vec2>(in_type, args...) ||
       lua_texture_handle_in<Fun, Vec3>(in_type, args...);
-    assert(handled);
+    assert(handled); (void)handled;
   }
 
   template<class Out, class In>

@@ -27,7 +27,7 @@ local scene = define_scene(function()
   else
     add_light(infinite_light {
       radiance = rgb(1, 1, 1),
-      num_samples = 16,
+      num_samples = 4,
     })
   end
 
@@ -49,8 +49,8 @@ else
 end
 
 write_png_image("minecraft_chunk.png", render(scene, {
-  x_res = 800,
-  y_res = 800,
+  x_res = 400,
+  y_res = 400,
   sampler = stratified_sampler {
     samples_per_x = samples,
     samples_per_y = samples,
