@@ -15,6 +15,7 @@ namespace dort {
     } else {
       bsdf->add(std::make_unique<OrenNayarBrdf>(reflectance, sigma));
     }
+
     return bsdf;
   }
 }

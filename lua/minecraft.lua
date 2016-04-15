@@ -13,6 +13,7 @@ function minecraft.add_world(params)
   dort.builder.add_voxel_grid {
     grid = voxel_grid,
     box = params.box,
-    voxel_materials = minecraft.blocks.voxel_materials(),
+    cube_voxels = minecraft.blocks.voxel_materials(),
+    primitive_voxels = minecraft.blocks.voxel_primitives(),
   }
 end

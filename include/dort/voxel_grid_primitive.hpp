@@ -6,8 +6,13 @@
 #include "dort/voxel.hpp"
 
 namespace dort {
-  struct VoxelMaterial {
+  struct VoxelCubeMaterial {
     std::array<std::shared_ptr<Material>, 6> faces;
+  };
+
+  struct VoxelMaterials {
+    std::vector<VoxelCubeMaterial> cube_voxels;
+    std::vector<std::shared_ptr<Primitive>> prim_voxels;
   };
 
   class VoxelGridPrimitive final: public GeometricPrimitive {
@@ -27,13 +32,17 @@ namespace dort {
         return (this->bits >> offset) & ((1 << length) - 1);
       }
 
+      int32_t field_signed(uint32_t offset, uint32_t length) const {
+        return (int32_t(this->bits)) << (32 - offset - length) >> (32 - length);
+      }
+
       uint8_t axis() const { return this->field(0, 2); }
       NodeType type() const { return NodeType(this->field(2, 2)); }
       bool full_bit_1() const { return this->field(4, 1) != 0; }
       bool full_bit_2() const { return this->field(5, 1) != 0; }
       bool leaf_branch_is_leaf_left() const { return this->field(6, 1) != 0; }
-      Voxel voxel_1() const { return this->field(18, 14); }
-      Voxel voxel_2() const { return this->field(4, 14); }
+      Voxel voxel_1() const { return this->field_signed(18, 14); }
+      Voxel voxel_2() const { return this->field_signed(4, 14); }
       uint32_t short_branch_offset() const { return this->field(6, 26); }
       uint32_t long_branch_offset() const { return this->field(4, 28); }
 
@@ -78,11 +87,11 @@ namespace dort {
     Boxi root_box;
     std::vector<Node> nodes;
     Transform voxel_to_frame;
-    std::vector<VoxelMaterial> voxel_materials;
+    VoxelMaterials voxel_materials;
   public:
     VoxelGridPrimitive(const Boxi& grid_box, const Grid& grid,
         const Transform& voxel_to_frame,
-        std::vector<VoxelMaterial> voxel_materials);
+        VoxelMaterials voxel_materials);
 
     virtual bool intersect(Ray& ray, Intersection& out_isect) const override final;
     virtual bool intersect_p(const Ray& ray) const override final;

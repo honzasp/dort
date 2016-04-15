@@ -6,9 +6,21 @@ local box = boxi(vec3i(-20, 0, -20), vec3i(20, 30, 20))
 
 local scene = define_scene(function()
   minecraft.add_world {
-    map = os.getenv("HOME") .. "/.minecraft/saves/Stones",
+    map = os.getenv("HOME") .. "/.minecraft/saves/Flat",
     box = box,
   }
+
+  --[[
+  block(function()
+    transform(translate(0, 10, 0))
+    material(matte_material {
+      color = rgb(1, 0, 1),
+    })
+    add_shape(sphere {
+      radius = 0.5,
+    })
+  end)
+  --]]
 
   if not quality then
     local points = {
@@ -27,14 +39,14 @@ local scene = define_scene(function()
   else
     add_light(infinite_light {
       radiance = rgb(1, 1, 1),
-      num_samples = 4,
+      num_samples = 2,
     })
   end
 
   camera(perspective_camera {
     transform = look_at(
-        point(10, 5, 10),
-        point(0, 0, 0),
+        point(-12, 11, 8),
+        point(0, 5, 2),
         vector(0, 1, 0)) *
       scale(-1, 1, 1),
     fov = pi / 3,
@@ -43,8 +55,8 @@ end)
 
 local samples
 if quality then
-  samples = 4
-else
+  samples = 2
+else 
   samples = 1
 end
 

@@ -367,38 +367,60 @@ namespace dort {
     std::shared_ptr<Grid> grid = lua_param_grid(l, p, "grid");
     Boxi box = lua_param_boxi(l, p, "box");
 
-    std::vector<VoxelMaterial> voxel_materials; {
-      if(lua_getfield(l, p, "voxel_materials") != LUA_TTABLE) {
-        luaL_error(l, "Expected an array of voxel materials");
+    std::vector<VoxelCubeMaterial> cube_voxels; {
+      if(lua_getfield(l, p, "cube_voxels") != LUA_TTABLE) {
+        luaL_error(l, "Expected an array of cube voxel materials");
       }
       int32_t array_len = lua_rawlen(l, -1);
 
-      voxel_materials.push_back(VoxelMaterial());
-      for(int32_t i = 0; i < array_len; ++i) {
-        if(lua_rawgeti(l, -1, i + 1) != LUA_TTABLE) {
-          luaL_error(l, "Voxel material must be a table");
+      cube_voxels.push_back(VoxelCubeMaterial());
+      for(int32_t i = 1; i <= array_len; ++i) {
+        if(lua_rawgeti(l, -1, i) != LUA_TTABLE) {
+          luaL_error(l, "Cube voxel material must be a table");
         }
 
-        VoxelMaterial material;
+        VoxelCubeMaterial material;
         for(int32_t j = 0; j < 6; ++j) {
           lua_rawgeti(l, -1, j + 1);
           material.faces.at(j) = lua_check_material(l, -1);
           lua_pop(l, 1);
         }
 
-        voxel_materials.push_back(std::move(material));
+        cube_voxels.push_back(std::move(material));
         lua_pop(l, 1);
       }
       lua_pop(l, 1);
 
       lua_pushnil(l);
-      lua_setfield(l, p, "voxel_materials");
+      lua_setfield(l, p, "cube_voxels");
+    }
+
+    std::vector<std::shared_ptr<Primitive>> prim_voxels; {
+      if(lua_getfield(l, p, "primitive_voxels") != LUA_TTABLE) {
+        luaL_error(l, "Expected an array of primitive voxel materials");
+      }
+      int32_t array_len = lua_rawlen(l, -1);
+
+      prim_voxels.push_back(nullptr);
+      for(int32_t i = 1; i <= array_len; ++i) {
+        lua_rawgeti(l, -1, i);
+        prim_voxels.push_back(lua_check_primitive(l, -1));
+        lua_pop(l, 1);
+      }
+      lua_pop(l, 1);
+
+      lua_pushnil(l);
+      lua_setfield(l, p, "primitive_voxels");
     }
 
     lua_params_check_unused(l, p);
 
+    VoxelMaterials voxel_materials;
+    voxel_materials.cube_voxels = std::move(cube_voxels);
+    voxel_materials.prim_voxels = std::move(prim_voxels);
+
     builder.frame.prims.push_back(std::make_unique<VoxelGridPrimitive>(
-        box, *grid, transform, voxel_materials));
+        box, *grid, transform, std::move(voxel_materials)));
     return 0;
   }
 

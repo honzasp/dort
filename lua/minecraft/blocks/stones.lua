@@ -18,8 +18,8 @@ for i = 1, #stone_colors do
   })
 end
 
-b.define("stone", 1, function(pos, id, data)
-  return stone_voxels[data + 1]
+b.define("stone", 1, function(b)
+  return stone_voxels[b.data + 1]
 end)
 b.define("cobblestone", 4, m.make_matte {
   color = rgb(0.5),

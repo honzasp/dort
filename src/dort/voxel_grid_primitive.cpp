@@ -7,7 +7,7 @@ namespace dort {
   VoxelGridPrimitive::VoxelGridPrimitive(
       const Boxi& grid_box, const Grid& grid,
       const Transform& voxel_to_frame,
-      std::vector<VoxelMaterial> voxel_materials):
+      VoxelMaterials voxel_materials):
     root_box(grid_box),
     voxel_to_frame(voxel_to_frame),
     voxel_materials(std::move(voxel_materials))
@@ -22,49 +22,86 @@ namespace dort {
   }
 
   bool VoxelGridPrimitive::intersect(Ray& ray, Intersection& out_isect) const {
-    bool miss = this->traverse(ray, [&](const Boxi&, const RayEntry& entry, Voxel voxel) {
+    bool miss = this->traverse(ray, 
+        [&](const RayEntry& entry, const RayEntry& exit, Voxel voxel) 
+    {
       assert(voxel != VOXEL_EMPTY);
       assert(entry.t_hit >= ray.t_min && entry.t_hit <= ray.t_max);
 
-      DiffGeom voxel_geom;
-      voxel_geom.p = Point(entry.p_hit);
-      out_isect.aux_int32[0] = voxel;
-      if(entry.on_surface) {
-        out_isect.aux_int32[1] = entry.surface_axis + (entry.surface_neg ? 3 : 0);
-      } else {
-        out_isect.aux_int32[1] = 6;
-      }
+      if(voxel < 0) {
+        Vec3 orig(entry.p_hit - floor(entry.p_hit));
+        if(entry.on_surface) {
+          orig[entry.surface_axis] = entry.surface_neg ? 1.f : 0.f;
+        }
 
-      if(entry.on_surface) {
-        voxel_geom.nn.v[entry.surface_axis] = entry.surface_neg ? 1.f : -1.f;
-        // TODO
-        voxel_geom.u = 0.5f;
-        voxel_geom.v = 0.5f;
-        voxel_geom.dpdu = Vector();
-        voxel_geom.dpdv = Vector();
-      } else {
-        voxel_geom.nn = normalize(Normal(-ray.dir));
-        voxel_geom.u = 0.5f;
-        voxel_geom.v = 0.5f;
-        voxel_geom.dpdu = Vector();
-        voxel_geom.dpdv = Vector();
-      }
-        
-      out_isect.frame_diff_geom = this->voxel_to_frame.apply(voxel_geom);
-      out_isect.world_diff_geom = out_isect.frame_diff_geom;
-      out_isect.ray_epsilon = 1e-3;
-      out_isect.primitive = this;
+        Ray prim_ray(Point(orig), this->voxel_to_frame.apply_inv(ray.dir),
+          0.f, exit.t_hit - entry.t_hit);
+        const auto& prim = this->voxel_materials.prim_voxels.at(-voxel);
+        if(!prim->intersect(prim_ray, out_isect)) {
+          return true;
+        }
 
-      ray.t_max = entry.t_hit;
-      return false;
+        out_isect.world_diff_geom = this->voxel_to_frame.apply(
+          translate(Vector(floor(entry.p_hit))).apply(out_isect.world_diff_geom));
+        ray.t_max = min(ray.t_max, prim_ray.t_max);
+        return false;
+      } else {
+        DiffGeom voxel_geom;
+        voxel_geom.p = Point(entry.p_hit);
+        out_isect.aux_int32[0] = voxel;
+        if(entry.on_surface) {
+          out_isect.aux_int32[1] = entry.surface_axis + (entry.surface_neg ? 3 : 0);
+        } else {
+          out_isect.aux_int32[1] = 6;
+        }
+
+        if(entry.on_surface) {
+          voxel_geom.nn.v[entry.surface_axis] = entry.surface_neg ? 1.f : -1.f;
+          // TODO
+          voxel_geom.u = 0.5f;
+          voxel_geom.v = 0.5f;
+          voxel_geom.dpdu = Vector();
+          voxel_geom.dpdv = Vector();
+        } else {
+          voxel_geom.nn = normalize(Normal(-ray.dir));
+          voxel_geom.u = 0.5f;
+          voxel_geom.v = 0.5f;
+          voxel_geom.dpdu = Vector();
+          voxel_geom.dpdv = Vector();
+        }
+          
+        out_isect.frame_diff_geom = this->voxel_to_frame.apply(voxel_geom);
+        out_isect.world_diff_geom = out_isect.frame_diff_geom;
+        out_isect.ray_epsilon = 1e-3;
+        out_isect.primitive = this;
+
+        ray.t_max = entry.t_hit;
+        return false;
+      }
     });
+
     return !miss;
   }
 
   bool VoxelGridPrimitive::intersect_p(const Ray& ray) const {
-    bool miss = this->traverse(ray, [&](const Boxi&, const RayEntry&, Voxel voxel) {
-      assert(voxel != VOXEL_EMPTY); (void)voxel;
-      return false;
+    bool miss = this->traverse(ray, 
+        [&](const RayEntry& entry, const RayEntry& exit, Voxel voxel) 
+    {
+      assert(voxel != VOXEL_EMPTY);
+      if(voxel < 0) {
+        Vec3 orig(entry.p_hit - floor(entry.p_hit));
+        if(entry.on_surface) {
+          orig[entry.surface_axis] = entry.surface_neg ? 1.f : 0.f;
+        }
+
+        Ray prim_ray(Point(orig), this->voxel_to_frame.apply_inv(ray.dir),
+          1e-2, exit.t_hit - entry.t_hit);
+        const auto& prim = this->voxel_materials.prim_voxels.at(-voxel);
+
+        return !prim->intersect_p(prim_ray);
+      } else {
+        return false;
+      }
     });
     return !miss;
   }
@@ -78,13 +115,14 @@ namespace dort {
     Voxel voxel = isect.aux_int32[0];
     uint32_t face = isect.aux_uint32[1];
     assert(voxel != VOXEL_EMPTY);
+    assert(voxel > 0);
     assert(face <= 6);
 
     if(face == 6) {
       return std::make_unique<Bsdf>(isect.frame_diff_geom, isect.frame_diff_geom.nn);
     }
-    const auto& voxel_material = this->voxel_materials.at(voxel);
-    return voxel_material.faces.at(face)->get_bsdf(isect.frame_diff_geom);
+    const auto& cube_material = this->voxel_materials.cube_voxels.at(voxel);
+    return cube_material.faces.at(face)->get_bsdf(isect.frame_diff_geom);
   }
 
   const AreaLight* VoxelGridPrimitive::get_area_light(const DiffGeom&) const {
@@ -243,7 +281,7 @@ namespace dort {
       if(voxel == VOXEL_EMPTY) {
         return true;
       }
-      return callback(half_box, half_entry, voxel);
+      return callback(half_entry, half_exit, voxel);
     } else if(type == NodeType::LEAF_BRANCH) {
       bool leaf_left = node.leaf_branch_is_leaf_left();
       bool walk_branch = (leaf_left && !left_half) || (!leaf_left && left_half);
@@ -254,7 +292,7 @@ namespace dort {
         if(voxel == VOXEL_EMPTY) {
           return true;
         }
-        return callback(half_box, half_entry, voxel);
+        return callback(half_entry, half_exit, voxel);
       }
     } else {
       uint32_t offset = left_half ? 1 :
@@ -286,17 +324,17 @@ namespace dort {
 
       if(right_first) {
         if(right != VOXEL_EMPTY) {
-          go_on = callback(right_box, entry, right);
+          go_on = callback(entry, mid_entry, right);
         }
         if(go_on && left != VOXEL_EMPTY) {
-          return callback(left_box, mid_entry, left);
+          return callback(mid_entry, exit, left);
         }
       } else {
         if(left != VOXEL_EMPTY) {
-          go_on = callback(left_box, entry, left);
+          go_on = callback(entry, mid_entry, left);
         }
         if(go_on && right != VOXEL_EMPTY) {
-          return callback(right_box, mid_entry, right);
+          return callback(mid_entry, exit, right);
         }
       }
     } else if(type == NodeType::LEAF_BRANCH) {
@@ -309,11 +347,11 @@ namespace dort {
           go_on = this->traverse_walk(ray, branch,
                 right_box, entry, mid_entry, callback);
           if(go_on && leaf != VOXEL_EMPTY) {
-            return callback(left_box, mid_entry, leaf);
+            return callback(mid_entry, exit, leaf);
           }
         } else {
           if(leaf != VOXEL_EMPTY) {
-            go_on = callback(right_box, entry, leaf);
+            go_on = callback(entry, mid_entry, leaf);
           }
           if(go_on) {
             return this->traverse_walk(ray, branch,
@@ -323,7 +361,7 @@ namespace dort {
       } else {
         if(leaf_left) {
           if(leaf != VOXEL_EMPTY) {
-            go_on = callback(left_box, entry, leaf);
+            go_on = callback(entry, mid_entry, leaf);
           }
           if(go_on) {
             return this->traverse_walk(ray, branch,
@@ -333,7 +371,7 @@ namespace dort {
           go_on = this->traverse_walk(ray, branch,
               left_box, entry, mid_entry, callback);
           if(go_on && leaf != VOXEL_EMPTY) {
-            return callback(right_box, mid_entry, leaf);
+            return callback(mid_entry, exit, leaf);
           }
         }
       }

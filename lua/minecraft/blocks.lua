@@ -12,6 +12,7 @@ local white = dort.material.make_matte {
 local VOXEL_MATERIALS = {
   {white, white, white, white, white, white},
 }
+local VOXEL_PRIMITIVES = {}
 local UNKNOWN_VOXEL = 1
 
 function blocks.voxel(material)
@@ -66,8 +67,22 @@ function blocks.define(block_name, block_id, material_or_fun)
   BLOCK_NAMES[block_id] = block_name
 end
 
+function blocks.voxel_primitive(prim)
+  VOXEL_PRIMITIVES[#VOXEL_PRIMITIVES + 1] = prim
+  return -#VOXEL_PRIMITIVES
+end
+
+function blocks.define_primitive(block_name, block_id, prim)
+  local voxel = blocks.voxel_primitive(prim)
+  blocks.define(block_name, block_id, function() return voxel end)
+end
+
 function blocks.voxel_materials()
   return VOXEL_MATERIALS
+end
+
+function blocks.voxel_primitives()
+  return VOXEL_PRIMITIVES
 end
 
 function block_to_voxel(block_pos, block_id, block_data)
@@ -77,7 +92,7 @@ function block_to_voxel(block_pos, block_id, block_data)
 
   local block = BLOCKS[block_id]
   if block then
-    return block(block_pos, block_id, block_data)
+    return block { pos = block_pos, id = block_id, data = block_data }
   else
     return UNKNOWN_VOXEL
   end
@@ -100,5 +115,6 @@ end
 
 require "minecraft/blocks/dirts"
 require "minecraft/blocks/stones"
+require "minecraft/blocks/utility"
 
 return decode
