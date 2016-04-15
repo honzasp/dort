@@ -11,6 +11,10 @@ end
 local b = dort.builder
 local B
 
+function dsl.get_builder()
+  return B
+end
+
 function dsl.define_scene(callback)
   local prev_builder = B
   local builder = b.make()

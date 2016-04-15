@@ -5,10 +5,10 @@ local quality = true
 local box = boxi(vec3i(-20, 0, -20), vec3i(20, 30, 20))
 
 local scene = define_scene(function()
-  minecraft.add_world {
+  minecraft.add_world(get_builder(), {
     map = os.getenv("HOME") .. "/.minecraft/saves/Flat",
     box = box,
-  }
+  })
 
   --[[
   block(function()

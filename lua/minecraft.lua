@@ -1,19 +1,128 @@
 require "minecraft/anvil"
 require "minecraft/read"
-require "minecraft/blocks"
 
-function minecraft.add_world(params)
+function minecraft.add_world(builder, params)
   local block_grid = dort.grid.make()
   local voxel_grid = dort.grid.make()
   local anvil_map = minecraft.anvil.open_map(params.map)
   minecraft.read.map_to_blocks(block_grid, anvil_map, params.box)
   minecraft.anvil.close_map(anvil_map)
 
-  minecraft.blocks.blocks_to_voxels(voxel_grid, block_grid, params.box)
-  dort.builder.add_voxel_grid {
-    grid = voxel_grid,
+  local world = build_world(builder, block_grid, params.box)
+  dort.builder.add_voxel_grid(builder, {
     box = params.box,
-    cube_voxels = minecraft.blocks.voxel_materials(),
-    primitive_voxels = minecraft.blocks.voxel_primitives(),
+    grid = world.voxel_grid,
+    cube_voxels = world.cube_voxels,
+    primitive_voxels = world.primitive_voxels,
+  })
+end
+
+local World = {}
+World.__index = World
+
+function build_world(builder, block_grid, box)
+  local world = {};
+  setmetatable(world, World)
+
+  world.voxel_grid = dort.grid.make()
+  world.builder = builder
+  world.block_funs = {}
+  world.block_names = {}
+
+  local white = dort.material.make_matte {
+    color = dort.spectrum.rgb(1, 1, 1)
   }
+  world.unknown_voxel = 1
+  world.cube_voxels = {
+    {white, white, white, white, white, white},
+  }
+  world.primitive_voxels = {}
+
+  ;(require "minecraft/blocks/dirts")(world)
+  ;(require "minecraft/blocks/stones")(world)
+  ;(require "minecraft/blocks/utility")(world)
+
+  for z = box:min():z(), box:max():z() - 1 do
+    for y = box:min():y(), box:max():y() - 1 do
+      for x = box:min():x(), box:max():x() - 1 do
+        local pos = dort.geometry.vec3i(x, y, z)
+        local block = block_grid:get(pos)
+        local block_id = minecraft.read.block_id(block)
+        local block_data = minecraft.read.block_data(block)
+        world.voxel_grid:set(pos, world:block_to_voxel(pos, block_id, block_data))
+      end
+    end
+  end
+
+  return world
+end
+
+function World:block_to_voxel(block_pos, block_id, block_data)
+  if block_id == 0 then
+    return 0
+  end
+
+  local block_fun = self.block_funs[block_id]
+  if block_fun then
+    return block_fun({ pos = block_pos, id = block_id, data = block_data })
+  else
+    return self.unknown_voxel
+  end
+end
+
+function World:define_cube_voxel(material)
+  local voxel_material
+  if type(material) == "table" then
+    local east = material.east or material.east_west or material.side
+    local west = material.west or material.east_west or material.side
+    local south = material.south or material.south_north or material.side
+    local north = material.north or material.south_north or material.side
+    local top = material.top or material.top_bottom or material.side
+    local bottom = material.bottom or material.top_bottom or material.side
+
+    local function check(face, mat)
+      if not mat then 
+        error("Material for " .. face .. " is not defined")
+      end
+    end
+    check("east", east)
+    check("west", west)
+    check("south", south)
+    check("north", north)
+    check("top", top)
+    check("bottom", bottom)
+
+    voxel_material = {
+      east, top, south,
+      west, bottom, north,
+    }
+  else
+    voxel_material = {
+      material, material, material,
+      material, material, material,
+    }
+  end
+
+  self.cube_voxels[#self.cube_voxels + 1] = voxel_material
+  return #self.cube_voxels
+end
+
+function World:define_primitive_voxel(primitive)
+  self.primitive_voxels[#self.primitive_voxels + 1] = primitive
+  return -#self.primitive_voxels
+end
+
+function World:define_block(block_name, block_id, voxel_or_fun)
+  if self.block_funs[block_id] then
+    error("Duplicate definition of block " .. block_id 
+      .. " (" .. self.block_names[block_id] .. " and " .. block_name .. ")")
+  end
+
+  local fun = voxel_or_fun
+  if type(voxel_or_fun) ~= "function" then
+    fun = function() return voxel_or_fun end
+  end
+
+  self.block_funs[block_id] = fun
+  self.block_names[block_id] = block_name
 end

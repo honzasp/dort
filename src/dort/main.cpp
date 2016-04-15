@@ -74,15 +74,23 @@ namespace dort {
       load_sublib("texture", lua_open_texture);
       lua_setglobal(l, "dort");
 
-
       const char* input_file = argc == 1 ? 0 : argv[1];
+
+      lua_pushcfunction(l, [](lua_State* l) -> int {
+        if(!lua_isstring(l, 1)) {
+          return 1;
+        }
+        const char* msg = lua_tostring(l, 1);
+        luaL_traceback(l, l, msg, 1);
+        return 1;
+      });
 
       int error;
       if((error = luaL_loadfile(l, input_file))) {
         std::fprintf(stderr, "Load error: %s\n", lua_tostring(l, -1));
         lua_pop(l, 1);
         exit_status = 1;
-      } else if((error = lua_pcall(l, 0, 0, 0))) {
+      } else if((error = lua_pcall(l, 0, 0, -2))) {
         std::fprintf(stderr, "Runtime error: %s\n", lua_tostring(l, -1));
         lua_pop(l, 1);
         exit_status = 1;
