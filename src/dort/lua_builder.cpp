@@ -22,6 +22,8 @@
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
 #include "dort/thread_pool.hpp"
+#include "dort/triangle_shape.hpp"
+#include "dort/triangle_shape_primitive.hpp"
 #include "dort/voxel_grid_primitive.hpp"
 
 namespace dort {
@@ -39,16 +41,21 @@ namespace dort {
     };
 
     const luaL_Reg builder_methods[] = {
-      {"__gc", lua_gc_managed_obj<Builder, BUILDER_TNAME>},
+      {"__gc", lua_gc_shared_obj<Builder, BUILDER_TNAME>},
       {0, 0},
     };
 
     const luaL_Reg builder_funs[] = {
-      {"define_scene", lua_builder_define_scene},
-      {"define_block", lua_builder_define_block},
-      {"define_instance", lua_builder_define_instance},
+      {"make", lua_builder_make},
+      {"build_scene", lua_builder_build_scene},
+      {"push_state", lua_builder_push_state},
+      {"pop_state", lua_builder_pop_state},
+      {"push_frame", lua_builder_push_frame},
+      {"pop_frame", lua_builder_pop_frame},
       {"set_transform", lua_builder_set_transform},
+      {"get_transform", lua_builder_get_transform},
       {"set_material", lua_builder_set_material},
+      {"get_material", lua_builder_get_material},
       {"set_camera", lua_builder_set_camera},
       {"set_option", lua_builder_set_option},
       {"add_shape", lua_builder_add_shape},
@@ -70,133 +77,139 @@ namespace dort {
     return 1;
   }
 
-  int lua_builder_define_scene(lua_State* l) {
-    lua_set_current_builder(l, Builder());
-    lua_pushvalue(l, 1);
-    lua_call(l, 0, 0);
-    lua_settop(l, 0);
-    lua_gc(l, LUA_GCCOLLECT, 0);
+  int lua_builder_make(lua_State* l) {
+    lua_push_builder(l, std::make_shared<Builder>());
+    return 1;
+  }
 
-    Builder builder = std::move(lua_get_current_builder(l));
-    lua_unset_current_builder(l);
+  int lua_builder_build_scene(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
 
-    if(!builder.frame_stack.empty()) {
+    if(!builder->frame_stack.empty()) {
       luaL_error(l, "Frame stack is not empty");
     }
-    if(!builder.state_stack.empty()) {
+    if(!builder->state_stack.empty()) {
       luaL_error(l, "State stack is not empty");
     }
-    if(!builder.camera) {
+    if(!builder->camera) {
       luaL_error(l, "No camera is set in the scene");
     }
 
     auto scene = std::make_shared<Scene>();
     scene->primitive = lua_make_aggregate(*lua_get_ctx(l),
-        builder.state, std::move(builder.frame));
-    scene->lights = std::move(builder.lights);
-    scene->camera = std::move(builder.camera);
+        builder->state, std::move(builder->frame));
+    scene->lights = std::move(builder->lights);
+    scene->camera = std::move(builder->camera);
 
-    std::move(builder.meshes.begin(), builder.meshes.end(),
+    std::move(builder->meshes.begin(), builder->meshes.end(),
         std::back_inserter(scene->meshes));
-    std::move(builder.prim_meshes.begin(), builder.prim_meshes.end(),
+    std::move(builder->prim_meshes.begin(), builder->prim_meshes.end(),
         std::back_inserter(scene->prim_meshes));
 
     lua_push_scene(l, std::move(scene));
+    *builder = Builder();
     return 1;
   }
 
-  int lua_builder_define_block(lua_State* l) {
-    {
-      Builder& builder = lua_get_current_builder(l);
-      builder.state_stack.push_back(builder.state);
-      lua_pushvalue(l, 1);
-      lua_call(l, 0, 0);
-    }
-
-    {
-      Builder& builder = lua_get_current_builder(l);
-      if(builder.state_stack.empty()) {
-        return luaL_error(l, "State stack is empty (not balanced)");
-      }
-      builder.state = builder.state_stack.back();
-      builder.state_stack.pop_back();
-      return 0;
-    }
+  int lua_builder_push_state(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+    builder->state_stack.push_back(builder->state);
+    return 0;
   }
 
-  int lua_builder_define_instance(lua_State* l) {
-    {
-      Builder& builder = lua_get_current_builder(l);
-      BuilderFrame new_frame;
-      BuilderState new_state;
-      new_state.material = builder.state.material;
+  int lua_builder_pop_state(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+    if(builder->state_stack.empty()) {
+      return luaL_error(l, "State stack is empty (not balanced)");
+    }
+    builder->state = builder->state_stack.back();
+    builder->state_stack.pop_back();
+    return 0;
+  }
 
-      builder.state_stack.push_back(std::move(builder.state));
-      builder.frame_stack.push_back(std::move(builder.frame));
-      builder.state = std::move(new_state);
-      builder.frame = std::move(new_frame);
+  int lua_builder_push_frame(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
 
-      lua_pushvalue(l, 1);
-      lua_call(l, 0, 0);
+    BuilderFrame new_frame;
+    BuilderState new_state;
+    new_state.material = builder->state.material;
+
+    builder->state_stack.push_back(std::move(builder->state));
+    builder->frame_stack.push_back(std::move(builder->frame));
+    builder->state = std::move(new_state);
+    builder->frame = std::move(new_frame);
+    return 0;
+  }
+
+  int lua_builder_pop_frame(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+
+    if(builder->frame_stack.empty()) {
+      return luaL_error(l, "Frame stack is empty (not balanced)");
+    } else if(builder->state_stack.empty()) {
+      return luaL_error(l, "State stack is empty (not balanced)");
     }
 
-    {
-      Builder& builder = lua_get_current_builder(l);
-      if(builder.frame_stack.empty()) {
-        return luaL_error(l, "Frame stack is empty (not balanced)");
-      } else if(builder.state_stack.empty()) {
-        return luaL_error(l, "State stack is empty (not balanced)");
-      }
+    auto primitive = lua_make_aggregate(*lua_get_ctx(l),
+        builder->state, std::move(builder->frame));
+    builder->frame = std::move(builder->frame_stack.back());
+    builder->state = std::move(builder->state_stack.back());
+    builder->frame_stack.pop_back();
+    builder->state_stack.pop_back();
 
-      auto primitive = lua_make_aggregate(*lua_get_ctx(l),
-          builder.state, std::move(builder.frame));
-      builder.frame = std::move(builder.frame_stack.back());
-      builder.state = std::move(builder.state_stack.back());
-      builder.frame_stack.pop_back();
-      builder.state_stack.pop_back();
-
-      lua_push_primitive(l, std::shared_ptr<Primitive>(std::move(primitive)));
-      return 1;
-    }
+    lua_push_primitive(l, std::shared_ptr<Primitive>(std::move(primitive)));
+    return 1;
   }
 
   int lua_builder_set_transform(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    const Transform& trans = lua_check_transform(l, 1);
-    builder.state.local_to_frame = builder.state.local_to_frame * trans;
+    auto builder = lua_check_builder(l, 1);
+    const Transform& trans = lua_check_transform(l, 2);
+    builder->state.local_to_frame = builder->state.local_to_frame * trans;
     return 0;
+  }
+
+  int lua_builder_get_transform(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+    lua_push_transform(l, builder->state.local_to_frame);
+    return 1;
   }
 
   int lua_builder_set_material(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto material = lua_check_material(l, 1);
-    builder.state.material = material;
+    auto builder = lua_check_builder(l, 1);
+    auto material = lua_check_material(l, 2);
+    builder->state.material = material;
     return 0;
   }
 
+  int lua_builder_get_material(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+    lua_push_material(l, builder->state.material);
+    return 1;
+  }
+
   int lua_builder_set_camera(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto camera = lua_check_camera(l, 1);
-    builder.camera = camera;
+    auto builder = lua_check_builder(l, 1);
+    auto camera = lua_check_camera(l, 2);
+    builder->camera = camera;
     return 0;
   }
 
   int lua_builder_set_option(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    std::string option = luaL_checkstring(l, 1);
+    auto builder = lua_check_builder(l, 1);
+    std::string option = luaL_checkstring(l, 2);
     if(option == "bvh split method") {
-      std::string method = luaL_checkstring(l, 2);
+      std::string method = luaL_checkstring(l, 3);
       if(method == "sah") {
-        builder.state.bvh_opts.split_method = BvhSplitMethod::Sah;
+        builder->state.bvh_opts.split_method = BvhSplitMethod::Sah;
       } else if(method == "middle") {
-        builder.state.bvh_opts.split_method = BvhSplitMethod::Middle;
+        builder->state.bvh_opts.split_method = BvhSplitMethod::Middle;
       } else {
         luaL_error(l, "unknown bvh split method: %s", method.c_str());
       }
     } else if(option == "bvh leaf size") {
-      builder.state.bvh_opts.leaf_size = luaL_checkinteger(l, 2);
+      builder->state.bvh_opts.leaf_size = luaL_checkinteger(l, 3);
     } else if(option == "bvh max leaf size") {
-      builder.state.bvh_opts.max_leaf_size = luaL_checkinteger(l, 2);
+      builder->state.bvh_opts.max_leaf_size = luaL_checkinteger(l, 3);
     } else {
       luaL_error(l, "unknown option: %s", option.c_str());
     }
@@ -204,10 +217,10 @@ namespace dort {
   }
 
   int lua_builder_add_shape(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto shape = lua_check_shape(l, 1);
-    auto material = builder.state.material;
-    auto transform = builder.state.local_to_frame;
+    auto builder = lua_check_builder(l, 1);
+    auto shape = lua_check_shape(l, 2);
+    auto material = builder->state.material;
+    auto transform = builder->state.local_to_frame;
 
     if(!material) {
       luaL_error(l, "no material is set");
@@ -215,39 +228,66 @@ namespace dort {
     }
 
     auto prim = std::make_unique<ShapePrimitive>(shape, material, nullptr, transform);
-    builder.frame.prims.push_back(std::move(prim));
+    builder->frame.prims.push_back(std::move(prim));
     return 0;
   }
 
   int lua_builder_add_primitive(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto primitive = lua_check_primitive(l, 1);
-    auto transform = builder.state.local_to_frame;
+    auto builder = lua_check_builder(l, 1);
+    auto primitive = lua_check_primitive(l, 2);
+    auto transform = builder->state.local_to_frame;
     auto frame_prim = std::make_unique<FramePrimitive>(transform, primitive);
-    builder.frame.prims.push_back(std::move(frame_prim));
+    builder->frame.prims.push_back(std::move(frame_prim));
+    return 0;
+  }
+
+  int lua_builder_add_triangle(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+    auto mesh = lua_check_mesh(l, 2);
+    uint32_t index = luaL_checkinteger(l, 3);
+
+    auto material = builder->state.material;
+    auto transform = builder->state.local_to_frame;
+    if(!material) {
+      luaL_error(l, "no material is set");
+      return 0;
+    }
+
+    std::unique_ptr<Primitive> prim;
+    if(transform == identity()) {
+      prim = std::make_unique<TriangleShapePrimitive>(mesh.get(), index, material);
+    } else {
+      prim = std::make_unique<ShapePrimitive>(
+           std::make_shared<TriangleShape>(mesh.get(), index),
+           material, nullptr, transform);
+    }
+
+    builder->frame.prims.push_back(std::move(prim));
+    builder->meshes.insert(mesh);
     return 0;
   }
 
   int lua_builder_add_light(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    if(!builder.frame_stack.empty()) {
+    auto builder = lua_check_builder(l, 1);
+    if(!builder->frame_stack.empty()) {
       luaL_error(l, "lights can only be added in the root frame");
       return 0;
     }
-    builder.lights.push_back(lua_check_light(l, 1));
+    builder->lights.push_back(lua_check_light(l, 2));
     return 0;
   }
 
   int lua_builder_add_read_ply_mesh(lua_State* l) {
-    const char* file_name = luaL_checkstring(l, 1);
+    auto builder = lua_check_builder(l, 1);
+
+    const char* file_name = luaL_checkstring(l, 2);
     FILE* file = std::fopen(file_name, "r");
     if(!file) {
       return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
     }
 
-    Builder& builder = lua_get_current_builder(l);
-    auto material = builder.state.material;
-    auto transform = builder.state.local_to_frame;
+    auto material = builder->state.material;
+    auto transform = builder->state.local_to_frame;
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
@@ -257,7 +297,7 @@ namespace dort {
     prim_mesh->material = material;
     bool ok = read_ply_to_mesh(file, transform, prim_mesh->mesh,
       [&](uint32_t index) {
-        builder.frame.prims.push_back(
+        builder->frame.prims.push_back(
           std::make_unique<MeshTrianglePrimitive>(prim_mesh.get(), index));
       });
     std::fclose(file);
@@ -266,20 +306,21 @@ namespace dort {
       return luaL_error(l, "Could not read ply file: %s", file_name);
     }
 
-    lua_register_prim_mesh(l, std::move(prim_mesh));
+    builder->prim_meshes.insert(prim_mesh);
     return 0;
   }
 
   int lua_builder_add_read_ply_mesh_as_bvh(lua_State* l) {
-    const char* file_name = luaL_checkstring(l, 1);
+    auto builder = lua_check_builder(l, 1);
+
+    const char* file_name = luaL_checkstring(l, 2);
     FILE* file = std::fopen(file_name, "r");
     if(!file) {
       return luaL_error(l, "Could not open ply mesh file for reading: %s", file_name);
     }
 
-    Builder& builder = lua_get_current_builder(l);
-    auto material = builder.state.material;
-    auto transform = builder.state.local_to_frame;
+    auto material = builder->state.material;
+    auto transform = builder->state.local_to_frame;
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
@@ -295,19 +336,19 @@ namespace dort {
       return luaL_error(l, "Could not read ply file: %s", file_name);
     }
 
-    builder.frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
-        mesh.get(), material, std::move(indices), builder.state.bvh_opts,
+    builder->frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
+        mesh.get(), material, std::move(indices), builder->state.bvh_opts,
         *lua_get_ctx(l)->pool));
-    lua_register_mesh(l, std::move(mesh));
+    builder->meshes.insert(mesh);
     return 0;
   }
 
   int lua_builder_add_ply_mesh(lua_State* l) {
-    auto ply_mesh = lua_check_ply_mesh(l, 1);
+    auto builder = lua_check_builder(l, 1);
+    auto ply_mesh = lua_check_ply_mesh(l, 2);
 
-    Builder& builder = lua_get_current_builder(l);
-    auto material = builder.state.material;
-    auto transform = builder.state.local_to_frame;
+    auto material = builder->state.material;
+    auto transform = builder->state.local_to_frame;
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
@@ -322,19 +363,19 @@ namespace dort {
     }
 
     for(uint32_t t = 0; t < ply_mesh->triangle_count; ++t) {
-      builder.frame.prims.push_back(
+      builder->frame.prims.push_back(
           std::make_unique<MeshTrianglePrimitive>(prim_mesh.get(), t * 3));
     }
-    lua_register_prim_mesh(l, std::move(prim_mesh));
+    builder->prim_meshes.insert(prim_mesh);
     return 0;
   }
 
   int lua_builder_add_ply_mesh_as_bvh(lua_State* l) {
-    auto ply_mesh = lua_check_ply_mesh(l, 1);
+    auto builder = lua_check_builder(l, 1);
+    auto ply_mesh = lua_check_ply_mesh(l, 2);
 
-    Builder& builder = lua_get_current_builder(l);
-    auto material = builder.state.material;
-    auto transform = builder.state.local_to_frame;
+    auto material = builder->state.material;
+    auto transform = builder->state.local_to_frame;
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
@@ -352,18 +393,18 @@ namespace dort {
       mesh->points.push_back(transform.apply(pt));
     }
 
-    builder.frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
-        mesh.get(), material, std::move(indices), builder.state.bvh_opts,
+    builder->frame.prims.push_back(std::make_unique<MeshBvhPrimitive>(
+        mesh.get(), material, std::move(indices), builder->state.bvh_opts,
         *lua_get_ctx(l)->pool));
-    lua_register_mesh(l, std::move(mesh));
+    builder->meshes.insert(mesh);
     return 0;
   }
 
   int lua_builder_add_voxel_grid(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto transform = builder.state.local_to_frame;
+    auto builder = lua_check_builder(l, 1);
+    auto transform = builder->state.local_to_frame;
 
-    int p = 1;
+    int p = 2;
     std::shared_ptr<Grid> grid = lua_param_grid(l, p, "grid");
     Boxi box = lua_param_boxi(l, p, "box");
 
@@ -419,7 +460,7 @@ namespace dort {
     voxel_materials.cube_voxels = std::move(cube_voxels);
     voxel_materials.prim_voxels = std::move(prim_voxels);
 
-    builder.frame.prims.push_back(std::make_unique<VoxelGridPrimitive>(
+    builder->frame.prims.push_back(std::make_unique<VoxelGridPrimitive>(
         box, *grid, transform, std::move(voxel_materials)));
     return 0;
   }
@@ -495,39 +536,17 @@ namespace dort {
     }
   }
 
-  void lua_register_mesh(lua_State* l, std::shared_ptr<Mesh> mesh) {
-    Builder& builder = lua_get_current_builder(l);
-    builder.meshes.insert(mesh);
+
+  std::shared_ptr<Builder> lua_check_builder(lua_State* l, int idx) {
+    return lua_check_shared_obj<Builder, BUILDER_TNAME>(l, idx);
+  }
+  bool lua_test_builder(lua_State* l, int idx) {
+    return lua_test_shared_obj<Builder, BUILDER_TNAME>(l, idx);
+  }
+  void lua_push_builder(lua_State* l, std::shared_ptr<Builder> builder) {
+    lua_push_shared_obj<Builder, BUILDER_TNAME>(l, builder);
   }
 
-  void lua_register_prim_mesh(lua_State* l, std::shared_ptr<PrimitiveMesh> mesh) {
-    Builder& builder = lua_get_current_builder(l);
-    builder.prim_meshes.insert(mesh);
-  }
-
-  Builder& lua_get_current_builder(lua_State* l) {
-    lua_getfield(l, LUA_REGISTRYINDEX, BUILDER_REG_KEY);
-    if(lua_isnil(l, -1)) {
-      luaL_error(l, "There is no current builder");
-    }
-    Builder& builder = lua_check_managed_obj<Builder, BUILDER_TNAME>(l, -1);
-    lua_pop(l, 1);
-    return builder;
-  }
-
-  void lua_set_current_builder(lua_State* l, Builder builder) {
-    lua_push_managed_gc_obj<Builder, BUILDER_TNAME>(l, std::move(builder));
-    lua_setfield(l, LUA_REGISTRYINDEX, BUILDER_REG_KEY);
-  }
-
-  void lua_unset_current_builder(lua_State* l) {
-    lua_pushnil(l);
-    lua_setfield(l, LUA_REGISTRYINDEX, BUILDER_REG_KEY);
-  }
-
-  const Transform& lua_current_frame_transform(lua_State* l) {
-    return lua_get_current_builder(l).state.local_to_frame;
-  }
 
   std::shared_ptr<Scene> lua_check_scene(lua_State* l, int idx) {
     return lua_check_shared_obj<Scene, SCENE_TNAME>(l, idx);

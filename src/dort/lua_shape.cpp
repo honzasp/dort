@@ -1,5 +1,4 @@
 #include "dort/disk_shape.hpp"
-#include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_params.hpp"
@@ -7,6 +6,7 @@
 #include "dort/mesh.hpp"
 #include "dort/ply_mesh.hpp"
 #include "dort/sphere_shape.hpp"
+#include "dort/transform.hpp"
 #include "dort/triangle_shape.hpp"
 
 namespace dort {
@@ -29,7 +29,6 @@ namespace dort {
     const luaL_Reg shape_funs[] = {
       {"make_sphere", lua_shape_make_sphere},
       {"make_disk", lua_shape_make_disk},
-      {"make_triangle", lua_shape_make_triangle},
       {"make_mesh", lua_shape_make_mesh},
       {"read_ply_mesh", lua_ply_mesh_read},
       {0, 0},
@@ -61,17 +60,12 @@ namespace dort {
     return 1;
   }
 
-  int lua_shape_make_triangle(lua_State* l) {
-    auto mesh = lua_check_mesh(l, 1);
-    uint32_t index = luaL_checkinteger(l, 2);
-    lua_register_mesh(l, mesh);
-    lua_push_shape(l, std::make_shared<TriangleShape>(mesh.get(), index));
-    return 1;
-  }
-
   int lua_shape_make_mesh(lua_State* l) {
-    Builder& builder = lua_get_current_builder(l);
-    auto& transform = builder.state.local_to_frame;
+    Transform transform; {
+      lua_getfield(l, 1, "transform");
+      transform = lua_check_transform(l, -1);
+      lua_pop(l, 1);
+    }
 
     std::vector<Point> points; {
       lua_getfield(l, 1, "points");

@@ -34,15 +34,21 @@ namespace dort {
 
   int lua_open_builder(lua_State* l);
 
-  int lua_builder_define_scene(lua_State* l);
-  int lua_builder_define_block(lua_State* l);
-  int lua_builder_define_instance(lua_State* l);
+  int lua_builder_make(lua_State* l);
+  int lua_builder_build_scene(lua_State* l);
+  int lua_builder_push_state(lua_State* l);
+  int lua_builder_pop_state(lua_State* l);
+  int lua_builder_push_frame(lua_State* l);
+  int lua_builder_pop_frame(lua_State* l);
   int lua_builder_set_transform(lua_State* l);
+  int lua_builder_get_transform(lua_State* l);
   int lua_builder_set_material(lua_State* l);
+  int lua_builder_get_material(lua_State* l);
   int lua_builder_set_camera(lua_State* l);
   int lua_builder_set_option(lua_State* l);
   int lua_builder_add_shape(lua_State* l);
   int lua_builder_add_primitive(lua_State* l);
+  int lua_builder_add_triangle(lua_State* l);
   int lua_builder_add_light(lua_State* l);
   int lua_builder_add_read_ply_mesh(lua_State* l);
   int lua_builder_add_read_ply_mesh_as_bvh(lua_State* l);
@@ -56,13 +62,10 @@ namespace dort {
 
   std::unique_ptr<Primitive> lua_make_aggregate(CtxG& ctx,
       const BuilderState& state, BuilderFrame frame);
-  void lua_register_mesh(lua_State* l, std::shared_ptr<Mesh> mesh);
-  void lua_register_prim_mesh(lua_State* l, std::shared_ptr<PrimitiveMesh> mesh);
 
-  Builder& lua_get_current_builder(lua_State* l);
-  void lua_set_current_builder(lua_State* l, Builder builder);
-  void lua_unset_current_builder(lua_State* l);
-  const Transform& lua_current_frame_transform(lua_State* l);
+  std::shared_ptr<Builder> lua_check_builder(lua_State* l, int idx);
+  bool lua_test_builder(lua_State* l, int idx);
+  void lua_push_builder(lua_State* l, std::shared_ptr<Builder> builder);
 
   std::shared_ptr<Scene> lua_check_scene(lua_State* l, int idx);
   bool lua_test_scene(lua_State* l, int idx);

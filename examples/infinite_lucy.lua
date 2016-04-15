@@ -1,4 +1,5 @@
-local quality = true
+local _ENV = require "dort/dsl"
+local quality = false
 
 local scene = define_scene(function()
   block(function()

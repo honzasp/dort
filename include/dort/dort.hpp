@@ -51,7 +51,7 @@ namespace dort {
   struct VoxelLump;
 
   template<class Out, class In> class Texture;
-  template<class Out> class TextureMao;
+  template<class Out> class TextureMap;
   template<class Pixel> struct Image;
 
   using Spectrum = RgbSpectrum;

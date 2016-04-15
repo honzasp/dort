@@ -29,8 +29,7 @@ namespace dort {
     float screen_y = lua_param_float(l, p, "screen_y");
     lua_params_check_unused(l, p);
 
-    lua_push_camera(l, std::make_shared<OrthographicCamera>(
-          lua_current_frame_transform(l) * transform,
+    lua_push_camera(l, std::make_shared<OrthographicCamera>(transform,
           Vec2(screen_x, screen_y)));
     return 1;
   }
@@ -45,8 +44,7 @@ namespace dort {
     float z_far = lua_param_float_opt(l, p, "z_far", 1e3f);
     lua_params_check_unused(l, p);
 
-    lua_push_camera(l, std::make_shared<PerspectiveCamera>(
-          lua_current_frame_transform(l) * transform,
+    lua_push_camera(l, std::make_shared<PerspectiveCamera>(transform,
           Vec2(screen_x, screen_y), clamp(fov, 1e-2f, PI), z_near, z_far));
     return 1;
   }

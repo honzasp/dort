@@ -8,21 +8,74 @@ for k,v in pairs(dort.math) do
   dsl[k] = v
 end
 
-dsl.define_scene = dort.builder.define_scene
-dsl.block = dort.builder.define_block
-dsl.instance = dort.builder.define_instance
-dsl.transform = dort.builder.set_transform
-dsl.material = dort.builder.set_material
-dsl.camera = dort.builder.set_camera
-dsl.option = dort.builder.set_option
-dsl.add_shape = dort.builder.add_shape
-dsl.add_primitive = dort.builder.add_primitive
-dsl.add_light = dort.builder.add_light
-dsl.add_read_ply_mesh = dort.builder.add_read_ply_mesh
-dsl.add_read_ply_mesh_as_bvh = dort.builder.add_read_ply_mesh_as_bvh
-dsl.add_ply_mesh = dort.builder.add_ply_mesh
-dsl.add_ply_mesh_as_bvh = dort.builder.add_ply_mesh_as_bvh
-dsl.add_voxel_grid = dort.builder.add_voxel_grid
+local b = dort.builder
+local B
+
+function dsl.define_scene(callback)
+  local prev_builder = B
+  local builder = b.make()
+
+  B = builder
+  callback(builder)
+
+  local scene = b.build_scene(builder)
+  B = prev_builder
+  return scene
+end
+
+function dsl.block(callback)
+  b.push_state(B)
+  callback(B)
+  b.pop_state(B)
+end
+
+function dsl.instance(callback)
+  b.push_frame(B)
+  callback(B)
+  b.pop_frame(B)
+end
+
+function dsl.transform(transform)
+  b.set_transform(B, transform)
+end
+function dsl.material(material)
+  b.set_material(B, material)
+end
+function dsl.camera(camera)
+  b.set_camera(B, camera)
+end
+function dsl.option(opt, ...)
+  b.set_option(B, opt, table.unpack(arg))
+end
+
+function dsl.add_shape(shape)
+  b.add_shape(B, shape)
+end
+function dsl.add_primitive(prim)
+  b.add_primitive(B, prim)
+end
+function dsl.add_triangle(mesh, index)
+  b.add_triangle(B, mesh, index)
+end
+function dsl.add_light(light)
+  b.add_light(B, light)
+end
+function dsl.add_read_ply_mesh(file_name)
+  b.add_read_ply_mesh(B, file_name)
+end
+function dsl.add_read_ply_mesh_as_bvh(file_name)
+  b.add_read_ply_mesh_as_bvh(B, file_name)
+end
+function dsl.add_ply_mesh(mesh)
+  b.add_ply_mesh(B, mesh)
+end
+function dsl.add_ply_mesh_as_bvh(mesh)
+  b.add_ply_mesh_as_bvh(B, mesh)
+end
+function dsl.add_voxel_grid(params)
+  b.add_voxel_grid(B, params)
+end
+
 dsl.render = dort.builder.render
 
 dsl.ortho_camera = dort.camera.make_ortho
@@ -49,8 +102,23 @@ dsl.boxi = dort.geometry.boxi
 dsl.read_image = dort.image.read
 dsl.write_png_image = dort.image.write_png
 
-dsl.point_light = dort.light.make_point
-dsl.diffuse_light = dort.light.make_diffuse
+function apply_builder_transform(transform)
+  local builder_transform = b.get_transform(B)
+  if transform then
+    return builder_transform * transform
+  else
+    return builder_transform
+  end
+end
+
+function dsl.point_light(params)
+  params.transform = apply_builder_transform(params.transform)
+  return dort.light.make_point(params)
+end
+function dsl.diffuse_light(params)
+  params.transform = apply_builder_transform(params.transform)
+  return dort.light.make_diffuse(params)
+end
 dsl.infinite_light = dort.light.make_infinite
 
 dsl.matte_material = dort.material.make_matte
@@ -66,9 +134,14 @@ dsl.stratified_sampler = dort.sampler.make_stratified
 
 dsl.sphere = dort.shape.make_sphere
 dsl.disk = dort.shape.make_disk
-dsl.triangle = dort.shape.make_triangle
-dsl.mesh = dort.shape.make_mesh
 dsl.read_ply_mesh = dort.shape.read_ply_mesh
+
+function dsl.mesh(params)
+  if not params.transform then
+    params.transform = b.get_transform(B)
+  end
+  return dort.shape.make_mesh(params)
+end
 
 dsl.rgb = dort.spectrum.rgb
 dsl.rgbh = dort.spectrum.rgbh

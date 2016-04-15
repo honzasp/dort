@@ -28,18 +28,16 @@ namespace dort {
 
   int lua_light_make_point(lua_State* l) {
     int p = 1;
-    Point local_point = lua_param_point(l, p, "point");
+    Point point = lua_param_point(l, p, "point");
     Spectrum intensity = lua_param_spectrum(l, p, "intensity");
     lua_params_check_unused(l, p);
 
-    Point frame_point = lua_current_frame_transform(l).apply(local_point);
-    lua_push_light(l, std::make_shared<PointLight>(frame_point, intensity));
+    lua_push_light(l, std::make_shared<PointLight>(point, intensity));
     return 1;
   }
 
   int lua_light_make_diffuse(lua_State* l) {
     int p = 1;
-    auto shape_to_world = lua_current_frame_transform(l);
     auto shape = lua_param_shape(l, p, "shape");
     auto radiance = lua_param_spectrum(l, p, "radiance");
     auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
@@ -47,7 +45,7 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     lua_push_light(l, std::make_shared<DiffuseLight>(
-          shape, shape_to_world * transform, radiance, num_samples));
+          shape, transform, radiance, num_samples));
     return 1;
   }
 
