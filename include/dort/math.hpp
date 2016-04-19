@@ -71,6 +71,7 @@ namespace dort {
     return std::copysign(magnitude, sign);
   }
   inline float sign(float x) { return copysign(1, x); }
+  inline float modf(float x, float* iptr) { return std::modf(x, iptr); }
 
   inline float sinc(float x) {
     float t = abs(x) * PI;

@@ -24,6 +24,18 @@ namespace dort {
       this->z = v.z;
     }
 
+    static Vec3 axis(int32_t axis, float dir = 1.f) {
+      if(axis == 0) {
+        return Vec3(dir, 0.f, 0.f);
+      } else if(axis == 1) {
+        return Vec3(0.f, dir, 0.f);
+      } else if(axis == 2) {
+        return Vec3(0.f, 0.f, dir);
+      } else {
+        assert(false && "Bad axis");
+      }
+    }
+
     float operator[](uint32_t i) const {
       assert(i < 3);
       return this->coords[i];
@@ -106,5 +118,16 @@ namespace dort {
   }
   inline Vec3 floor(const Vec3& v) {
     return Vec3(floor(v.x), floor(v.y), floor(v.z));
+  }
+
+  inline Vec3 permute(const Vec3& v, int32_t rot) {
+    assert(rot >= 0 && rot < 3);
+    if(rot == 1) {
+      return Vec3(v.y, v.z, v.x);
+    } else if(rot == 2) {
+      return Vec3(v.z, v.x, v.y);
+    } else {
+      return v;
+    }
   }
 }

@@ -32,7 +32,7 @@ namespace dort {
     const luaL_Reg transform_methods[] = {
       {"apply", lua_transform_apply},
       {"apply_inv", lua_transform_apply_inv},
-      {"inverse", lua_transform_inverse},
+      {"__tostring", lua_transform_tostring},
       {"__call", lua_transform_apply},
       {"__mul", lua_transform_mul},
       {"__eq", lua_transform_eq},
@@ -62,12 +62,14 @@ namespace dort {
       {"vector", lua_vector_make},
       {"point", lua_point_make},
       {"identity", lua_transform_identity},
+      {"inverse", lua_transform_inverse},
       {"translate", lua_transform_translate},
       {"scale", lua_transform_scale},
       {"rotate_x", lua_transform_rotate_x},
       {"rotate_y", lua_transform_rotate_y},
       {"rotate_z", lua_transform_rotate_z},
       {"look_at", lua_transform_look_at},
+      {"stretch", lua_transform_stretch},
       {"vec3i", lua_vec3i_make},
       {"boxi", lua_boxi_make},
       {0, 0},
@@ -217,6 +219,44 @@ namespace dort {
     Point look = lua_check_point(l, 2);
     Vector up = lua_check_vector(l, 3);
     lua_push_transform(l, look_at(eye, look, up));
+    return 1;
+  }
+  int lua_transform_stretch(lua_State* l) {
+    Point p1 = lua_check_point(l, 1);
+    Point p2 = lua_check_point(l, 2);
+    Point center = 0.5f * (p2 + p1);
+    Vector radius = 0.5f * (p2 - p1);
+    Transform stretch = translate(Vector(center.v)) * scale(radius);
+    lua_push_transform(l, stretch);
+    return 1;
+  }
+
+  int lua_transform_tostring(lua_State* l) {
+    const Transform& trans = lua_check_transform(l, 1);
+    luaL_checkstack(l, 100, nullptr);
+    uint32_t n = 0;
+
+    lua_pushstring(l, "transform("); ++n;
+    for(bool inv: {false, true}) {
+      const auto& mat = trans.get_mat(inv);
+      if(inv) {
+        lua_pushstring(l, ", "); ++n;
+      }
+      lua_pushstring(l, "mat4x4("); ++n;
+      for(uint32_t col = 0; col < 4; ++col) {
+        if(col != 0) {
+          lua_pushstring(l, ", "); ++n;
+        }
+        lua_pushfstring(l, "vec4(%f, %f, %f, %f)", 
+            mat.cols[col][0], mat.cols[col][1],
+            mat.cols[col][2], mat.cols[col][3]);
+        ++n;
+      }
+      lua_pushstring(l, ")"); ++n;
+    }
+    lua_pushstring(l, ")"); ++n;
+
+    lua_concat(l, n);
     return 1;
   }
 

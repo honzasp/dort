@@ -47,21 +47,25 @@ namespace dort {
   }
 
   Transform translate(const Vector& delta) {
+    return translate(delta.v.x, delta.v.y, delta.v.z);
+  }
+
+  Transform translate(float x, float y, float z) {
     Mat4x4 mat(1.f);
-    mat.cols[3][0] = delta.v.x;
-    mat.cols[3][1] = delta.v.y;
-    mat.cols[3][2] = delta.v.z;
+    mat.cols[3][0] = x;
+    mat.cols[3][1] = y;
+    mat.cols[3][2] = z;
 
     Mat4x4 mat_inv(1.f);
-    mat_inv.cols[3][0] = -delta.v.x;
-    mat_inv.cols[3][1] = -delta.v.y;
-    mat_inv.cols[3][2] = -delta.v.z;
+    mat_inv.cols[3][0] = -x;
+    mat_inv.cols[3][1] = -y;
+    mat_inv.cols[3][2] = -z;
 
     return Transform(mat, mat_inv);
   }
 
-  Transform translate(float x, float y, float z) {
-    return translate(Vector(x, y, z));
+  Transform scale(const Vector& s) {
+    return scale(s.v.x, s.v.y, s.v.z);
   }
 
   Transform scale(float x, float y, float z) {

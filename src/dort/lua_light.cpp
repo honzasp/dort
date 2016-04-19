@@ -28,11 +28,12 @@ namespace dort {
 
   int lua_light_make_point(lua_State* l) {
     int p = 1;
-    Point point = lua_param_point(l, p, "point");
-    Spectrum intensity = lua_param_spectrum(l, p, "intensity");
+    auto point = lua_param_point(l, p, "point");
+    auto intensity = lua_param_spectrum(l, p, "intensity");
+    auto transform = lua_param_transform_opt(l, p, "transform", identity());
     lua_params_check_unused(l, p);
 
-    lua_push_light(l, std::make_shared<PointLight>(point, intensity));
+    lua_push_light(l, std::make_shared<PointLight>(transform.apply(point), intensity));
     return 1;
   }
 

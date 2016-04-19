@@ -1,3 +1,4 @@
+#include "dort/cube_shape.hpp"
 #include "dort/disk_shape.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
@@ -29,6 +30,7 @@ namespace dort {
     const luaL_Reg shape_funs[] = {
       {"make_sphere", lua_shape_make_sphere},
       {"make_disk", lua_shape_make_disk},
+      {"make_cube", lua_shape_make_cube},
       {"make_mesh", lua_shape_make_mesh},
       {"read_ply_mesh", lua_ply_mesh_read},
       {0, 0},
@@ -57,6 +59,13 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     lua_push_shape(l, std::make_shared<DiskShape>(radius, z));
+    return 1;
+  }
+
+  int lua_shape_make_cube(lua_State* l) {
+    static const std::shared_ptr<CubeShape> CUBE_SHAPE =
+      std::make_shared<CubeShape>();
+    lua_push_shape(l, CUBE_SHAPE);
     return 1;
   }
 

@@ -33,7 +33,7 @@ function dsl.block(callback)
   b.pop_state(B)
 end
 
-function dsl.instance(callback)
+function dsl.frame(callback)
   b.push_frame(B)
   callback(B)
   b.pop_frame(B)
@@ -94,12 +94,14 @@ dsl.lanczos_sinc_filter = dort.filter.make_lanczos_sinc
 dsl.vector = dort.geometry.vector
 dsl.point = dort.geometry.point
 dsl.identity = dort.geometry.identity
+dsl.inverse = dort.geometry.inverse
 dsl.translate = dort.geometry.translate
 dsl.scale = dort.geometry.scale
 dsl.rotate_x = dort.geometry.rotate_x
 dsl.rotate_y = dort.geometry.rotate_y
 dsl.rotate_z = dort.geometry.rotate_z
 dsl.look_at = dort.geometry.look_at
+dsl.stretch = dort.geometry.stretch
 dsl.vec3i = dort.geometry.vec3i
 dsl.boxi = dort.geometry.boxi
 
@@ -138,6 +140,7 @@ dsl.stratified_sampler = dort.sampler.make_stratified
 
 dsl.sphere = dort.shape.make_sphere
 dsl.disk = dort.shape.make_disk
+dsl.cube = dort.shape.make_cube
 dsl.read_ply_mesh = dort.shape.read_ply_mesh
 
 function dsl.mesh(params)

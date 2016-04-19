@@ -42,7 +42,6 @@ namespace dort {
       return this->apply(true, obj);
     }
 
-  private:
     const Mat4x4& get_mat(bool inv) const {
       return inv ? this->mat_inv : this->mat;
     }
@@ -51,6 +50,7 @@ namespace dort {
   Transform identity();
   Transform translate(const Vector& delta);
   Transform translate(float x, float y, float z);
+  Transform scale(const Vector& s);
   Transform scale(float x, float y, float z);
   Transform scale(float x);
   Transform rotate_x(float angle);
@@ -58,4 +58,5 @@ namespace dort {
   Transform rotate_z(float angle);
   Transform perspective(float fov, float z_near, float z_far);
   Transform look_at(const Point& eye, const Point& look, const Vector& up);
+  Transform stretch(const Point& p1, const Point& p2);
 }
