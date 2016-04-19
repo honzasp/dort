@@ -1,3 +1,5 @@
+require "dort/helpers"
+
 local dsl = {}
 
 for k,v in pairs(_G) do
@@ -27,58 +29,25 @@ function dsl.define_scene(callback)
   return scene
 end
 
-function dsl.block(callback)
-  b.push_state(B)
-  callback(B)
-  b.pop_state(B)
-end
+function dsl.block(callback) b.block(B, callback) end
+function dsl.frame(callback) b.frame(B, callback) end
 
-function dsl.frame(callback)
-  b.push_frame(B)
-  callback(B)
-  b.pop_frame(B)
-end
+function dsl.transform(transform) b.set_transform(B, transform) end
+function dsl.material(material) b.set_material(B, material) end
+function dsl.camera(camera) b.set_camera(B, camera) end
+function dsl.option(opt, ...) b.set_option(B, opt, table.unpack(arg)) end
 
-function dsl.transform(transform)
-  b.set_transform(B, transform)
-end
-function dsl.material(material)
-  b.set_material(B, material)
-end
-function dsl.camera(camera)
-  b.set_camera(B, camera)
-end
-function dsl.option(opt, ...)
-  b.set_option(B, opt, table.unpack(arg))
-end
-
-function dsl.add_shape(shape)
-  b.add_shape(B, shape)
-end
-function dsl.add_primitive(prim)
-  b.add_primitive(B, prim)
-end
-function dsl.add_triangle(mesh, index)
-  b.add_triangle(B, mesh, index)
-end
-function dsl.add_light(light)
-  b.add_light(B, light)
-end
-function dsl.add_read_ply_mesh(file_name)
-  b.add_read_ply_mesh(B, file_name)
-end
+function dsl.add_shape(shape) b.add_shape(B, shape) end
+function dsl.add_primitive(prim) b.add_primitive(B, prim) end
+function dsl.add_triangle(mesh, index) b.add_triangle(B, mesh, index) end
+function dsl.add_light(light) b.add_light(B, light) end
+function dsl.add_read_ply_mesh(file_name) b.add_read_ply_mesh(B, file_name) end
 function dsl.add_read_ply_mesh_as_bvh(file_name)
   b.add_read_ply_mesh_as_bvh(B, file_name)
 end
-function dsl.add_ply_mesh(mesh)
-  b.add_ply_mesh(B, mesh)
-end
-function dsl.add_ply_mesh_as_bvh(mesh)
-  b.add_ply_mesh_as_bvh(B, mesh)
-end
-function dsl.add_voxel_grid(params)
-  b.add_voxel_grid(B, params)
-end
+function dsl.add_ply_mesh(mesh) b.add_ply_mesh(B, mesh) end
+function dsl.add_ply_mesh_as_bvh(mesh) b.add_ply_mesh_as_bvh(B, mesh) end
+function dsl.add_voxel_grid(params) b.add_voxel_grid(B, params) end
 
 dsl.render = dort.builder.render
 
@@ -100,6 +69,9 @@ dsl.scale = dort.geometry.scale
 dsl.rotate_x = dort.geometry.rotate_x
 dsl.rotate_y = dort.geometry.rotate_y
 dsl.rotate_z = dort.geometry.rotate_z
+dsl.rotate_x_around = dort.geometry.rotate_x_around
+dsl.rotate_y_around = dort.geometry.rotate_y_around
+dsl.rotate_z_around = dort.geometry.rotate_z_around
 dsl.look_at = dort.geometry.look_at
 dsl.stretch = dort.geometry.stretch
 dsl.vec3i = dort.geometry.vec3i
