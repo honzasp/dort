@@ -126,6 +126,18 @@ namespace dort {
   }
 
   int lua_vector_make(lua_State* l) {
+    if(lua_gettop(l) == 1) {
+      if(lua_test_vector(l, 1)) {
+        lua_pushvalue(l, 1);
+        return 1;
+      } else if(lua_test_point(l, 1)) {
+        lua_push_vector(l, Vector(lua_check_point(l, 1).v));
+        return 1;
+      } else if(lua_test_vec3i(l, 1)) {
+        lua_push_vector(l, Vector(Vec3(lua_check_vec3i(l, 1))));
+        return 1;
+      }
+    }
     float x = luaL_checknumber(l, 1);
     float y = luaL_checknumber(l, 2);
     float z = luaL_checknumber(l, 3);
@@ -151,6 +163,18 @@ namespace dort {
   }
 
   int lua_point_make(lua_State* l) {
+    if(lua_gettop(l) == 1) {
+      if(lua_test_point(l, 1)) {
+        lua_pushvalue(l, 1);
+        return 1;
+      } else if(lua_test_vector(l, 1)) {
+        lua_push_point(l, Point(lua_check_vector(l, 1).v));
+        return 1;
+      } else if(lua_test_vec3i(l, 1)) {
+        lua_push_point(l, Point(Vec3(lua_check_vec3i(l, 1))));
+        return 1;
+      }
+    }
     float x = luaL_checknumber(l, 1);
     float y = luaL_checknumber(l, 2);
     float z = luaL_checknumber(l, 3);

@@ -10,5 +10,6 @@ _env.g = dort.geometry
 _env.rgb = dort.spectrum.rgb
 _env.rgbh = dort.spectrum.rgbh
 _env.s = dort.shape
+_env.l = dort.light
 _env.pi = dort.math.pi
 return _env

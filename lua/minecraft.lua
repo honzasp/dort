@@ -8,7 +8,7 @@ function minecraft.add_world(builder, params)
   minecraft.read.map_to_blocks(block_grid, anvil_map, params.box)
   minecraft.anvil.close_map(anvil_map)
 
-  local world = build_world(builder, block_grid, params.box)
+  local world = build_world(builder, block_grid, params.box, params)
   dort.builder.add_voxel_grid(builder, {
     box = params.box,
     grid = world.voxel_grid,
@@ -20,7 +20,11 @@ end
 local World = {}
 World.__index = World
 
-function build_world(builder, block_grid, box)
+local DEFAULT_OPTIONS = {
+  torch_num_samples = 1,
+}
+
+function build_world(builder, block_grid, box, params)
   local world = {};
   setmetatable(world, World)
 
@@ -28,6 +32,15 @@ function build_world(builder, block_grid, box)
   world.builder = builder
   world.block_funs = {}
   world.block_names = {}
+
+  world.options = {}
+  for key, value in pairs(DEFAULT_OPTIONS) do
+    if params[key] then
+      world.options[key] = params[key]
+    else
+      world.options[key] = value
+    end
+  end
 
   local white = dort.material.make_matte {
     color = dort.spectrum.rgb(1, 1, 1)
@@ -55,6 +68,10 @@ function build_world(builder, block_grid, box)
   end
 
   return world
+end
+
+function World:option(key)
+  return self.options[key]
 end
 
 function World:block_to_voxel(block_pos, block_id, block_data)

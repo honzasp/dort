@@ -37,7 +37,7 @@ local scene = define_scene(function()
   end
   --]]
   add_light(infinite_light {
-    radiance = rgb(1, 1, 1),
+    radiance = rgbh("b1e1ff") * 0.5,
     num_samples = 2,
   })
 
