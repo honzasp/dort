@@ -25,14 +25,13 @@ namespace dort {
     }
 
     static Vec3 axis(int32_t axis, float dir = 1.f) {
+      assert(axis >= 0 && axis < 3);
       if(axis == 0) {
         return Vec3(dir, 0.f, 0.f);
       } else if(axis == 1) {
         return Vec3(0.f, dir, 0.f);
-      } else if(axis == 2) {
-        return Vec3(0.f, 0.f, dir);
       } else {
-        assert(false && "Bad axis");
+        return Vec3(0.f, 0.f, dir);
       }
     }
 
