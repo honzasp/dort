@@ -1,3 +1,4 @@
+#include "dort/box.hpp"
 #include "dort/triangle.hpp"
 #include "dort/triangle_shape.hpp"
 

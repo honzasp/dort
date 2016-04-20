@@ -1,4 +1,5 @@
 #pragma once
+#include "dort/box.hpp"
 #include "dort/shape.hpp"
 #include "dort/spectrum.hpp"
 #include "dort/transform.hpp"

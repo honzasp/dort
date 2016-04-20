@@ -1,3 +1,4 @@
+#include "dort/box.hpp"
 #include "dort/transform.hpp"
 
 namespace dort {

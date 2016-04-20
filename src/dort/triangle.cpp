@@ -1,3 +1,4 @@
+#include "dort/box.hpp"
 #include "dort/mesh.hpp"
 #include "dort/shape.hpp"
 #include "dort/stats.hpp"

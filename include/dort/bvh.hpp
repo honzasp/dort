@@ -3,7 +3,7 @@
 #include <memory>
 #include <shared_mutex>
 #include <vector>
-#include "dort/geometry.hpp"
+#include "dort/box.hpp"
 
 namespace dort {
   enum class BvhSplitMethod {

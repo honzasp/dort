@@ -1,5 +1,5 @@
 #pragma once
-#include "dort/dort.hpp"
+#include "dort/box.hpp"
 #include "dort/geometry.hpp"
 
 namespace dort {
