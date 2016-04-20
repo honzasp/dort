@@ -17,15 +17,15 @@ local scene = define_scene(function()
   camera(perspective_camera {
     transform = look_at(
         point(-5, 7.5, 8),
-        point(0.5, 8, 0.5),
+        point(0.5, 7, 0.5),
         vector(0, 1, 0)) *
       scale(-1, 1, 1),
-    fov = pi / 3,
+    fov = pi / 4,
   })
 end)
 
-local samples = 4
-local res = 800
+local samples = 3
+local res = 400
 
 write_png_image("trees.png", render(scene, {
   x_res = res,

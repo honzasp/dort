@@ -9,6 +9,9 @@ return function(world)
     world:define_cube_voxel(m.make_matte {
       color = rgbh("2e1d0c"),
     }),
+    world:define_cube_voxel(m.make_matte {
+      color = rgbh("cfcec9"),
+    })
   }
 
   world:define_block("log", 17, function(block)
@@ -26,6 +29,23 @@ return function(world)
     return materials
   end
 
+  function generate_lobed_leaf(B, rng, lobes, make_lobe, materials)
+    local vertices = {}
+    vertices[1] = g.vec2(0, 0)
+    for lobe = 1, lobes do
+      vertices[#vertices + 1] = make_lobe(lobe, 1)
+    end
+    vertices[#vertices + 1] = g.vec2(0, 1)
+    for lobe = 0, lobes - 1 do
+      vertices[#vertices + 1] = make_lobe(lobes - lobe, -1)
+    end
+
+    b.set_material(B, materials[1 + floor(#materials * rng())])
+    b.add_shape(B, s.make_polygon {
+      vertices = vertices,
+    })
+  end
+
   local oak_leaf_materials = leaf_materials {
     rgbh("2b6006"),
     rgbh("3d8011"),
@@ -40,7 +60,11 @@ return function(world)
   }
 
   function generate_oak_leaf(B, rng)
-    function make_lobe(lobe, lobes, x_sign)
+    local lobes = floor(rng() * 4 + 5)
+    if lobes % 2 == 0 then
+      lobes = lobes + 1
+    end
+    function make_lobe(lobe, x_sign)
       local y = (lobe / (lobes + 1)) + 3/100 * rng()
       local x
       if lobe % 2 == 0 then
@@ -50,27 +74,7 @@ return function(world)
       end
       return g.vec2(x * x_sign, y)
     end
-
-    local lobes = floor(rng() * 4 + 5)
-    if lobes % 2 == 0 then
-      lobes = lobes + 1
-    end
-
-    local vertices = {}
-
-    vertices[1] = g.vec2(0, 0)
-    for lobe = 1, lobes do
-      vertices[#vertices + 1] = make_lobe(lobe, lobes, 1)
-    end
-    vertices[#vertices + 1] = g.vec2(0, 1)
-    for lobe = 0, lobes - 1 do
-      vertices[#vertices + 1] = make_lobe(lobes - lobe, lobes, -1)
-    end
-
-    b.set_material(B, oak_leaf_materials[1 + floor(#oak_leaf_materials * rng())])
-    b.add_shape(B, s.make_polygon {
-      vertices = vertices,
-    })
+    generate_lobed_leaf(B, rng, lobes, make_lobe, oak_leaf_materials)
   end
 
   local spruce_leaf_materials = leaf_materials {
@@ -100,6 +104,34 @@ return function(world)
     b.add_shape(B, spruce_leaf_shape)
   end
 
+  local birch_leaf_materials = leaf_materials {
+    rgbh("63a423"),
+    rgbh("74b831"),
+    rgbh("75b03b"),
+    rgbh("6ca03a"),
+    rgbh("629134"),
+    rgbh("59a423"),
+    rgbh("549822"),
+    rgbh("518e25"),
+    rgbh("5d9633"),
+    rgbh("6ba740"),
+    rgbh("74b147"),
+    rgbh("85b147"),
+    rgbh("81b03f"),
+    rgbh("7dae37"),
+    rgbh("7eb52f"),
+  }
+
+  function generate_birch_leaf(B, rng)
+    local lobes = floor(rng() * 2.5 + 1)
+    function make_lobe(lobe, x_sign)
+      local y = lobe / (lobes + 2) + 1/20 * rng()
+      local x = 1/2 * sin(pi * (lobes - lobe + 1) / (lobes + 4)) + 1/10 * rng()
+      return g.vec2(x * x_sign, y)
+    end
+    generate_lobed_leaf(B, rng, lobes, make_lobe, birch_leaf_materials)
+  end
+
   function sample_sphere(u1, u2)
     local z = 1 - 2 * u1;
     local r = sqrt(max(0, 1 - z * z));
@@ -111,7 +143,7 @@ return function(world)
 
   function generate_leaves_voxels(B, density, scale, generate_leaf)
     local voxels = {}
-    for i = 1, 10 do
+    for i = 1, 7 do
       voxels[i] = world:define_primitive_voxel(b.frame(B, function()
         local rng = make_rng(i * 1234 + 56789)
         for leaf = 1, density do
@@ -132,6 +164,7 @@ return function(world)
   local leaves_voxels = {
     generate_leaves_voxels(B, 200, 0.2, generate_oak_leaf),
     generate_leaves_voxels(B, 5000, 0.1, generate_spruce_leaf),
+    generate_leaves_voxels(B, 150, 0.15, generate_birch_leaf),
   }
 
   world:define_block("leaves", 18, function(block)
