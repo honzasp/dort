@@ -75,6 +75,7 @@ dsl.rotate_z_around = dort.geometry.rotate_z_around
 dsl.look_at = dort.geometry.look_at
 dsl.stretch = dort.geometry.stretch
 dsl.vec3i = dort.geometry.vec3i
+dsl.vec2 = dort.geometry.vec2
 dsl.boxi = dort.geometry.boxi
 
 dsl.read_image = dort.image.read
@@ -113,6 +114,7 @@ dsl.stratified_sampler = dort.sampler.make_stratified
 dsl.sphere = dort.shape.make_sphere
 dsl.disk = dort.shape.make_disk
 dsl.cube = dort.shape.make_cube
+dsl.polygon = dort.shape.make_polygon
 dsl.read_ply_mesh = dort.shape.read_ply_mesh
 
 function dsl.mesh(params)

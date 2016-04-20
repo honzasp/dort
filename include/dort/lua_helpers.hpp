@@ -29,9 +29,9 @@ namespace dort {
   }
 
   template<class T, const char* tname>
-  void lua_push_managed_obj(lua_State* l, const T& obj) {
+  void lua_push_managed_obj(lua_State* l, T obj) {
     T* lua_obj = (T*)lua_newuserdata(l, sizeof(T));
-    new (lua_obj) T(obj);
+    new (lua_obj) T(std::move(obj));
     luaL_getmetatable(l, tname);
     lua_setmetatable(l, -2);
   }

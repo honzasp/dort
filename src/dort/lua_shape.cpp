@@ -5,10 +5,12 @@
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/mesh.hpp"
+#include "dort/polygon_shape.hpp"
 #include "dort/ply_mesh.hpp"
 #include "dort/sphere_shape.hpp"
 #include "dort/transform.hpp"
 #include "dort/triangle_shape.hpp"
+#include "dort/vec_2.hpp"
 
 namespace dort {
   int lua_open_shape(lua_State* l) {
@@ -31,6 +33,7 @@ namespace dort {
       {"make_sphere", lua_shape_make_sphere},
       {"make_disk", lua_shape_make_disk},
       {"make_cube", lua_shape_make_cube},
+      {"make_polygon", lua_shape_make_polygon},
       {"make_mesh", lua_shape_make_mesh},
       {"read_ply_mesh", lua_ply_mesh_read},
       {0, 0},
@@ -66,6 +69,26 @@ namespace dort {
     static const std::shared_ptr<CubeShape> CUBE_SHAPE =
       std::make_shared<CubeShape>();
     lua_push_shape(l, CUBE_SHAPE);
+    return 1;
+  }
+
+  int lua_shape_make_polygon(lua_State* l) {
+    int p = 1;
+    std::vector<Vec2> vertices; {
+      lua_getfield(l, 1, "vertices");
+      uint32_t vertex_count = lua_rawlen(l, -1);
+      for(uint32_t i = 1; i <= vertex_count; ++i) {
+        lua_rawgeti(l, -1, i);
+        vertices.push_back(lua_check_vec2(l, -1));
+        lua_pop(l, 1);
+      }
+      lua_pushnil(l);
+      lua_setfield(l, 1, "vertices");
+      lua_pop(l, 1);
+    }
+    lua_params_check_unused(l, p);
+
+    lua_push_shape(l, std::make_shared<PolygonShape>(std::move(vertices)));
     return 1;
   }
 

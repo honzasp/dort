@@ -53,6 +53,7 @@ function build_world(builder, block_grid, box, params)
 
   ;(require "minecraft/blocks/dirts")(world)
   ;(require "minecraft/blocks/stones")(world)
+  ;(require "minecraft/blocks/plants")(world)
   ;(require "minecraft/blocks/utility")(world)
 
   for z = box:min():z(), box:max():z() - 1 do

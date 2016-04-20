@@ -32,62 +32,62 @@ namespace dort {
     }
   };
 
-  inline Vec2 operator+(const Vec2& v1, const Vec2& v2) {
+  inline Vec2 operator+(Vec2 v1, Vec2 v2) {
     return Vec2(v1.x + v2.x, v1.y + v2.y);
   }
-  inline Vec2 operator-(const Vec2& v1, const Vec2& v2) {
+  inline Vec2 operator-(Vec2 v1, Vec2 v2) {
     return Vec2(v1.x - v2.x, v1.y - v2.y);
   }
-  inline Vec2 operator-(const Vec2& v) {
+  inline Vec2 operator-(Vec2 v) {
     return Vec2(-v.x, -v.y);
   }
-  inline Vec2 operator*(const Vec2& v, float a) {
+  inline Vec2 operator*(Vec2 v, float a) {
     return Vec2(v.x * a, v.y * a);
   }
-  inline Vec2 operator*(float a, const Vec2& v) {
+  inline Vec2 operator*(float a, Vec2 v) {
     return Vec2(a * v.x, a * v.y);
   }
-  inline Vec2 operator/(const Vec2& v, float a) {
+  inline Vec2 operator/(Vec2 v, float a) {
     return v * (1.f / a);
   }
-  inline Vec2 operator/(float a, const Vec2& v) {
+  inline Vec2 operator/(float a, Vec2 v) {
     return Vec2(a / v.x, a / v.y);
   }
-  inline Vec2 operator*(const Vec2& v1, const Vec2& v2) {
+  inline Vec2 operator*(Vec2 v1, Vec2 v2) {
     return Vec2(v1.x * v2.x, v1.y * v2.y);
   }
-  inline Vec2 operator/(const Vec2& v1, const Vec2& v2) {
+  inline Vec2 operator/(Vec2 v1, Vec2 v2) {
     return Vec2(v1.x / v2.x, v1.y / v2.y);
   }
 
-  inline bool operator==(const Vec2& v1, const Vec2& v2) {
+  inline bool operator==(Vec2 v1, Vec2 v2) {
     return v1.x == v2.x && v1.y == v2.y;
   }
-  inline bool operator!=(const Vec2& v1, const Vec2& v2) {
+  inline bool operator!=(Vec2 v1, Vec2 v2) {
     return !(v1 == v2);
   }
 
-  inline float dot(const Vec2& v1, const Vec2& v2) {
+  inline float dot(Vec2 v1, Vec2 v2) {
     return v1.x * v2.x + v1.y * v2.y;
   }
-  inline float length_squared(const Vec2& v) {
+  inline float length_squared(Vec2 v) {
     return dot(v, v);
   }
-  inline float length(const Vec2& v) {
+  inline float length(Vec2 v) {
     return sqrt(length_squared(v));
   }
 
-  inline Vec2 abs(const Vec2& v) {
+  inline Vec2 abs(Vec2 v) {
     return Vec2(abs(v.x), abs(v.y));
   }
 
-  inline bool is_finite(const Vec2& v) {
+  inline bool is_finite(Vec2 v) {
     return is_finite(v.x) && is_finite(v.y);
   }
-  inline bool is_nonnegative(const Vec2& v) {
+  inline bool is_nonnegative(Vec2 v) {
     return v.x >= 0.f && v.y >= 0.f;
   }
-  inline Vec2 floor(const Vec2& v) {
+  inline Vec2 floor(Vec2 v) {
     return Vec2(floor(v.x), floor(v.y));
   }
 }

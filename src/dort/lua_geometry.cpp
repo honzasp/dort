@@ -4,6 +4,7 @@
 #include "dort/lua_helpers.hpp"
 #include "dort/transform.hpp"
 #include "dort/vec_3i.hpp"
+#include "dort/vec_2.hpp"
 
 namespace dort {
   int lua_open_geometry(lua_State* l) {
@@ -11,6 +12,7 @@ namespace dort {
       {"x", lua_vector_get_x},
       {"y", lua_vector_get_y},
       {"z", lua_vector_get_z},
+      {"length", lua_vector_length},
       {"__tostring", lua_vector_tostring},
       {"__add", lua_geometry_add},
       {"__sub", lua_geometry_sub},
@@ -50,6 +52,16 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg vec2_methods[] = {
+      {"x", lua_vec2_get_x},
+      {"y", lua_vec2_get_y},
+      {"__tostring", lua_vec2_tostring},
+      {"__add", lua_geometry_add},
+      {"__sub", lua_geometry_sub},
+      {"__eq", lua_geometry_eq},
+      {0, 0},
+    };
+
     const luaL_Reg boxi_methods[] = {
       {"min", lua_boxi_get_min},
       {"max", lua_boxi_get_max},
@@ -61,6 +73,7 @@ namespace dort {
     const luaL_Reg geometry_funs[] = {
       {"vector", lua_vector_make},
       {"point", lua_point_make},
+      {"cross", lua_vector_cross},
       {"identity", lua_transform_identity},
       {"inverse", lua_transform_inverse},
       {"translate", lua_transform_translate},
@@ -71,6 +84,7 @@ namespace dort {
       {"look_at", lua_transform_look_at},
       {"stretch", lua_transform_stretch},
       {"vec3i", lua_vec3i_make},
+      {"vec2", lua_vec2_make},
       {"boxi", lua_boxi_make},
       {0, 0},
     };
@@ -79,6 +93,7 @@ namespace dort {
     lua_register_type(l, POINT_TNAME, point_methods);
     lua_register_type(l, TRANSFORM_TNAME, transform_methods);
     lua_register_type(l, VEC3I_TNAME, vec3i_methods);
+    lua_register_type(l, VEC2_TNAME, vec2_methods);
     lua_register_type(l, BOXI_TNAME, boxi_methods);
     luaL_newlib(l, geometry_funs);
     return 1;
@@ -159,6 +174,17 @@ namespace dort {
   int lua_vector_tostring(lua_State* l) {
     Vector vec = lua_check_vector(l, 1);
     lua_pushfstring(l, "vector(%f, %f, %f)", vec.v.x, vec.v.y, vec.v.z);
+    return 1;
+  }
+  int lua_vector_length(lua_State* l) {
+    Vector vec = lua_check_vector(l, 1);
+    lua_pushnumber(l, length(vec));
+    return 1;
+  }
+  int lua_vector_cross(lua_State* l) {
+    Vector v1 = lua_check_vector(l, 1);
+    Vector v2 = lua_check_vector(l, 2);
+    lua_push_vector(l, cross(v1, v2));
     return 1;
   }
 
@@ -351,6 +377,26 @@ namespace dort {
     return 1;
   }
 
+  int lua_vec2_make(lua_State* l) {
+    float x = luaL_checknumber(l, 1);
+    float y = luaL_checknumber(l, 2);
+    lua_push_vec2(l, Vec2(x, y));
+    return 1;
+  }
+  int lua_vec2_get_x(lua_State* l) {
+    lua_pushnumber(l, lua_check_vec2(l, 1).x);
+    return 1;
+  }
+  int lua_vec2_get_y(lua_State* l) {
+    lua_pushnumber(l, lua_check_vec2(l, 1).y);
+    return 1;
+  }
+  int lua_vec2_tostring(lua_State* l) {
+    Vec2 vec = lua_check_vec2(l, 1);
+    lua_pushfstring(l, "vec2(%f, %f)", vec.x, vec.y);
+    return 1;
+  }
+
   int lua_boxi_make(lua_State* l) {
     if(lua_gettop(l) == 0) {
       lua_push_boxi(l, Boxi());
@@ -431,6 +477,16 @@ namespace dort {
   }
   void lua_push_vec3i(lua_State* l, const Vec3i& vec) {
     return lua_push_managed_obj<Vec3i, VEC3I_TNAME>(l, vec);
+  }
+
+  const Vec2& lua_check_vec2(lua_State* l, int idx) {
+    return lua_check_managed_obj<Vec2, VEC2_TNAME>(l, idx);
+  }
+  bool lua_test_vec2(lua_State* l, int idx) {
+    return lua_test_managed_obj<Vec2, VEC2_TNAME>(l, idx);
+  }
+  void lua_push_vec2(lua_State* l, Vec2 vec) {
+    return lua_push_managed_obj<Vec2, VEC2_TNAME>(l, vec);
   }
 
   const Boxi& lua_check_boxi(lua_State* l, int idx) {

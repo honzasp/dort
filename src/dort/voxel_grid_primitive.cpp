@@ -29,12 +29,10 @@ namespace dort {
       assert(entry.t_hit >= ray.t_min && entry.t_hit <= ray.t_max);
 
       if(voxel < 0) {
-        Vec3 orig(entry.p_hit - floor(entry.p_hit));
-        if(entry.on_surface) {
-          orig[entry.surface_axis] = entry.surface_neg ? 1.f : 0.f;
-        }
+        Vector voxel_ray_dir = this->voxel_to_frame.apply_inv(ray.dir);
+        Vec3 entry_pos = floor(entry.p_hit + 1e-3 * voxel_ray_dir.v);
 
-        Ray prim_ray(Point(orig), this->voxel_to_frame.apply_inv(ray.dir),
+        Ray prim_ray(Point(entry.p_hit - entry_pos), voxel_ray_dir,
           0.f, exit.t_hit - entry.t_hit);
         const auto& prim = this->voxel_materials.prim_voxels.at(-voxel);
         if(!prim->intersect(prim_ray, out_isect)) {
@@ -42,7 +40,7 @@ namespace dort {
         }
 
         out_isect.world_diff_geom = this->voxel_to_frame.apply(
-          translate(Vector(floor(entry.p_hit))).apply(out_isect.world_diff_geom));
+          translate(Vector(entry_pos)).apply(out_isect.world_diff_geom));
         ray.t_max = min(ray.t_max, prim_ray.t_max);
         return false;
       } else {

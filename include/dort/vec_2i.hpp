@@ -36,19 +36,19 @@ namespace dort {
     }
   };
 
-  inline Vec2i operator+(const Vec2i& v1, const Vec2i& v2) {
+  inline Vec2i operator+(Vec2i v1, Vec2i v2) {
     return Vec2i(v1.x + v2.x, v1.y + v2.y);
   }
-  inline Vec2i operator-(const Vec2i& v1, const Vec2i& v2) {
+  inline Vec2i operator-(Vec2i v1, Vec2i v2) {
     return Vec2i(v1.x - v2.x, v1.y - v2.y);
   }
-  inline Vec2i operator-(const Vec2i& v) {
+  inline Vec2i operator-(Vec2i v) {
     return Vec2i(-v.x, -v.y);
   }
-  inline Vec2i operator*(const Vec2i& v, int32_t a) {
+  inline Vec2i operator*(Vec2i v, int32_t a) {
     return Vec2i(v.x * a, v.y * a);
   }
-  inline Vec2i operator*(int32_t a, const Vec2i& v) {
+  inline Vec2i operator*(int32_t a, Vec2i v) {
     return Vec2i(a * v.x, a * v.y);
   }
 

@@ -7,6 +7,7 @@ namespace dort {
   constexpr const char POINT_TNAME[] = "dort.Point";
   constexpr const char TRANSFORM_TNAME[] = "dort.Transform";
   constexpr const char VEC3I_TNAME[] = "dort.Vec3i";
+  constexpr const char VEC2_TNAME[] = "dort.Vec2";
   constexpr const char BOXI_TNAME[] = "dort.Boxi";
 
   int lua_open_geometry(lua_State* l);
@@ -20,7 +21,8 @@ namespace dort {
   int lua_vector_get_y(lua_State* l);
   int lua_vector_get_z(lua_State* l);
   int lua_vector_tostring(lua_State* l);
-  int lua_vector_add(lua_State* l);
+  int lua_vector_length(lua_State* l);
+  int lua_vector_cross(lua_State* l);
 
   int lua_point_make(lua_State* l);
   int lua_point_get_x(lua_State* l);
@@ -50,6 +52,11 @@ namespace dort {
   int lua_vec3i_get_z(lua_State* l);
   int lua_vec3i_tostring(lua_State* l);
 
+  int lua_vec2_make(lua_State* l);
+  int lua_vec2_get_x(lua_State* l);
+  int lua_vec2_get_y(lua_State* l);
+  int lua_vec2_tostring(lua_State* l);
+
   int lua_boxi_make(lua_State* l);
   int lua_boxi_get_min(lua_State* l);
   int lua_boxi_get_max(lua_State* l);
@@ -71,6 +78,10 @@ namespace dort {
   const Vec3i& lua_check_vec3i(lua_State* l, int idx);
   bool lua_test_vec3i(lua_State* l, int idx);
   void lua_push_vec3i(lua_State* l, const Vec3i& vec3i);
+
+  const Vec2& lua_check_vec2(lua_State* l, int idx);
+  bool lua_test_vec2(lua_State* l, int idx);
+  void lua_push_vec2(lua_State* l, Vec2 vec2);
 
   const Boxi& lua_check_boxi(lua_State* l, int idx);
   bool lua_test_boxi(lua_State* l, int idx);

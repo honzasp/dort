@@ -1,7 +1,5 @@
 local _ENV = require "dort/dsl"
-
 local scene = define_scene(function()
-
   block(function()
     material(matte_material {
       color = rgb(1, 0, 0)
