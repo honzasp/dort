@@ -11,21 +11,21 @@ local scene = define_scene(function()
 
   add_light(infinite_light {
     radiance = rgb(1,1,1) * 1,
-    num_samples = 1,
+    num_samples = 4,
   })
 
   camera(perspective_camera {
     transform = look_at(
-        point(-5, 7.5, 8),
-        point(0.5, 7, 0.5),
+        point(20, 15.2, -8),
+        point(0.5, 14.0, 0.5),
         vector(0, 1, 0)) *
       scale(-1, 1, 1),
-    fov = pi / 4,
+    fov = pi / 3,
   })
 end)
 
 local samples = 3
-local res = 400
+local res = 1200
 
 write_png_image("trees.png", render(scene, {
   x_res = res,
