@@ -15,6 +15,12 @@ return function(world)
     world:define_cube_voxel(m.make_matte {
       color = rgbh("57441b"),
     }),
+    world:define_cube_voxel(m.make_matte {
+      color = rgbh("504b44"),
+    }),
+    world:define_cube_voxel(m.make_matte {
+      color = rgbh("342917"),
+    }),
   }
 
   world:define_block("log", 17, function(block)
@@ -62,7 +68,16 @@ return function(world)
     rgbh("667718"),
   }
 
-  function generate_oak_leaf(B, rng)
+  local dark_oak_leaf_materials = leaf_materials {
+    rgbh("315816"),
+    rgbh("2e4e18"),
+    rgbh("395e21"),
+    rgbh("376618"),
+    rgbh("3c6422"),
+    rgbh("2d5215"),
+  }
+
+  function generate_oak_leaf_with_materials(B, rng, leaf_materials)
     local lobes = floor(rng() * 4 + 5)
     if lobes % 2 == 0 then
       lobes = lobes + 1
@@ -77,7 +92,15 @@ return function(world)
       end
       return g.vec2(x * x_sign, y)
     end
-    generate_lobed_leaf(B, rng, lobes, make_lobe, oak_leaf_materials)
+    generate_lobed_leaf(B, rng, lobes, make_lobe, leaf_materials)
+  end
+
+  function generate_oak_leaf(B, rng)
+    generate_oak_leaf_with_materials(B, rng, oak_leaf_materials)
+  end
+
+  function generate_dark_oak_leaf(B, rng)
+    generate_oak_leaf_with_materials(B, rng, dark_oak_leaf_materials)
   end
 
   local spruce_leaf_materials = leaf_materials {
@@ -170,6 +193,28 @@ return function(world)
     generate_lobed_leaf(B, rng, lobes, make_lobe, jungle_leaf_materials)
   end
 
+  local acacia_leaf_materials = leaf_materials {
+    rgbh("ada42b"),
+    rgbh("9ca72e"),
+    rgbh("a6b038"),
+    rgbh("abb541"),
+    rgbh("97a222"),
+    rgbh("a69e25"),
+  }
+
+  function generate_acacia_leaf(B, rng)
+    local lobes = floor(rng() * 5 + 20)
+    function make_lobe(lobe, x_sign)
+      local y = lobe / (lobes + 1) + 1/40 * rng()
+      local x = 5/40 * sin(pi * lobe / (lobes + 1)) + 1/20 + 1/20 * rng()
+      if lobe % 2 == 1 then
+        x = x * (0.1 + 0.2 * rng())
+      end
+      return g.vec2(x * x_sign, y)
+    end
+    generate_lobed_leaf(B, rng, lobes, make_lobe, acacia_leaf_materials)
+  end
+
   function sample_sphere(u1, u2)
     local z = 1 - 2 * u1;
     local r = sqrt(max(0, 1 - z * z));
@@ -204,14 +249,23 @@ return function(world)
     generate_leaves_voxels(B, 5000, 0.1, generate_spruce_leaf),
     generate_leaves_voxels(B, 150, 0.15, generate_birch_leaf),
     generate_leaves_voxels(B, 150, 0.35, generate_jungle_leaf),
+    generate_leaves_voxels(B, 80, 0.3, generate_acacia_leaf),
+    generate_leaves_voxels(B, 180, 0.3, generate_dark_oak_leaf),
   }
 
-  world:define_block("leaves", 18, function(block)
+  function leaves_block(block)
     local leaf_type = (block.data & 3) + 1
+    if block.id == 161 then
+      leaf_type = 4 + leaf_type
+    end
+
     local voxels = leaves_voxels[leaf_type]
     local i = (2 * block.pos:x() + 3 * block.pos:y() + 5 * block.pos:z()) % #voxels
     return voxels[i + 1]
-  end)
+  end
+
+  world:define_block("leaves", 18, leaves_block)
+  world:define_block("leaves2", 161, leaves_block)
 
   local vines_materials = leaf_materials {
     rgbh("8cbc30"),
