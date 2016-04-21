@@ -345,7 +345,9 @@ return function(world)
     elseif block.data == 8 then
       rot = 3
     else
-      error("Bad vines orientation " .. block.data)
+      print("Bad vines orientation " .. block.data .. " at " ..
+        block.pos:x() .. ", " .. block.pos:y() .. ", " .. block.pos:z())
+      return 0
     end
 
     local i = (2 * block.pos:x() + 3 * block.pos:y() + 5 * block.pos:z()) % #vines_voxels
