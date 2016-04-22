@@ -29,8 +29,8 @@ function dsl.define_scene(callback)
   return scene
 end
 
-function dsl.block(callback) b.block(B, callback) end
-function dsl.frame(callback) b.frame(B, callback) end
+function dsl.block(callback) return b.block(B, callback) end
+function dsl.frame(callback) return b.frame(B, callback) end
 
 function dsl.transform(transform) b.set_transform(B, transform) end
 function dsl.material(material) b.set_material(B, material) end

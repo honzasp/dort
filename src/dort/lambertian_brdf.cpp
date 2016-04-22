@@ -3,8 +3,12 @@
 #include "dort/rng.hpp"
 
 namespace dort {
-  Spectrum LambertianBrdf::f(const Vector&, const Vector&) const {
-    return this->reflectance * INV_PI;
+  Spectrum LambertianBrdf::f(const Vector& wo, const Vector& wi) const {
+    if(Bsdf::same_hemisphere(wo, wi)) {
+      return this->reflectance * INV_PI;
+    } else {
+      return Spectrum(0.f);
+    }
   }
 
   Spectrum LambertianBrdf::sample_f(const Vector& wo, Vector& out_wi,

@@ -46,7 +46,11 @@ namespace dort {
   }
 
   float cosine_hemisphere_pdf(const Vector& w) {
-    return max(0.f, w.v.z * INV_PI);
+    // NOTE: this is not technically correct, because cosine_hemisphere_sample
+    // never returns vectors with negative z, so there should really be max(0.f,
+    // ...). However, this function is mostly used in BxDFs, where we already
+    // know that w is in the correct hemisphere.
+    return abs(w.v.z * INV_PI);
   }
 
   Vector uniform_cone_sample(float cos_theta_max, float u1, float u2) {

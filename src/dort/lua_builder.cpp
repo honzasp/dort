@@ -60,6 +60,7 @@ namespace dort {
       {"set_option", lua_builder_set_option},
       {"add_shape", lua_builder_add_shape},
       {"add_primitive", lua_builder_add_primitive},
+      {"add_triangle", lua_builder_add_triangle},
       {"add_light", lua_builder_add_light},
       {"add_read_ply_mesh", lua_builder_add_read_ply_mesh},
       {"add_read_ply_mesh_as_bvh", lua_builder_add_read_ply_mesh_as_bvh},

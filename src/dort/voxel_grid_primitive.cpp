@@ -33,7 +33,7 @@ namespace dort {
         Vec3 entry_pos = floor(entry.p_hit + 1e-3 * voxel_ray_dir.v);
 
         Ray prim_ray(Point(entry.p_hit - entry_pos), voxel_ray_dir,
-          0.f, exit.t_hit - entry.t_hit);
+          -1e-3, exit.t_hit - entry.t_hit);
         const auto& prim = this->voxel_materials.prim_voxels.at(-voxel);
         if(!prim->intersect(prim_ray, out_isect)) {
           return true;
@@ -41,7 +41,7 @@ namespace dort {
 
         out_isect.world_diff_geom = this->voxel_to_frame.apply(
           translate(Vector(entry_pos)).apply(out_isect.world_diff_geom));
-        ray.t_max = min(ray.t_max, prim_ray.t_max);
+        ray.t_max = min(ray.t_max, prim_ray.t_max + entry.t_hit);
         return false;
       } else {
         DiffGeom voxel_geom;
@@ -132,8 +132,11 @@ namespace dort {
   {
     BranchOrLeaf ret;
     if(VoxelGridPrimitive::is_box_homogeneous(grid, box, ret.leaf_voxel)) {
-      ret.is_leaf = true;
-      return ret;
+      Vec3i r = box.p_max - box.p_min;
+      if(ret.leaf_voxel >= 0 || (r.x <= 1 && r.y <= 1 && r.z <= 1)) {
+        ret.is_leaf = true;
+        return ret;
+      }
     }
 
     // TODO: compute best axis for small boxes
@@ -152,17 +155,17 @@ namespace dort {
     if(left.is_leaf && right.is_leaf) {
       this->nodes.at(idx) = Node::make_leaf_leaf(axis,
           left.leaf_voxel, right.leaf_voxel);
-      full = left.leaf_voxel != VOXEL_EMPTY && right.leaf_voxel != VOXEL_EMPTY;
+      full = left.leaf_voxel > 0 && right.leaf_voxel > 0;
     } else if(left.is_leaf && !right.is_leaf) {
       assert(right.branch_idx == idx + 1);
       this->nodes.at(idx) = Node::make_leaf_branch(axis, left.leaf_voxel,
           true, right.branch_full);
-      full = left.leaf_voxel != VOXEL_EMPTY && right.branch_full;
+      full = left.leaf_voxel > 0 && right.branch_full;
     } else if(!left.is_leaf && right.is_leaf) {
       assert(left.branch_idx == idx + 1);
       this->nodes.at(idx) = Node::make_leaf_branch(axis, right.leaf_voxel,
           false, left.branch_full);
-      full = right.leaf_voxel != VOXEL_EMPTY && left.branch_full;
+      full = right.leaf_voxel > 0 && left.branch_full;
     } else {
       assert(left.branch_idx == idx + 1);
       assert(right.branch_idx > idx);

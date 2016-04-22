@@ -29,6 +29,7 @@ function build_world(builder, block_grid, box, params)
   setmetatable(world, World)
 
   world.voxel_grid = dort.grid.make()
+  world.block_grid = block_grid
   world.builder = builder
   world.block_funs = {}
   world.block_names = {}
@@ -55,15 +56,13 @@ function build_world(builder, block_grid, box, params)
   ;(require "minecraft/blocks/stones")(world)
   ;(require "minecraft/blocks/plants")(world)
   ;(require "minecraft/blocks/utility")(world)
+  ;(require "minecraft/blocks/water")(world)
 
   for z = box:min():z(), box:max():z() - 1 do
     for y = box:min():y(), box:max():y() - 1 do
       for x = box:min():x(), box:max():x() - 1 do
         local pos = dort.geometry.vec3i(x, y, z)
-        local block = block_grid:get(pos)
-        local block_id = minecraft.read.block_id(block)
-        local block_data = minecraft.read.block_data(block)
-        world.voxel_grid:set(pos, world:block_to_voxel(pos, block_id, block_data))
+        world.voxel_grid:set(pos, world:block_to_voxel(world:block(pos)))
       end
     end
   end
@@ -71,18 +70,25 @@ function build_world(builder, block_grid, box, params)
   return world
 end
 
+function World:block(pos)
+  local block_int = self.block_grid:get(pos)
+  local block_id = minecraft.read.block_id(block_int)
+  local block_data = minecraft.read.block_data(block_int)
+  return { pos = pos, id = block_id, data = block_data }
+end
+
 function World:option(key)
   return self.options[key]
 end
 
-function World:block_to_voxel(block_pos, block_id, block_data)
-  if block_id == 0 then
+function World:block_to_voxel(block)
+  if block.id == 0 then
     return 0
   end
 
-  local block_fun = self.block_funs[block_id]
+  local block_fun = self.block_funs[block.id]
   if block_fun then
-    return block_fun({ pos = block_pos, id = block_id, data = block_data })
+    return block_fun(block)
   else
     return self.unknown_voxel
   end

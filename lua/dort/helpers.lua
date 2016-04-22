@@ -34,3 +34,9 @@ function dort.geometry.rotate_z_around(angle, origin)
     g.rotate_z(angle) *
     g.translate(-origin:x(), -origin:y(), -origin:z())
 end
+
+function dort.geometry.scale_around(scale, origin)
+  return g.translate(origin:x(), origin:y(), origin:z()) *
+    g.scale(scale) *
+    g.translate(-origin:x(), -origin:y(), -origin:z())
+end

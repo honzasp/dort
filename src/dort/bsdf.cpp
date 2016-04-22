@@ -30,6 +30,7 @@ namespace dort {
       coordinate_system(this->nn, this->sn, this->tn);
     } else {
       this->sn = diff_geom.dpdu / len;
+      assert(abs_dot(this->sn, this->nn) < 1e-3);
       this->tn = cross(this->nn, this->sn);
     }
   }
@@ -39,14 +40,14 @@ namespace dort {
   }
 
   Spectrum Bsdf::f(const Vector& wo, const Vector& wi, BxdfFlags flags) const {
-    if(dot(wo, this->nn_geom) * dot(wi, this->nn_geom) > 0.f) {
+    Vector wo_local = this->world_to_local(wo);
+    Vector wi_local = this->world_to_local(wi);
+
+    if(Bsdf::same_hemisphere(wo_local, wi_local)) {
       flags = BxdfFlags(flags & ~BSDF_TRANSMISSION);
     } else {
       flags = BxdfFlags(flags & ~BSDF_REFLECTION);
     }
-
-    Vector wo_local = this->world_to_local(wo);
-    Vector wi_local = this->world_to_local(wi);
 
     Spectrum f_sum;
     for(const auto& bxdf: this->bxdfs) {
@@ -85,6 +86,10 @@ namespace dort {
 
     out_wi = this->local_to_world(wi_local);
     out_flags = sampled_bxdf->flags;
+
+    if(sampled_pdf == 0.f) {
+      return Spectrum(0.f);
+    }
 
     if(sampled_bxdf->flags & BSDF_SPECULAR || num_bxdfs == 1) {
       out_pdf = sampled_pdf;
