@@ -9,8 +9,10 @@ namespace dort {
   {
     auto bsdf = std::make_unique<Bsdf>(shading_geom, nn_geom);
     Spectrum reflect = this->reflectance->evaluate(shading_geom);
+    float eta = this->eta->evaluate(shading_geom);
+
     bsdf->add(std::make_unique<SpecularBrdf<FresnelConstant>>(
-          reflect, FresnelConstant(1.f, 1.f)));
+          reflect, FresnelConstant(1.f, eta)));
     return bsdf;
   }
 

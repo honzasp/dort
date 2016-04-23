@@ -329,7 +329,7 @@ namespace dort {
     LuaTexture lua_tex_other;
 
     if(lua_tex_0.in_type != lua_tex_1.in_type) {
-      return luaL_error(l, "Textures that are added must have the same input type");
+      return luaL_error(l, "Textures that are multiplied must have the same input type");
     } else if(lua_tex_0.out_type == LuaTextureOut::Float) {
       lua_tex_float = lua_tex_0;
       lua_tex_other = lua_tex_1;

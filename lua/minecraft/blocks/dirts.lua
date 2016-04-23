@@ -19,6 +19,6 @@ return function(world)
   ))
 
   world:define_block("gravel", 13, world:define_cube_voxel(
-    m.make_matte { color = rgb(127, 124, 123) / 25 }
+    m.make_matte { color = rgb(127, 124, 123) / 256 }
   ))
 end

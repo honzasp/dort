@@ -25,7 +25,7 @@ namespace dort {
   }
 
   std::unique_ptr<Bsdf> TriangleShapePrimitive::get_bsdf(const Intersection& isect) const {
-    return this->material->get_bsdf(isect.frame_diff_geom);
+    return this->material->get_bsdf(isect.world_diff_geom);
   }
 
   const AreaLight* TriangleShapePrimitive::get_area_light(const DiffGeom&) const {

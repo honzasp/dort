@@ -2,6 +2,29 @@ local _ENV = require "minecraft/blocks/_env"
 return function(world)
   local B = world.builder
 
+  local water_material = m.make_mirror {
+    color = rgbh("e0e7ff"),
+    eta = 1.3,
+  }
+
+  local water_surface_material = m.make_bump {
+    material = water_material,
+    bump = (t.make_const_2d(0.01) * t.make_value_noise_2d {
+        { frequency = 2.1, weight = 1 },
+        { frequency = 5.3, weight = 1 },
+        { frequency = 12.7, weight = 1 },
+      }) .. t.make_map_xy(g.rotate_x(pi / 2)),
+  }
+
+  local water_side_material = m.make_bump {
+    material = water_material,
+    bump = (t.make_const_2d(0.01) * t.make_value_noise_2d {
+        { frequency = 2.1, weight = 1 },
+        { frequency = 5.3, weight = 1 },
+        { frequency = 12.7, weight = 1 },
+      }) .. t.make_map_xy(g.rotate_x(pi / 2)),
+  }
+
   function water_mesh(height) 
     return s.make_mesh {
       points = {
@@ -25,11 +48,23 @@ return function(world)
     }
   end
 
+  local surface_height = 15/16
   local full_water_mesh = water_mesh(1)
-  local surface_water_mesh = water_mesh(15/16)
-  local water_material = m.make_matte { 
-    color = rgb(0.5, 0.5, 1),
-  }
+  local surface_water_mesh = water_mesh(surface_height)
+
+  local water_surface = b.frame(B, function()
+    b.set_material(B, water_surface_material)
+    b.set_transform(B, g.rotate_x_around(pi/2, g.point(0.5, 0.5, 0.5)))
+    b.set_transform(B, g.translate(0.0, 0.0, 1 - surface_height))
+    b.add_shape(B, s.make_polygon {
+      vertices = {
+        g.vec2(0, 0),
+        g.vec2(1, 0),
+        g.vec2(1, 1),
+        g.vec2(0, 1),
+      }
+    })
+  end)
 
   function generate_water_voxel(B, sides)
     if sides == 0 then
@@ -51,11 +86,14 @@ return function(world)
     end
 
     return world:define_primitive_voxel(b.frame(B, function()
-      b.set_material(B, water_material)
-
       function side(idx)
-        b.add_triangle(B, mesh, 6 * idx)
-        b.add_triangle(B, mesh, 6 * idx + 3)
+        if idx == 0 then
+          b.add_primitive(B, water_surface)
+        else
+          b.set_material(B, water_side_material)
+          b.add_triangle(B, mesh, 6 * idx)
+          b.add_triangle(B, mesh, 6 * idx + 3)
+        end
       end
 
       if up then side(0) end
@@ -77,17 +115,18 @@ return function(world)
       return 0
     end
 
-    function isnt_side_water(x, y, z)
-      return not is_water(world:block(block.pos + g.vec3i(x, y, z)))
+    function isnt_side_solid(x, y, z)
+      local neigh = world:block(block.pos + g.vec3i(x, y, z))
+      return neigh.id == 0 or ((neigh.id == 9 or neigh.id == 8) and neigh.data ~= 0)
     end
 
     local sides = 0
-    if isnt_side_water(0, 1, 0) then sides = sides + 1 end
-    if isnt_side_water(0, -1, 0) then sides = sides + 2 end
-    if isnt_side_water(0, 0, -1) then sides = sides + 4 end
-    if isnt_side_water(0, 0, 1) then sides = sides + 8 end
-    if isnt_side_water(-1, 0, 0) then sides = sides + 16 end
-    if isnt_side_water(1, 0, 0) then sides = sides + 32 end
+    if isnt_side_solid(0, 1, 0) then sides = sides + 1 end
+    if isnt_side_solid(0, -1, 0) then sides = sides + 2 end
+    if isnt_side_solid(0, 0, -1) then sides = sides + 4 end
+    if isnt_side_solid(0, 0, 1) then sides = sides + 8 end
+    if isnt_side_solid(-1, 0, 0) then sides = sides + 16 end
+    if isnt_side_solid(1, 0, 0) then sides = sides + 32 end
 
     return water_voxels[sides + 1]
   end

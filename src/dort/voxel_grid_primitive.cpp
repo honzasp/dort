@@ -30,10 +30,11 @@ namespace dort {
 
       if(voxel < 0) {
         Vector voxel_ray_dir = this->voxel_to_frame.apply_inv(ray.dir);
-        Vec3 entry_pos = floor(entry.p_hit + 1e-3 * voxel_ray_dir.v);
+        Vec3 entry_pos = floor(entry.p_hit + 1e-3f * voxel_ray_dir.v);
 
+        float pad = entry.on_surface ? 1e-3f : 0.f;
         Ray prim_ray(Point(entry.p_hit - entry_pos), voxel_ray_dir,
-          -1e-3, exit.t_hit - entry.t_hit);
+          -pad, exit.t_hit - entry.t_hit + pad);
         const auto& prim = this->voxel_materials.prim_voxels.at(-voxel);
         if(!prim->intersect(prim_ray, out_isect)) {
           return true;
@@ -117,7 +118,7 @@ namespace dort {
     assert(face <= 6);
 
     if(face == 6) {
-      return std::make_unique<Bsdf>(isect.frame_diff_geom, isect.frame_diff_geom.nn);
+      return std::make_unique<Bsdf>(isect.world_diff_geom, isect.frame_diff_geom.nn);
     }
     const auto& cube_material = this->voxel_materials.cube_voxels.at(voxel);
     return cube_material.faces.at(face)->get_bsdf(isect.frame_diff_geom);
