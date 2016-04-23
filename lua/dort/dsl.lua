@@ -16,6 +16,9 @@ local B
 function dsl.get_builder()
   return B
 end
+function dsl.get_transform()
+  return b.get_transform(B)
+end
 
 function dsl.define_scene(callback)
   local prev_builder = B

@@ -31,4 +31,7 @@ namespace dort {
         float& out_pdf, float u1, float u2) const override final;
     virtual float f_pdf(const Vector& wo, const Vector& wi) const override final;
   };
+
+  template<class F>
+  float specular_reflectance(const F& fresnel, const Vector& wo, Vector& out_wi);
 }

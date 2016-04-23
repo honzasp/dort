@@ -22,23 +22,23 @@ namespace dort {
       if(!reflect.is_black()) {
         bsdf->add(std::make_unique<MicrofacetBrdf<
             BeckmannD, FresnelDielectric, SmithG<BeckmannApproxG1>>>(
-          reflect, BeckmannD(alpha_b), FresnelDielectric(1.f, eta),
+          reflect, BeckmannD(alpha_b), FresnelDielectric(eta),
           SmithG<BeckmannApproxG1>(BeckmannApproxG1(alpha_b))));
       }
       if(!transmit.is_black()) {
         bsdf->add(std::make_unique<MicrofacetBtdf<
             BeckmannD, FresnelDielectric, SmithG<BeckmannApproxG1>>>(
-          transmit, BeckmannD(alpha_b), FresnelDielectric(1.f, eta),
+          transmit, BeckmannD(alpha_b), FresnelDielectric(eta),
           SmithG<BeckmannApproxG1>(BeckmannApproxG1(alpha_b))));
       }
     } else {
       if(!reflect.is_black()) {
         bsdf->add(std::make_unique<SpecularBrdf<FresnelDielectric>>(
-              reflect, FresnelDielectric(1.f, eta)));
+              reflect, FresnelDielectric(eta)));
       }
       if(!transmit.is_black()) {
         bsdf->add(std::make_unique<SpecularBtdf>(
-              transmit, FresnelDielectric(1.f, eta)));
+              transmit, FresnelDielectric(eta)));
       }
     }
     return bsdf;

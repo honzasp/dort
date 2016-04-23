@@ -2,10 +2,18 @@ local _ENV = require "minecraft/blocks/_env"
 return function(world)
   local B = world.builder
 
-  local water_material = m.make_mirror {
-    color = rgbh("e0e7ff"),
-    eta = 1.3,
-  }
+  local water_material
+  if world:option("water_glass") then
+    water_material = m.make_glass {
+      transmit_color = rgb(1),
+      color = rgb(0),
+      eta = 1.6,
+    }
+  else
+    water_material = m.make_mirror {
+      color = rgbh("e0e7ff"),
+    }
+  end
 
   local water_surface_material = m.make_bump {
     material = water_material,

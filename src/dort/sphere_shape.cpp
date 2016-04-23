@@ -21,7 +21,7 @@ namespace dort {
     float t_hit;
     if(ray.t_min < t0 && t0 < ray.t_max) {
       t_hit = t0;
-    } else if(ray.t_min < t1 && t1 < ray.t_min) {
+    } else if(ray.t_min < t1 && t1 < ray.t_max) {
       t_hit = t1;
     } else {
       return false;

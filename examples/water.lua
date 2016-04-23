@@ -9,17 +9,20 @@ local scene = define_scene(function()
     box = box,
   })
 
-  if true then
   add_light(infinite_light {
-    radiance = rgb(1,1,1) * 1,
+    radiance = rgb(1,1,1),
     num_samples = 4,
   })
-  else
-  add_light(point_light {
-    point = point(0.5, 10, 0.5),
-    intensity = rgb(1,1,1) * 100,
+  add_light(diffuse_light {
+    transform = translate(0.5, 2.0, 0.5),
+    shape = sphere { radius = 0.3 },
+    radiance = rgb(1, 1, 1) * 30,
   })
-  end
+  block(function()
+    transform(translate(0.5, 2.0, 0.5))
+    material(matte_material { color = rgb(1, 1, 0) })
+    add_shape(sphere { radius = 0.3-0.001 })
+  end)
 
   camera(perspective_camera {
     transform = look_at(
@@ -31,8 +34,8 @@ local scene = define_scene(function()
   })
 end)
 
-local samples = 1
-local res = 400
+local samples = 4
+local res = 100
 
 write_png_image("water.png", render(scene, {
   x_res = res,
@@ -45,4 +48,5 @@ write_png_image("water.png", render(scene, {
     radius = 1.5,
   },
   renderer = "direct",
+  max_depth = 10,
 }))

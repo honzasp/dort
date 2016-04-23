@@ -92,7 +92,7 @@ namespace dort {
     }
 
     if(sampled_bxdf->flags & BSDF_SPECULAR || num_bxdfs == 1) {
-      out_pdf = sampled_pdf;
+      out_pdf = sampled_pdf / float(num_bxdfs);
       return sampled_f;
     }
 

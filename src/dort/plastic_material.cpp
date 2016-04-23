@@ -24,7 +24,7 @@ namespace dort {
           BeckmannD, FresnelDielectric, SmithG<BeckmannApproxG1>>>(
         reflection,
         BeckmannD(alpha_b),
-        FresnelDielectric(1.f, eta),
+        FresnelDielectric(eta),
         SmithG<BeckmannApproxG1>(BeckmannApproxG1(alpha_b))));
     }
     return bsdf;

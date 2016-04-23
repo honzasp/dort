@@ -43,7 +43,7 @@ namespace dort {
     float dot_i_n = Bsdf::cos_theta(wi);
     float dot_o_n = Bsdf::cos_theta(wo);
 
-    float fresnel = this->fresnel.reflectance(dot_i_m);
+    float fresnel = this->fresnel.reflectance(dot_i_m, dot_o_m);
     float geom = this->geom.g(wo, wi, m);
     float dis = this->distrib.d(m);
 
@@ -59,11 +59,7 @@ namespace dort {
 
   template<class D, class F, class G>
   float MicrofacetBtdf<D, F, G>::get_eta_o(const Vector& wo) const {
-    if(Bsdf::cos_theta(wo) < 0.f) {
-      return this->fresnel.eta_t() / this->fresnel.eta_i();
-    } else {
-      return this->fresnel.eta_i() / this->fresnel.eta_t();
-    }
+    return Bsdf::cos_theta(wo) > 0.f ? this->fresnel.inv_eta : this->fresnel.eta;
   }
 
   template class MicrofacetBtdf<

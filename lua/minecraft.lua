@@ -22,6 +22,7 @@ World.__index = World
 
 local DEFAULT_OPTIONS = {
   torch_num_samples = 1,
+  water_glass = false,
 }
 
 function build_world(builder, block_grid, box, params)

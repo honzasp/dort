@@ -17,11 +17,11 @@ namespace dort {
 
       if(bounces == 0 || last_bxdf_was_specular) {
         if(isected) {
-          radiance += isect.emitted_radiance(-next_ray.dir);
+          radiance += throughput * isect.emitted_radiance(-next_ray.dir);
         } else {
           for(const auto& light: scene.lights) {
             if(light->flags & LIGHT_BACKGROUND) {
-              radiance += light->background_radiance(next_ray);
+              radiance += throughput * light->background_radiance(next_ray);
             }
           }
         }
@@ -72,7 +72,7 @@ namespace dort {
       next_ray = Ray(geom.p, bsdf_wi, geom.ray_epsilon);
       last_bxdf_was_specular = bsdf_flags & BSDF_SPECULAR;
 
-      if(bounces > 3) {
+      if(bounces > this->max_depth / 2) {
         float term_prob = max(0.05f, 1.f - throughput.average());
         if(sampler.random_1d() < term_prob) {
           break;

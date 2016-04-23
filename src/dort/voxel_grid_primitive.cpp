@@ -264,7 +264,8 @@ namespace dort {
     }
 
     assert(mid_entry.on_surface);
-    assert(mid_entry.t_hit >= entry.t_hit && mid_entry.t_hit <= exit.t_hit);
+    assert(mid_entry.t_hit - entry.t_hit > -1e-3);
+    assert(mid_entry.t_hit - exit.t_hit < 1e-3);
     //assert(box.contains(floor_vec3i(mid_entry.p_hit)));
     return this->traverse_walk_both_halves(ray, node_idx, node, axis,
         left_box, right_box, entry, exit, mid_entry, callback);

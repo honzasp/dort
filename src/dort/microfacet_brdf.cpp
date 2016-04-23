@@ -33,7 +33,10 @@ namespace dort {
   {
     float cos_o = Bsdf::cos_theta(wo);
     float cos_i = Bsdf::cos_theta(wi);
-    float fresnel = this->fresnel.reflectance(dot(wi, m));
+    // TODO: is this correct??
+    float eta_o = this->get_eta_o(wo);
+    Vector transmit_m = -normalize(eta_o * wo + wi);
+    float fresnel = this->fresnel.reflectance(dot(wi, transmit_m), dot(wo, transmit_m));
     float geom = this->geom.g(wo, wi, m);
     float dis = this->distrib.d(m);
     return this->reflectance * (0.25f * fresnel * geom * dis / (cos_o * cos_i));

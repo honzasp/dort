@@ -11,8 +11,10 @@ namespace dort {
     Spectrum reflect = this->reflectance->evaluate(shading_geom);
     float eta = this->eta->evaluate(shading_geom);
 
-    bsdf->add(std::make_unique<SpecularBrdf<FresnelConstant>>(
-          reflect, FresnelConstant(1.f, eta)));
+    if(!reflect.is_black()) {
+      bsdf->add(std::make_unique<SpecularBrdf<FresnelConstant>>(
+            reflect, FresnelConstant(eta, 1.f)));
+    }
     return bsdf;
   }
 
@@ -24,10 +26,14 @@ namespace dort {
     Spectrum transmit = this->transmittance->evaluate(shading_geom);
     float eta = this->eta->evaluate(shading_geom);
 
-    bsdf->add(std::make_unique<SpecularBrdf<FresnelDielectric>>(
-          reflect, FresnelDielectric(1.f, eta)));
-    bsdf->add(std::make_unique<SpecularBtdf>(
-          transmit, FresnelDielectric(1.f, eta)));
+    if(!reflect.is_black()) {
+      bsdf->add(std::make_unique<SpecularBrdf<FresnelDielectric>>(
+            reflect, FresnelDielectric(eta)));
+    }
+    if(!transmit.is_black()) {
+      bsdf->add(std::make_unique<SpecularBtdf>(
+            transmit, FresnelDielectric(eta)));
+    }
     return bsdf;
   }
 }
