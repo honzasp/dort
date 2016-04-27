@@ -1,4 +1,5 @@
 #include "dort/cube_shape.hpp"
+#include "dort/cylinder_shape.hpp"
 #include "dort/disk_shape.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
@@ -32,6 +33,7 @@ namespace dort {
     const luaL_Reg shape_funs[] = {
       {"make_sphere", lua_shape_make_sphere},
       {"make_disk", lua_shape_make_disk},
+      {"make_cylinder", lua_shape_make_cylinder},
       {"make_cube", lua_shape_make_cube},
       {"make_polygon", lua_shape_make_polygon},
       {"make_mesh", lua_shape_make_mesh},
@@ -62,6 +64,17 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     lua_push_shape(l, std::make_shared<DiskShape>(radius, z));
+    return 1;
+  }
+
+  int lua_shape_make_cylinder(lua_State* l) {
+    int p = 1;
+    float radius = lua_param_float(l, p, "radius");
+    float z_min = lua_param_float_opt(l, p, "z_min", -1.f);
+    float z_max = lua_param_float_opt(l, p, "z_max", 1.f);
+    lua_params_check_unused(l, p);
+
+    lua_push_shape(l, std::make_shared<CylinderShape>(radius, z_min, z_max));
     return 1;
   }
 

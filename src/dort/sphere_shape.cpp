@@ -4,42 +4,33 @@
 
 namespace dort {
   SphereShape::SphereShape(float radius):
-    radius(radius), inv_radius(1.f / radius)
+    radius(radius)
   { }
 
   bool SphereShape::hit(const Ray& ray, float& out_t_hit,
       float& out_ray_epsilon, DiffGeom& out_diff_geom) const
   {
-    float t0, t1;
-    if(!this->solve_hit_t(ray, t0, t1)) {
-      return false;
-    }
-    if(t1 < t0) {
-      std::swap(t0, t1);
-    }
-
     float t_hit;
-    if(ray.t_min < t0 && t0 < ray.t_max) {
-      t_hit = t0;
-    } else if(ray.t_min < t1 && t1 < ray.t_max) {
-      t_hit = t1;
-    } else {
+    if(!this->solve_hit_t(ray, t_hit)) {
       return false;
     }
 
     Point p_hit = ray.point_t(t_hit);
-    float x = p_hit.v.x, y = p_hit.v.y, z = p_hit.v.z;
+    float x = p_hit.v.x;
+    float y = p_hit.v.y;
+    float z = p_hit.v.z;
+
     float phi = atan(y, z);
     if(phi < 0.f) {
       phi = phi + TWO_PI;
     }
-    float theta = acos(z * this->inv_radius);
+    float theta = acos(z / this->radius);
 
     float r_sin_theta = sqrt(x*x + y*y);
     float inv_r_sin_theta = 1.f / r_sin_theta;
 
     out_diff_geom.p = p_hit;
-    out_diff_geom.nn = Normal(p_hit - Point(0.f, 0.f, 0.f)) * this->inv_radius;
+    out_diff_geom.nn = Normal(x, y, z) / this->radius;
     out_diff_geom.u = phi * INV_TWO_PI;
     out_diff_geom.v = theta * INV_PI;
     out_diff_geom.dpdu = Vector(-TWO_PI * y, TWO_PI * x, 0.f);
@@ -53,18 +44,8 @@ namespace dort {
   }
 
   bool SphereShape::hit_p(const Ray& ray) const {
-    float t0, t1;
-    if(!this->solve_hit_t(ray, t0, t1)) {
-      return false;
-    }
-
-    if(ray.t_min < t0 && t0 < ray.t_max) {
-      return true;
-    } else if(ray.t_min < t1 && t1 < ray.t_max) {
-      return true;
-    } else {
-      return false;
-    }
+    float t_hit;
+    return this->solve_hit_t(ray, t_hit);
   }
 
   Box SphereShape::bounds() const {
@@ -83,7 +64,7 @@ namespace dort {
   }
 
   float SphereShape::point_pdf(const Point&) const {
-    return uniform_sphere_pdf();
+    return uniform_sphere_pdf() / this->area();
   }
 
   Point SphereShape::sample_point_eye(const Point& eye,
@@ -106,15 +87,13 @@ namespace dort {
     Vector ray_dir = cone_x * cone_vec.v.x +
       cone_y * cone_vec.v.y + cone_z * cone_vec.v.z;
     Ray ray(eye, ray_dir);
-    float t0, t1;
-    if(!this->solve_hit_t(ray, t0, t1)) {
-      t0 = dist;
-    } else if(t1 < t0) {
-      t0 = t1;
+    float t_hit;
+    if(!this->solve_hit_t(ray, t_hit)) {
+      t_hit = dist;
     }
 
-    Point pt = ray.point_t(t0);
-    out_n = Normal(pt.v) * this->inv_radius;
+    Point pt = ray.point_t(t_hit);
+    out_n = Normal(pt.v) / this->radius;
     return pt;
   }
 
@@ -129,10 +108,26 @@ namespace dort {
     return uniform_cone_pdf(cos_theta_max);
   }
 
-  bool SphereShape::solve_hit_t(const Ray& ray, float& t0, float& t1) const {
-    float A = dot(ray.dir.v, ray.dir.v);
-    float B = 2.f * dot(ray.orig.v, ray.dir.v);
-    float C = dot(ray.orig.v, ray.orig.v) - this->radius * this->radius;
-    return solve_quadratic(A, B, C, t0, t1);
+  bool SphereShape::solve_hit_t(const Ray& ray, float& out_t_hit) const {
+    float a = dot(ray.dir.v, ray.dir.v);
+    float b = 2.f * dot(ray.orig.v, ray.dir.v);
+    float c = dot(ray.orig.v, ray.orig.v) - this->radius * this->radius;
+    float t0, t1;
+    if(!solve_quadratic(a, b, c, t0, t1)) {
+      return false;
+    }
+
+    if(t1 < t0) {
+      std::swap(t0, t1);
+    }
+
+    if(ray.t_min <= t0 && t0 <= ray.t_max) {
+      out_t_hit = t0;
+    } else if(ray.t_min <= t1 && t1 <= ray.t_max) {
+      out_t_hit = t1;
+    } else {
+      return false;
+    }
+    return true;
   }
 }

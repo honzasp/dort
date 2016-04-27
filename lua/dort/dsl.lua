@@ -116,6 +116,7 @@ dsl.stratified_sampler = dort.sampler.make_stratified
 
 dsl.sphere = dort.shape.make_sphere
 dsl.disk = dort.shape.make_disk
+dsl.cylinder = dort.shape.make_cylinder
 dsl.cube = dort.shape.make_cube
 dsl.polygon = dort.shape.make_polygon
 dsl.read_ply_mesh = dort.shape.read_ply_mesh

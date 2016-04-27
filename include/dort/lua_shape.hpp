@@ -11,6 +11,7 @@ namespace dort {
 
   int lua_shape_make_sphere(lua_State* l);
   int lua_shape_make_disk(lua_State* l);
+  int lua_shape_make_cylinder(lua_State* l);
   int lua_shape_make_cube(lua_State* l);
   int lua_shape_make_polygon(lua_State* l);
   int lua_shape_make_mesh(lua_State* l);

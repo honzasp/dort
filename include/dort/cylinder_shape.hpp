@@ -1,12 +1,13 @@
 #pragma once
-#include <memory>
 #include "dort/shape.hpp"
 
 namespace dort {
-  class SphereShape final: public Shape {
+  class CylinderShape final: public Shape {
     float radius;
+    float z_min;
+    float z_max;
   public:
-    SphereShape(float radius);
+    CylinderShape(float radius, float z_min, float z_max);
     virtual bool hit(const Ray& ray, float& out_t_hit,
         float& out_ray_epsilon, DiffGeom& out_diff_geom) const final;
     virtual bool hit_p(const Ray& ray) const override final;
@@ -16,9 +17,6 @@ namespace dort {
     virtual Point sample_point(float u1, float u2,
         Normal& out_n) const override final;
     virtual float point_pdf(const Point& pt) const override final;
-    virtual Point sample_point_eye(const Point& eye,
-        float u1, float u2, Normal& out_n) const override final;
-    virtual float point_eye_pdf(const Point& eye, const Vector& w) const override final;
   private:
     bool solve_hit_t(const Ray& ray, float& out_t_hit) const;
   };
