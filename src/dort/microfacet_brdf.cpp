@@ -42,6 +42,11 @@ namespace dort {
     return this->reflectance * (0.25f * fresnel * geom * dis / (cos_o * cos_i));
   }
 
+  template<class D, class F, class G>
+  float MicrofacetBrdf<D, F, G>::get_eta_o(const Vector& wo) const {
+    return Bsdf::cos_theta(wo) > 0.f ? this->fresnel.inv_eta : this->fresnel.eta;
+  }
+
   template class MicrofacetBrdf<
     BeckmannD, FresnelDielectric, SmithG<BeckmannApproxG1>>;
   template class MicrofacetBrdf<
