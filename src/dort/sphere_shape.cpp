@@ -57,9 +57,12 @@ namespace dort {
     return FOUR_PI * this->radius * this->radius;
   }
 
-  Point SphereShape::sample_point(float u1, float u2, Normal& out_n) const {
+  Point SphereShape::sample_point(float u1, float u2,
+      Normal& out_n, float& out_ray_epsilon) const 
+  {
     Vector w = uniform_sphere_sample(u1, u2);
     out_n = Normal(w);
+    out_ray_epsilon = 5e-3f * this->radius;
     return Point() + w * this->radius;
   }
 
@@ -72,7 +75,8 @@ namespace dort {
   {
     float dist_squared = length_squared(eye.v);
     if(dist_squared - this->radius * this->radius < 1e-3) {
-      return this->sample_point(u1, u2, out_n);
+      float ray_epsilon;
+      return this->sample_point(u1, u2, out_n, ray_epsilon);
     }
 
     float dist = sqrt(dist_squared);

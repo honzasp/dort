@@ -14,7 +14,7 @@ namespace dort {
 
     this->sum_ = sum;
     float inv_sum = 1.f / sum;
-    for(uint32_t i = 0; i < xs.size(); ++i) {
+    for(uint32_t i = 0; i <= xs.size(); ++i) {
       this->cdf.at(i) *= inv_sum;
     }
   }

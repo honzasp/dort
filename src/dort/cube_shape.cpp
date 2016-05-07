@@ -37,7 +37,7 @@ namespace dort {
     }
 
     out_t_hit = t0;
-    out_ray_epsilon = 1e-3;
+    out_ray_epsilon = 1e-3f;
     Point p = out_diff_geom.p = ray.point_t(t0);
     out_diff_geom.nn = Normal(Vec3::axis(hit_axis, hit_negative ? -1.f : 1.f));
 
@@ -89,7 +89,9 @@ namespace dort {
     return 24.f;
   }
 
-  Point CubeShape::sample_point(float u1, float u2, Normal& out_n) const {
+  Point CubeShape::sample_point(float u1, float u2,
+      Normal& out_n, float& out_ray_epsilon) const 
+  {
     float fface;
     float x = modf(6.f * u1, &fface);
     float y = u2;
@@ -98,6 +100,7 @@ namespace dort {
     int32_t axis = face / 2;
     bool negative = face % 2 != 0;
     out_n = Normal(permute(Vec3(negative ? -1.f : 1.f, 0.f, 0.f), axis));
+    out_ray_epsilon = 1e-3f;
     return Point(permute(Vec3(negative ? -1.f : 1.f, x, y), axis));
   }
 

@@ -55,6 +55,7 @@ namespace dort {
   int lua_builder_add_ply_mesh(lua_State* l);
   int lua_builder_add_ply_mesh_as_bvh(lua_State* l);
   int lua_builder_add_voxel_grid(lua_State* l);
+  int lua_builder_make_triangle(lua_State* l);
 
   int lua_scene_render(lua_State* l);
   int lua_scene_eq(lua_State* l);

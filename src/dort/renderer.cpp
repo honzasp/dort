@@ -9,9 +9,9 @@
 #include "dort/thread_pool.hpp"
 
 namespace dort {
-  void Renderer::preprocess(CtxG&) {
+  void Renderer::preprocess(CtxG& ctx) {
     this->pixel_pos_idx = this->sampler->request_sample_2d();
-    this->do_preprocess(*this->scene, *this->sampler);
+    this->do_preprocess(ctx, *this->scene, *this->sampler);
   }
 
   void Renderer::render(CtxG& ctx) {

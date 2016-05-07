@@ -8,7 +8,7 @@ namespace dort {
     float sum_;
   public:
     DiscreteDistrib1d() = default;
-    DiscreteDistrib1d(const std::vector<float>& xs);
+    explicit DiscreteDistrib1d(const std::vector<float>& xs);
     uint32_t sample(float u) const;
     float pdf(uint32_t sample) const;
     float sum() const { return this->sum_; }

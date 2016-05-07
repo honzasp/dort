@@ -38,6 +38,21 @@ namespace dort {
     static LightSamplesIdxs request(Sampler& sampler, uint32_t count);
   };
 
+  struct LightRaySamplesIdxs {
+    SampleIdx uv_pos_idx;
+    SampleIdx uv_dir_idx;
+    uint32_t count;
+  };
+
+  struct LightRaySample {
+    Vec2 uv_pos;
+    Vec2 uv_dir;
+
+    explicit LightRaySample(Sampler& sampler);
+    LightRaySample(Sampler& sampler, const LightRaySamplesIdxs& idxs, uint32_t n);
+    static LightRaySamplesIdxs request(Sampler& sampler, uint32_t count);
+  };
+
   class Light {
   public:
     LightFlags flags;
@@ -51,11 +66,15 @@ namespace dort {
       return (this->flags & test) == this->flags;
     }
 
+    virtual Spectrum sample_ray_radiance(const Scene& scene, 
+        Ray& out_ray, Normal& out_nn, float& out_pdf,
+        LightRaySample sample) const = 0;
     virtual Spectrum sample_radiance(const Point& eye, float eye_epsilon,
         Vector& out_wi, float& out_pdf, ShadowTest& out_shadow, 
         LightSample sample) const = 0;
-    virtual float radiance_pdf(const Point& pt, const Vector& wi) const = 0;
+    virtual float radiance_pdf(const Point& eye, const Vector& wi) const = 0;
     virtual Spectrum background_radiance(const Ray& ray) const = 0;
+    virtual Spectrum approximate_power(const Scene& scene) const = 0;
   };
 
   class AreaLight: public Light {

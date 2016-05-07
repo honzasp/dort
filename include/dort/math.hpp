@@ -64,6 +64,8 @@ namespace dort {
 
   inline int32_t floor_int32(float a) { return int32_t(floor(a)); }
   inline int32_t ceil_int32(float a) { return int32_t(ceil(a)); }
+  inline uint32_t floor_uint32(float a) { return uint32_t(floor(a)); }
+  inline uint32_t ceil_uint32(float a) { return uint32_t(ceil(a)); }
   inline float mul_power_of_two(float a, int32_t exp) { return std::ldexp(a, exp); }
   inline float square(float a) { return a * a; }
   inline float cube(float a) { return a * a * a; }

@@ -5,7 +5,8 @@ namespace dort {
       float u1, float u2, Normal& out_n) const
   {
     (void)eye;
-    return this->sample_point(u1, u2, out_n);
+    float ray_epsilon;
+    return this->sample_point(u1, u2, out_n, ray_epsilon);
   }
 
   float Shape::point_eye_pdf(const Point& eye, const Vector& w) const {

@@ -209,7 +209,7 @@ namespace dort {
   {
     assert(entry.t_hit >= ray.t_min && entry.t_hit <= ray.t_max);
     assert(exit.t_hit >= ray.t_min && exit.t_hit <= ray.t_max);
-    assert(entry.t_hit <= exit.t_hit);
+    assert(exit.t_hit - entry.t_hit > -1e-3f);
 
     const Node& node = this->nodes.at(node_idx);
     uint8_t axis = node.axis();
@@ -264,8 +264,8 @@ namespace dort {
     }
 
     assert(mid_entry.on_surface);
-    assert(mid_entry.t_hit - entry.t_hit > -1e-3);
-    assert(mid_entry.t_hit - exit.t_hit < 1e-3);
+    assert(mid_entry.t_hit - entry.t_hit > -1e-3f);
+    assert(mid_entry.t_hit - exit.t_hit < 1e-3f);
     //assert(box.contains(floor_vec3i(mid_entry.p_hit)));
     return this->traverse_walk_both_halves(ray, node_idx, node, axis,
         left_box, right_box, entry, exit, mid_entry, callback);

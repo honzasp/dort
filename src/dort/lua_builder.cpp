@@ -4,6 +4,7 @@
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
 #include "dort/grid.hpp"
+#include "dort/igi_renderer.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
@@ -67,6 +68,7 @@ namespace dort {
       {"add_ply_mesh", lua_builder_add_ply_mesh},
       {"add_ply_mesh_as_bvh", lua_builder_add_ply_mesh_as_bvh},
       {"add_voxel_grid", lua_builder_add_voxel_grid},
+      {"make_triangle", lua_builder_make_triangle},
       {"render", lua_scene_render},
       {0, 0},
     };
@@ -99,6 +101,7 @@ namespace dort {
     auto scene = std::make_shared<Scene>();
     scene->primitive = lua_make_aggregate(*lua_get_ctx(l),
         builder->state, std::move(builder->frame));
+    scene->bounds = scene->primitive->bounds();
     scene->lights = std::move(builder->lights);
     scene->camera = std::move(builder->camera);
 
@@ -466,6 +469,16 @@ namespace dort {
     return 0;
   }
 
+  int lua_builder_make_triangle(lua_State* l) {
+    auto builder = lua_check_builder(l, 1);
+    auto mesh = lua_check_mesh(l, 2);
+    uint32_t index = luaL_checkinteger(l, 3);
+
+    builder->meshes.insert(mesh);
+    lua_push_shape(l, std::make_shared<TriangleShape>(mesh.get(), index));
+    return 1;
+  }
+
   int lua_scene_render(lua_State* l) {
     auto scene = lua_check_scene(l, 1);
 
@@ -489,6 +502,17 @@ namespace dort {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<PathRenderer>(
           scene, film, sampler, max_depth);
+    } else if(method == "igi") {
+      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      uint32_t light_set_count = lua_param_uint32_opt(l, p, "light_sets", 1);
+      uint32_t path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
+      float g_limit = lua_param_float_opt(l, p, "g_limit", 5.f);
+      float roulette_threshold = lua_param_float_opt(l, p, 
+          "roulette_threshold", 0.01f);
+      renderer = std::make_shared<IgiRenderer>(
+          scene, film, sampler,
+          max_depth, light_set_count, path_count,
+          g_limit, roulette_threshold);
     } else {
       return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
     }

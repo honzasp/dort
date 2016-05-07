@@ -19,7 +19,8 @@ namespace dort {
     virtual Box bounds() const = 0;
 
     virtual float area() const = 0;
-    virtual Point sample_point(float u1, float u2, Normal& out_n) const = 0;
+    virtual Point sample_point(float u1, float u2,
+        Normal& out_n, float& out_ray_epsilon) const = 0;
     virtual float point_pdf(const Point& pt) const = 0;
     virtual Point sample_point_eye(const Point& eye,
         float u1, float u2, Normal& out_n) const;

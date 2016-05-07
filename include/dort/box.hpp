@@ -38,6 +38,10 @@ namespace dort {
       return (this->p_max + this->p_min) * 0.5f;
     }
 
+    float radius() const {
+      return length(this->p_max - this->p_min) * 0.5f;
+    }
+
     uint8_t max_axis() const {
       return (this->p_max - this->p_min).v.max_axis();
     }

@@ -58,7 +58,7 @@ namespace dort {
     return 0.5f * abs(double_area);
   }
 
-  Point PolygonShape::sample_point(float, float, Normal&) const {
+  Point PolygonShape::sample_point(float, float, Normal&, float&) const {
     assert(false && "Sampling from polygons is not implemented");
     return Point();
   }

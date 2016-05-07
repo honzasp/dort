@@ -1,4 +1,5 @@
 #include "dort/diffuse_light.hpp"
+#include "dort/monte_carlo.hpp"
 
 namespace dort {
   DiffuseLight::DiffuseLight(std::shared_ptr<Shape> shape,
@@ -11,6 +12,29 @@ namespace dort {
     radiance(radiance)
   {
     this->area = this->shape->area();
+  }
+
+  Spectrum DiffuseLight::sample_ray_radiance(const Scene&, 
+      Ray& out_ray, Normal& out_nn, float& out_pdf,
+      LightRaySample sample) const
+  {
+    Normal shape_n;
+    float ray_epsilon;
+    Point shape_p = this->shape->sample_point(sample.uv_pos.x, sample.uv_pos.y,
+        shape_n, ray_epsilon);
+    Vector shape_wo = uniform_hemisphere_sample(sample.uv_dir.x, sample.uv_dir.y);
+    if(dot(shape_wo, shape_n) < 0.f) {
+      shape_wo = -shape_wo;
+    }
+
+    Normal world_n = this->shape_to_world.apply(shape_n);
+    Point world_p = this->shape_to_world.apply(shape_p);
+    Vector world_wo = this->shape_to_world.apply(shape_wo);
+
+    out_ray = Ray(world_p, world_wo, ray_epsilon);
+    out_nn = normalize(world_n);
+    out_pdf = this->shape->point_pdf(shape_p) * INV_TWO_PI;
+    return this->radiance;
   }
 
   Spectrum DiffuseLight::sample_radiance(const Point& eye, float eye_epsilon,
@@ -56,6 +80,10 @@ namespace dort {
     } else {
       return Spectrum(0.f);
     }
+  }
+
+  Spectrum DiffuseLight::approximate_power(const Scene&) const {
+    return this->shape->area() * this->radiance;
   }
 }
 

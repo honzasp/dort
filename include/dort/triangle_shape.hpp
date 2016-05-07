@@ -15,7 +15,8 @@ namespace dort {
     virtual Box bounds() const override final;
 
     virtual float area() const override final;
-    virtual Point sample_point(float u1, float u2, Normal& out_n) const override final;
+    virtual Point sample_point(float u1, float u2,
+        Normal& out_n, float& out_ray_epsilon) const override final;
     virtual float point_pdf(const Point& pt) const override final;
   };
 }

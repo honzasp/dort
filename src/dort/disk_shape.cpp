@@ -25,7 +25,7 @@ namespace dort {
     float inv_v = this->radius / dist;
 
     out_t_hit = t_hit;
-    out_ray_epsilon = t_hit * 1e-3;
+    out_ray_epsilon = t_hit * 1e-3f;
     out_diff_geom.p = p;
     out_diff_geom.nn = Normal(0.f, 0.f, 1.f);
     out_diff_geom.u = theta * INV_TWO_PI;
@@ -60,9 +60,12 @@ namespace dort {
     return PI * square(this->radius);
   }
 
-  Point DiskShape::sample_point(float u1, float u2, Normal& out_n) const {
+  Point DiskShape::sample_point(float u1, float u2,
+      Normal& out_n, float& out_ray_epsilon) const 
+  {
     Vector w = uniform_disk_sample(u1, u2);
     out_n = Normal(0.f, 0.f, 1.f);
+    out_ray_epsilon = 1e-3f;
     return Point(w.v.x * this->radius, w.v.y * this->radius, this->z_coord);
   }
 

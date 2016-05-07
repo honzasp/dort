@@ -15,7 +15,7 @@ namespace dort {
 
     virtual float area() const override final;
     virtual Point sample_point(float u1, float u2,
-        Normal& out_n) const override final;
+        Normal& out_n, float& out_ray_epsilon) const override final;
     virtual float point_pdf(const Point& pt) const override final;
   private:
     bool solve_hit_t(const Ray& ray, float& out_t_hit) const;

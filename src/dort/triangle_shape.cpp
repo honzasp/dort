@@ -22,8 +22,11 @@ namespace dort {
     return Triangle(*this->mesh, this->index).area();
   }
 
-  Point TriangleShape::sample_point(float u1, float u2, Normal& out_n) const {
-    return Triangle(*this->mesh, this->index).sample_point(u1, u2, out_n);
+  Point TriangleShape::sample_point(float u1, float u2,
+      Normal& out_n, float& out_ray_epsilon) const 
+  {
+    return Triangle(*this->mesh, this->index).sample_point(
+        u1, u2, out_n, out_ray_epsilon);
   }
 
   float TriangleShape::point_pdf(const Point& pt) const {

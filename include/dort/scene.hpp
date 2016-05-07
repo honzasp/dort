@@ -2,9 +2,11 @@
 #include <memory>
 #include <vector>
 #include "dort/dort.hpp"
+#include "dort/box.hpp"
 
 namespace dort {
   struct Scene {
+    Box bounds;
     std::unique_ptr<Primitive> primitive;
     std::vector<std::shared_ptr<Light>> lights;
     std::vector<std::shared_ptr<Mesh>> meshes;

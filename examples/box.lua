@@ -1,3 +1,5 @@
+local _ENV = require "dort/dsl"
+
 local scene = define_scene(function()
   local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
   local green = matte_material { color = rgb(0, 0.5, 0) }
@@ -26,20 +28,20 @@ local scene = define_scene(function()
     }
 
     material(white)
-    add_shape(triangle(m, 0))
-    add_shape(triangle(m, 3))
-    add_shape(triangle(m, 6))
-    add_shape(triangle(m, 9))
-    add_shape(triangle(m, 12))
-    add_shape(triangle(m, 15))
+    add_triangle(m, 0)
+    add_triangle(m, 3)
+    add_triangle(m, 6)
+    add_triangle(m, 9)
+    add_triangle(m, 12)
+    add_triangle(m, 15)
 
     material(green)
-    add_shape(triangle(m, 18))
-    add_shape(triangle(m, 21))
+    add_triangle(m, 18)
+    add_triangle(m, 21)
 
     material(red)
-    add_shape(triangle(m, 24))
-    add_shape(triangle(m, 27))
+    add_triangle(m, 24)
+    add_triangle(m, 27)
   end)
 
   block(function()
@@ -48,8 +50,7 @@ local scene = define_scene(function()
         translate(185, 82.5, 169)
       * rotate_y(-0.29) 
       * scale(165 / 2))
-    --add_shape(cube())
-    add_read_ply_mesh("data/cube.ply")
+    add_shape(cube())
   end)
 
   block(function()
@@ -58,8 +59,7 @@ local scene = define_scene(function()
         translate(368, 165, 351) 
       * rotate_y(-1.27) 
       * scale(165 / 2, 330 / 2, 165 / 2))
-    --add_shape(cube())
-    add_read_ply_mesh("data/cube.ply")
+    add_shape(cube())
   end)
 
   camera(perspective_camera {
@@ -93,14 +93,17 @@ local scene = define_scene(function()
   end)
 end)
 
-write_png_image("box.png", render(scene, {
-  x_res = 512, y_res = 512,
+write_png_image("box_igi.png", render(scene, {
+  x_res = 256, y_res = 256,
   max_depth = 10,
   sampler = stratified_sampler {
-    samples_per_x = 8,
-    samples_per_y = 8,
+    samples_per_x = 2,
+    samples_per_y = 2,
   },
   filter = mitchell_filter {
     radius = 1.5,
   },
+  renderer = "igi",
+  light_sets = 4,
+  light_paths = 32,
 }))

@@ -157,6 +157,7 @@ namespace dort {
     float t_min;
     float t_max;
 
+    Ray() = default;
     Ray(const Point& orig, const Vector& dir,
         float t_min = -INFINITY, float t_max = INFINITY):
       orig(orig), dir(dir), t_min(t_min), t_max(t_max)

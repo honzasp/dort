@@ -32,6 +32,7 @@ namespace dort {
   struct DiffGeom;
   struct Film;
   struct Intersection;
+  struct LightingGeom;
   struct Mesh;
   struct Normal;
   struct PixelRgb8;

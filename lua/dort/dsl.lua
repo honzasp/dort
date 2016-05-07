@@ -128,6 +128,10 @@ function dsl.mesh(params)
   return dort.shape.make_mesh(params)
 end
 
+function dsl.triangle(mesh, index)
+  return b.make_triangle(B, mesh, index)
+end
+
 dsl.rgb = dort.spectrum.rgb
 dsl.rgbh = dort.spectrum.rgbh
 
