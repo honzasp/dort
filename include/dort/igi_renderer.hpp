@@ -51,5 +51,10 @@ namespace dort {
     DiscreteDistrib1d compute_light_distrib(const Scene& scene) const;
     std::vector<std::vector<VirtualLight>> compute_light_sets(CtxG& ctx,
         const Scene& scene, Sampler& sampler) const;
+    void compute_light_path(const Scene& scene,
+        const Light& light, float light_pdf,
+        const LightRaySample& light_sample,
+        std::vector<VirtualLight>& virtual_lights,
+        Sampler& sampler) const;
   };
 }

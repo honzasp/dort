@@ -508,7 +508,7 @@ namespace dort {
       uint32_t path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
       float g_limit = lua_param_float_opt(l, p, "g_limit", 5.f);
       float roulette_threshold = lua_param_float_opt(l, p, 
-          "roulette_threshold", 0.01f);
+          "roulette_threshold", 0.001f);
       renderer = std::make_shared<IgiRenderer>(
           scene, film, sampler,
           max_depth, light_set_count, path_count,

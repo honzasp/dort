@@ -16,12 +16,12 @@ namespace dort {
 
   class Sampler {
   protected:
-    Rng rng;
     std::vector<float> samples_1d;
     std::vector<Vec2> samples_2d;
     std::vector<std::vector<float>> arrays_1d;
     std::vector<std::vector<Vec2>> arrays_2d;
   public:
+    Rng rng;
     uint32_t samples_per_pixel;
   protected:
     Sampler(uint32_t samples_per_pixel, Rng rng):

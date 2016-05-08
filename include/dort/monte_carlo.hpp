@@ -25,4 +25,6 @@ namespace dort {
 
   template<class T>
   void shuffle(slice<T> ary, Rng& rng);
+  template<class T>
+  void shuffle_chunks(slice<T> ary, uint32_t chunk_size, Rng& rng);
 }

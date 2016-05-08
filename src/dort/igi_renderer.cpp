@@ -1,5 +1,6 @@
 #include "dort/igi_renderer.hpp"
 #include "dort/lighting.hpp"
+#include "dort/low_discrepancy.hpp"
 #include "dort/primitive.hpp"
 #include "dort/thread_pool.hpp"
 
@@ -117,8 +118,6 @@ namespace dort {
   std::vector<std::vector<IgiRenderer::VirtualLight>> 
   IgiRenderer::compute_light_sets(CtxG& ctx, const Scene& scene, Sampler& sampler) const
   {
-    // TODO: use a better sampling pattern than random noise
-
     uint32_t set_count = this->light_set_count;
     uint32_t path_count = this->path_count;
     DiscreteDistrib1d light_distrib(this->compute_light_distrib(scene));
@@ -127,13 +126,19 @@ namespace dort {
 
     uint32_t desired_jobs = 16 * ctx.pool->num_threads();
     uint32_t jobs_per_set = max(1u, desired_jobs / set_count);
-    jobs_per_set = 1;
     uint32_t job_count = set_count * jobs_per_set;
 
     std::vector<std::shared_ptr<Sampler>> samplers;
     for(uint32_t i = 0; i < job_count; ++i) {
       samplers.push_back(sampler.split());
     }
+
+    std::vector<float> light_idx_samples(low_discrepancy_1d(
+          set_count, path_count, sampler.rng));
+    std::vector<Vec2> light_pos_samples(low_discrepancy_2d(
+          set_count, path_count, sampler.rng));
+    std::vector<Vec2> light_dir_samples(low_discrepancy_2d(
+          set_count, path_count, sampler.rng));
 
     fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
       uint32_t set_i = job_i / jobs_per_set;
@@ -144,59 +149,14 @@ namespace dort {
       auto& sampler = *samplers.at(job_i);
 
       std::vector<VirtualLight> virtual_lights;
-      for(uint32_t i = chunk_begin; i < chunk_end; ++i) {
-        uint32_t light_i = light_distrib.sample(sampler.random_1d());
+      for(uint32_t path_i = chunk_begin; path_i < chunk_end; ++path_i) {
+        uint32_t i = set_i * path_count + path_i;
+        uint32_t light_i = light_distrib.sample(light_idx_samples.at(i));
         float light_pdf = light_distrib.pdf(light_i);
-        if(light_pdf == 0.f) {
-          continue;
-        }
-
-        Ray ray;
-        Normal prev_nn;
-        float light_ray_pdf;
-        Spectrum light_radiance = scene.lights.at(light_i)->sample_ray_radiance(
-            scene, ray, prev_nn, light_ray_pdf, LightRaySample(sampler));
-        if(light_radiance.is_black() || light_ray_pdf == 0.f) {
-          continue;
-        }
-
-        Spectrum path_contrib = light_radiance / (light_ray_pdf * light_pdf);
-        Intersection isect;
-        while(scene.intersect(ray, isect)) {
-          auto bsdf = isect.get_bsdf();
-
-          Vector bounce_wi;
-          float bounce_pdf;
-          BxdfFlags bounce_flags;
-          Spectrum bounce_f = bsdf->sample_f(-ray.dir, bounce_wi, bounce_pdf,
-              BSDF_ALL, bounce_flags, BsdfSample(sampler));
-          if(bounce_f.is_black() || bounce_pdf == 0.f) {
-            break;
-          }
-
-          Spectrum bounce_contrib = bounce_f 
-            * (abs_dot(bounce_wi, isect.world_diff_geom.nn) / bounce_pdf);
-
-          if(!(bounce_flags & BSDF_SPECULAR)) {
-            VirtualLight virt;
-            virt.p = isect.world_diff_geom.p;
-            virt.nn = isect.world_diff_geom.nn;
-            virt.wi = -ray.dir;
-            virt.ray_epsilon = isect.ray_epsilon;
-            virt.path_contrib = path_contrib;
-            virt.bsdf = std::move(bsdf);
-            virtual_lights.push_back(std::move(virt));
-
-            float survive_prob = min(0.95f, bounce_contrib.average());
-            if(sampler.random_1d() > survive_prob) {
-              break;
-            }
-            path_contrib = path_contrib / survive_prob;
-          }
-
-          ray = Ray(isect.world_diff_geom.p, bounce_wi, isect.ray_epsilon);
-          path_contrib = path_contrib * bounce_contrib;
-        }
+        this->compute_light_path(scene,
+          *scene.lights.at(light_i), light_pdf,
+          LightRaySample(light_pos_samples.at(i), light_dir_samples.at(i)),
+          virtual_lights, sampler);
       }
 
       std::unique_lock<std::mutex> sets_lock(sets_mutexes.at(set_i));
@@ -206,5 +166,63 @@ namespace dort {
     });
 
     return sets;
+  }
+
+  void IgiRenderer::compute_light_path(const Scene& scene,
+      const Light& light, float light_pdf,
+      const LightRaySample& light_sample,
+      std::vector<VirtualLight>& virtual_lights,
+      Sampler& sampler) const
+  {
+    if(light_pdf == 0.f) {
+      return;
+    }
+
+    Ray ray;
+    Normal prev_nn;
+    float light_ray_pdf;
+    Spectrum light_radiance = light.sample_ray_radiance(
+        scene, ray, prev_nn, light_ray_pdf, light_sample);
+    if(light_radiance.is_black() || light_ray_pdf == 0.f) {
+      return;
+    }
+
+    Spectrum path_contrib = light_radiance / (light_ray_pdf * light_pdf);
+    Intersection isect;
+    while(scene.intersect(ray, isect)) {
+      auto bsdf = isect.get_bsdf();
+
+      Vector bounce_wi;
+      float bounce_pdf;
+      BxdfFlags bounce_flags;
+      Spectrum bounce_f = bsdf->sample_f(-ray.dir, bounce_wi, bounce_pdf,
+          BSDF_ALL, bounce_flags, BsdfSample(sampler));
+      if(bounce_f.is_black() || bounce_pdf == 0.f) {
+        break;
+      }
+
+      Spectrum bounce_contrib = bounce_f 
+        * (abs_dot(bounce_wi, isect.world_diff_geom.nn) / bounce_pdf);
+
+      if(!(bounce_flags & BSDF_SPECULAR)) {
+        VirtualLight virt;
+        virt.p = isect.world_diff_geom.p;
+        virt.nn = isect.world_diff_geom.nn;
+        virt.wi = -ray.dir;
+        virt.ray_epsilon = isect.ray_epsilon;
+        virt.path_contrib = path_contrib;
+        virt.bsdf = std::move(bsdf);
+        virtual_lights.push_back(std::move(virt));
+
+        float survive_prob = min(0.95f, bounce_contrib.average());
+        if(sampler.random_1d() > survive_prob) {
+          break;
+        }
+        path_contrib = path_contrib / survive_prob;
+      }
+
+      ray = Ray(isect.world_diff_geom.p, bounce_wi, isect.ray_epsilon);
+      path_contrib = path_contrib * bounce_contrib;
+    }
   }
 }

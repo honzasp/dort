@@ -60,28 +60,28 @@ namespace dort {
     }
 
     slice subslice(size_t begin, size_t end) const {
-      if(begin >= this->len || end >= this->len) {
+      if(begin > this->len || end > this->len) {
         throw std::out_of_range("slice::subslice");
       }
       return slice(this->ptr + begin, end > begin ? end - begin : 0);
     }
 
     slice subslice_len(size_t begin, size_t len) const {
-      if(begin >= this->len || begin + len >= this->len) {
+      if(begin > this->len || begin + len > this->len) {
         throw std::out_of_range("slice::subslice_len");
       }
       return slice(this->ptr + begin, len);
     }
 
     slice subslice_from(size_t begin) const {
-      if(begin >= this->len) {
+      if(begin > this->len) {
         throw std::out_of_range("slice::subslice_from");
       }
       return slice(this->ptr + begin, this->len - begin);
     }
 
     slice subslice_to(size_t end) const {
-      if(end >= this->len) {
+      if(end > this->len) {
         throw std::out_of_range("slice::subslice_to");
       }
       return slice(this->ptr, end);

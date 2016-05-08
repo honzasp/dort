@@ -2,11 +2,11 @@
 
 namespace dort {
   Sampler::Sampler(const Sampler& parent, Rng rng):
-    rng(std::move(rng)),
     samples_1d(parent.samples_1d),
     samples_2d(parent.samples_2d),
     arrays_1d(parent.arrays_1d),
     arrays_2d(parent.arrays_2d),
+    rng(std::move(rng)),
     samples_per_pixel(parent.samples_per_pixel)
   { }
 

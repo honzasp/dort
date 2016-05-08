@@ -50,7 +50,7 @@ return function(world)
     local tip = g.vector(block.pos) + g.vector(torch_tips[block.data])
     b.add_light(B, l.make_diffuse {
       shape = torch_lightball,
-      radiance = rgbh("f1ddbe") * 30,
+      radiance = rgbh("f1ddbe") * 8,
       num_samples = world:option("torch_num_samples"),
       transform = g.translate(tip)
     })

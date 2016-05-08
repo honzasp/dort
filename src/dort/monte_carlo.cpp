@@ -117,7 +117,20 @@ namespace dort {
       std::swap(ary.at(i), ary.at(shuf));
     }
   }
-
   template void shuffle(slice<float> ary, Rng& rng);
   template void shuffle(slice<Vec2> ary, Rng& rng);
+
+  template<class T>
+  void shuffle_chunks(slice<T> ary, uint32_t chunk_size, Rng& rng) {
+    uint32_t chunks = ary.size() / chunk_size;
+    for(uint32_t i = 0; i + 1 < chunks; ++i) {
+      int32_t shuf = i + rng.uniform_uint32(chunks - i);
+      for(uint32_t j = 0; j < chunk_size; ++j) {
+        std::swap(ary.at(i * chunk_size + j), ary.at(shuf * chunk_size + j));
+      }
+    }
+  }
+
+  template void shuffle_chunks(slice<float> ary, uint32_t chunk_size, Rng& rng);
+  template void shuffle_chunks(slice<Vec2> ary, uint32_t chunk_size, Rng& rng);
 }

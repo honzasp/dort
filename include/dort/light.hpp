@@ -48,6 +48,8 @@ namespace dort {
     Vec2 uv_pos;
     Vec2 uv_dir;
 
+    LightRaySample(Vec2 uv_pos, Vec2 uv_dir):
+      uv_pos(uv_pos), uv_dir(uv_dir) { }
     explicit LightRaySample(Sampler& sampler);
     LightRaySample(Sampler& sampler, const LightRaySamplesIdxs& idxs, uint32_t n);
     static LightRaySamplesIdxs request(Sampler& sampler, uint32_t count);
