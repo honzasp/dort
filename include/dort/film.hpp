@@ -21,7 +21,8 @@ namespace dort {
     Film(uint32_t x_res, uint32_t y_res, SampledFilter filter);
     void add_sample(Vec2 pos, const Spectrum& radiance);
     void add_tile(Vec2i pos, const Film& tile);
-    Image<PixelRgb8> to_image() const;
+    template<class Pix>
+    Image<Pix> to_image() const;
 
     uint32_t pixel_idx(int32_t x, int32_t y) const {
       assert(x >= 0 && x < int32_t(this->x_res));

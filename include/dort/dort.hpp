@@ -36,6 +36,7 @@ namespace dort {
   struct Mesh;
   struct Normal;
   struct PixelRgb8;
+  struct PixelRgbFloat;
   struct PlyMesh;
   struct Point;
   struct PrimitiveMesh;

@@ -38,4 +38,15 @@ namespace dort {
     std::fprintf(output, "P6 %u %u 255\n", img.x_res, img.y_res);
     std::fwrite(img.storage.data(), 3, img.x_res * img.y_res, output);
   }
+
+  void write_image_rgbe(FILE* output, const Image<PixelRgbFloat>& img) {
+    auto write = [](void* file, void* data, int size) {
+      std::fwrite(data, size, 1, (FILE*)file);
+    };
+    int result = stbi_write_hdr_to_func(write, output, 
+          img.x_res, img.y_res, 3, img.storage.data());
+    if(result == 0) {
+      throw std::runtime_error("Error writing RGBE (stbi_write_hdr_to_func)");
+    }
+  }
 }

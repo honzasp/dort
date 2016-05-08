@@ -64,11 +64,11 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return box;
   }
-  std::shared_ptr<Image<PixelRgb8>> lua_param_image(lua_State* l,
+  std::shared_ptr<Image<PixelRgb8>> lua_param_image_8(lua_State* l,
       int params_idx, const char* param_name)
   {
     lua_getfield(l, params_idx, param_name);
-    auto image = lua_check_image(l, -1);
+    auto image = lua_check_image_8(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return image;
   }
@@ -115,6 +115,14 @@ namespace dort {
     }
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return uint32_t(num);
+  }
+  bool lua_param_bool_opt(lua_State* l, int params_idx,
+      const char* param_name, bool def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    bool x = lua_isnil(l, -1) ? def : lua_toboolean(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return x;
   }
   Spectrum lua_param_spectrum_opt(lua_State* l, int params_idx,
       const char* param_name, const Spectrum& def)

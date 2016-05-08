@@ -256,7 +256,7 @@ namespace dort {
 
   int lua_texture_make_image(lua_State* l) {
     int p = 1;
-    auto image = lua_param_image(l, p, "image");
+    auto image = lua_param_image_8(l, p, "image");
     lua_params_check_unused(l, p);
 
     LuaTexture lua_tex;
@@ -482,7 +482,7 @@ namespace dort {
 
     auto image = std::make_shared<Image<PixelRgb8>>(render_texture_2d(tex,
           Vec2i(x_res, y_res), Vec2(float(x_res) * x_scale, float(y_res) * y_scale)));
-    lua_push_image(l, image);
+    lua_push_image_8(l, image);
     return 1;
   }
 

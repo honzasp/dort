@@ -83,6 +83,7 @@ dsl.boxi = dort.geometry.boxi
 
 dsl.read_image = dort.image.read
 dsl.write_png_image = dort.image.write_png
+dsl.write_rgbe_image = dort.image.write_rgbe
 
 function apply_builder_transform(transform)
   local builder_transform = b.get_transform(B)

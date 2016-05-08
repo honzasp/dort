@@ -490,6 +490,7 @@ namespace dort {
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
         std::make_shared<RandomSampler>(1, 42));
     auto method = lua_param_string_opt(l, p, "renderer", "direct");
+    auto hdr = lua_param_bool_opt(l, p, "hdr", false);
 
     auto film = std::make_shared<Film>(x_res, y_res, filter);
 
@@ -523,8 +524,15 @@ namespace dort {
     renderer->preprocess(ctx);
     renderer->render(ctx);
 
-    auto image = std::make_shared<Image<PixelRgb8>>(film->to_image());
-    lua_push_image(l, image);
+    if(hdr) {
+      auto image = std::make_shared<Image<PixelRgbFloat>>(
+          film->to_image<PixelRgbFloat>());
+      lua_push_image_f(l, image);
+    } else {
+      auto image = std::make_shared<Image<PixelRgb8>>(
+          film->to_image<PixelRgb8>());
+      lua_push_image_8(l, image);
+    }
     return 1;
   }
 

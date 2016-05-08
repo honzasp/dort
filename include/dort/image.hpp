@@ -71,7 +71,33 @@ namespace dort {
     }
   };
 
+  struct PixelRgbFloat {
+    float r;
+    float g;
+    float b;
+
+    PixelRgbFloat(): r(0.f), g(0.f), b(0.f) { }
+    PixelRgbFloat(float r, float g, float b): r(r), g(g), b(b) { }
+
+    using StorageT = float;
+    static constexpr uint32_t storage_size = 3;
+    static PixelRgbFloat read_storage(const float* data) {
+      return PixelRgbFloat(data[0], data[1], data[2]);
+    }
+    static void write_storage(float* data, PixelRgbFloat pix) {
+      data[0] = pix.r; data[1] = pix.g; data[2] = pix.b;
+    }
+
+    static PixelRgbFloat from_rgb(const RgbSpectrum& spectrum) {
+      return PixelRgbFloat(spectrum.rgb.x, spectrum.rgb.y, spectrum.rgb.z);
+    }
+    static RgbSpectrum to_rgb(PixelRgbFloat pix) {
+      return RgbSpectrum(pix.r, pix.g, pix.b);
+    }
+  };
+
   Image<PixelRgb8> read_image(FILE* input);
   void write_image_png(FILE* output, const Image<PixelRgb8>& img);
   void write_image_ppm(FILE* output, const Image<PixelRgb8>& img);
+  void write_image_rgbe(FILE* output, const Image<PixelRgbFloat>& img);
 }

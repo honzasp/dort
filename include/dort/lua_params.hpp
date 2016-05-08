@@ -13,7 +13,7 @@ namespace dort {
   Boxi lua_param_boxi(lua_State* l, int params_idx, const char* param_name);
   LuaTexture lua_param_texture(lua_State* l,
       int params_idx, const char* param_name);
-  std::shared_ptr<Image<PixelRgb8>> lua_param_image(lua_State* l,
+  std::shared_ptr<Image<PixelRgb8>> lua_param_image_8(lua_State* l,
       int params_idx, const char* param_name);
   std::shared_ptr<Shape> lua_param_shape(lua_State* l,
       int params_idx, const char* param_name);
@@ -26,6 +26,8 @@ namespace dort {
       const char* param_name, float def);
   uint32_t lua_param_uint32_opt(lua_State* l, int params_idx,
       const char* param_name, uint32_t def);
+  bool lua_param_bool_opt(lua_State* l, int params_idx,
+      const char* param_name, bool def);
   Spectrum lua_param_spectrum_opt(lua_State* l, int params_idx,
       const char* param_name, const Spectrum& def);
   Transform lua_param_transform_opt(lua_State* l, int params_idx,
