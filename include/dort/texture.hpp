@@ -5,7 +5,8 @@
 
 namespace dort {
   class AnyTexture {
-    virtual void dummy_to_make_this_class_polymorphic() { };
+  public:
+    virtual ~AnyTexture() { }
   };
 
   template<class Out, class In>
