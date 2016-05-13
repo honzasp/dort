@@ -8,4 +8,5 @@ output.ppm
 output.png
 Session.vim
 /*.png
+/*.hdr
 gmon.out
