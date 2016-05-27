@@ -7,9 +7,9 @@ function box_scene(params)
   return define_scene(function()
     local light_mat = matte_material { color = rgb(0) }
     local glossy_white_mat = phong_material {
-      diffuse_color = rgb(0.1),
-      phong_color = rgb(0.7),
-      phong_exponent = 90,
+      color = rgb(0.1),
+      glossy_color = rgb(0.7),
+      exponent = 90,
     }
     local diffuse_green_mat = matte_material {
       color = rgb(0.156863, 0.803922, 0.172549),
@@ -246,14 +246,14 @@ local scene_ggbs_b = box_scene {
 
 
 local res = 512
-local samples = 1
+local samples = 4
 local filter = mitchell_filter { radius = 1.5 }
 local sampler = stratified_sampler {
   samples_per_x = samples, samples_per_y = samples,
 }
 
 function render_direct(scene, scene_name)
-  write_png_image("box_" .. scene_name .. "_direct.png", render(scene, {
+  write_png_image("box_direct_" .. scene_name .. ".png", render(scene, {
     x_res = res, y_res = res,
     sampler = sampler,
     filter = filter,
@@ -262,22 +262,44 @@ function render_direct(scene, scene_name)
 end
 
 function render_igi(scene, scene_name)
-  write_png_image("box_" .. scene_name .. "_igi.png", render(scene, {
+  write_png_image("box_igi_" .. scene_name .. ".png", render(scene, {
     x_res = res, y_res = res,
     sampler = sampler,
     filter = filter,
     renderer = "igi",
     light_sets = samples * samples,
-    light_paths = 256,
+    light_paths = 512,
+  }))
+end
+
+function render_pt(scene, scene_name)
+  write_png_image("box_pt_" .. scene_name .. ".png", render(scene, {
+    x_res = res, y_res = res,
+    sampler = stratified_sampler {
+      samples_per_x = 3 * samples, samples_per_y = 3 * samples,
+    },
+    filter = filter,
+    renderer = "pt",
   }))
 end
 
 render_igi(scene_ggbs_s, "ggbs_s")
---render_igi(scene_ggbs_p, "ggbs_p")
---render_igi(scene_ggbs_b, "ggbs_b")
---render_igi(scene_gglm_d, "gglm_d")
+--[[
+render_igi(scene_ggbs_p, "ggbs_p")
+render_igi(scene_ggbs_b, "ggbs_b")
+render_igi(scene_gglm_d, "gglm_c")
+--]]
 
+--[[
 render_direct(scene_ggbs_s, "ggbs_s")
---render_direct(scene_ggbs_p, "ggbs_p")
---render_direct(scene_ggbs_b, "ggbs_b")
---render_direct(scene_gglm_d, "gglm_d")
+render_direct(scene_ggbs_p, "ggbs_p")
+render_direct(scene_ggbs_b, "ggbs_b")
+render_direct(scene_gglm_d, "gglm_c")
+--]]
+
+--[[
+render_pt(scene_ggbs_s, "ggbs_s")
+render_pt(scene_ggbs_p, "ggbs_p")
+render_pt(scene_ggbs_b, "ggbs_b")
+render_pt(scene_gglm_d, "gglm_c")
+--]]

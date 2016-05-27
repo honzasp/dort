@@ -11,9 +11,11 @@ namespace dort {
   Vec2 uniform_disk_sample(float u1, float u2);
   float uniform_disk_pdf();
   Vec3 cosine_hemisphere_sample(float u1, float u2);
-  float cosine_hemisphere_pdf(const Vec3& w);
+  float cosine_hemisphere_pdf(float cos_theta);
   Vec3 uniform_cone_sample(float cos_theta_max, float u1, float u2);
   float uniform_cone_pdf(float cos_theta_max);
+  Vec3 power_cosine_hemisphere_sample(float u1, float u2, float exponent);
+  float power_cosine_hemisphere_pdf(float cos_theta, float exponent);
 
   float mis_power_heuristic(int32_t num_a, float pdf_a,
       int32_t num_b, float pdf_b);

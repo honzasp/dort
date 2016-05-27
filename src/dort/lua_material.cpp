@@ -6,6 +6,7 @@
 #include "dort/lua_texture_magic.hpp"
 #include "dort/matte_material.hpp"
 #include "dort/metal_material.hpp"
+#include "dort/phong_material.hpp"
 #include "dort/plastic_material.hpp"
 #include "dort/rough_glass_material.hpp"
 #include "dort/spectrum.hpp"
@@ -25,6 +26,7 @@ namespace dort {
       {"make_mirror", lua_material_make_mirror},
       {"make_glass", lua_material_make_glass},
       {"make_rough_glass", lua_material_make_rough_glass},
+      {"make_phong", lua_material_make_phong},
       {"make_bump", lua_material_make_bump},
       {0, 0},
     };
@@ -115,6 +117,20 @@ namespace dort {
     lua_params_check_unused(l, p);
     lua_push_material(l, std::make_shared<RoughGlassMaterial>(
           reflect, transmit, roughness, eta));
+    return 1;
+  }
+
+  int lua_material_make_phong(lua_State* l) {
+    int p = 1;
+    auto diffuse = lua_param_texture_opt(l, p, "color",
+        const_texture(Spectrum(0.f))).check<Spectrum>(l);
+    auto glossy = lua_param_texture_opt(l, p, "glossy_color",
+        const_texture(Spectrum(1.f))).check<Spectrum>(l);
+    auto exponent = lua_param_texture_opt(l, p, "exponent",
+        const_texture(50.f)).check<float>(l);
+    lua_params_check_unused(l, p);
+    lua_push_material(l, std::make_shared<PhongMaterial>(
+          diffuse, glossy, exponent));
     return 1;
   }
 

@@ -15,7 +15,7 @@ namespace dort {
       float& out_pdf, float u1, float u2) const
   {
     out_wi = Vector(cosine_hemisphere_sample(u1, u2));
-    out_pdf = cosine_hemisphere_pdf(out_wi.v);
+    out_pdf = cosine_hemisphere_pdf(out_wi.v.z);
     if(wo.v.z < 0.f) {
       out_wi.v.z = -out_wi.v.z;
     }
@@ -24,7 +24,7 @@ namespace dort {
 
   float LambertianBrdf::f_pdf(const Vector& wo, const Vector& wi) const {
     if(Bsdf::same_hemisphere(wo, wi)) {
-      return cosine_hemisphere_pdf(wi.v);
+      return cosine_hemisphere_pdf(wi.v.z);
     } else {
       return 0.f;
     }

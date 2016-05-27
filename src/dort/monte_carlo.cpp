@@ -45,12 +45,12 @@ namespace dort {
     return Vec3(w.x, w.y, z);
   }
 
-  float cosine_hemisphere_pdf(const Vec3& w) {
+  float cosine_hemisphere_pdf(float cos_theta) {
     // NOTE: this is not technically correct, because cosine_hemisphere_sample
     // never returns vectors with negative z, so there should really be max(0.f,
     // ...). However, this function is mostly used in BxDFs, where we already
     // know that w is in the correct hemisphere.
-    return abs(w.z * INV_PI);
+    return abs(cos_theta * INV_PI);
   }
 
   Vec3 uniform_cone_sample(float cos_theta_max, float u1, float u2) {
@@ -65,6 +65,20 @@ namespace dort {
 
   float uniform_cone_pdf(float cos_theta_max) {
     return 1.f / (TWO_PI * (1.f - cos_theta_max));
+  }
+
+  Vec3 power_cosine_hemisphere_sample(float u1, float u2, float exponent) {
+    float phi = TWO_PI * u1;
+    float cos_theta = pow(u2, 1.f / (1.f + exponent));
+    float sin_theta = sqrt(1.f - square(cos_theta));
+    float x = cos(phi) * sin_theta;
+    float y = sin(phi) * sin_theta;
+    float z = cos_theta;
+    return Vec3(x, y, z);
+  }
+
+  float power_cosine_hemisphere_pdf(float cos_theta, float exponent) {
+    return (exponent + 1.f) * pow(cos_theta, exponent) * INV_TWO_PI;
   }
 
   float mis_power_heuristic(int32_t num_a, float pdf_a,

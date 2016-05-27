@@ -47,13 +47,13 @@ namespace dort {
     if(wo.v.z < 0.f) {
       out_wi.v.z = -out_wi.v.z;
     }
-    out_pdf = cosine_hemisphere_pdf(out_wi.v);
+    out_pdf = cosine_hemisphere_pdf(out_wi.v.z);
     return this->f(wo, out_wi);
   }
 
   float OrenNayarBrdf::f_pdf(const Vector& wo, const Vector& wi) const {
     if(Bsdf::same_hemisphere(wo, wi)) {
-      return cosine_hemisphere_pdf(wi.v);
+      return cosine_hemisphere_pdf(wi.v.z);
     } else {
       return 0.f;
     }

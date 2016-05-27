@@ -47,10 +47,3 @@ function dort.geometry.scale_around(scale, origin)
     g.scale(scale) *
     g.translate(-origin:x(), -origin:y(), -origin:z())
 end
-
-function dort.material.make_phong(params)
-  -- TODO: implement real Phong!
-  return dort.material.make_matte { 
-    color = params.color,
-  }
-end
