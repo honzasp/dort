@@ -227,11 +227,18 @@ namespace dort {
     auto transform = builder->state.local_to_frame;
 
     if(!material) {
-      luaL_error(l, "no material is set");
-      return 0;
+      return luaL_error(l, "no material is set");
     }
 
-    auto prim = std::make_unique<ShapePrimitive>(shape, material, nullptr, transform);
+    std::shared_ptr<AreaLight> area_light;
+    if(lua_gettop(l) >= 3) {
+      auto light = lua_check_light(l, 3);
+      if(!(area_light = std::dynamic_pointer_cast<AreaLight>(light))) {
+        return luaL_error(l, "the light must be an area light");
+      }
+    }
+
+    auto prim = std::make_unique<ShapePrimitive>(shape, material, area_light, transform);
     builder->frame.prims.push_back(std::move(prim));
     return 0;
   }
@@ -505,6 +512,7 @@ namespace dort {
           scene, film, sampler, max_depth);
     } else if(method == "igi") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      uint32_t max_light_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
       uint32_t light_set_count = lua_param_uint32_opt(l, p, "light_sets", 1);
       uint32_t path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
       float g_limit = lua_param_float_opt(l, p, "g_limit", 5.f);
@@ -512,7 +520,7 @@ namespace dort {
           "roulette_threshold", 0.001f);
       renderer = std::make_shared<IgiRenderer>(
           scene, film, sampler,
-          max_depth, light_set_count, path_count,
+          max_depth, max_light_depth, light_set_count, path_count,
           g_limit, roulette_threshold);
     } else {
       return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());

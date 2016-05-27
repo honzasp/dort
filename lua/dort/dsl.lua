@@ -51,6 +51,10 @@ end
 function dsl.add_ply_mesh(mesh) b.add_ply_mesh(B, mesh) end
 function dsl.add_ply_mesh_as_bvh(mesh) b.add_ply_mesh_as_bvh(B, mesh) end
 function dsl.add_voxel_grid(params) b.add_voxel_grid(B, params) end
+function dsl.add_diffuse_light(params) 
+  params.transform = apply_builder_transform(params.transform)
+  b.add_diffuse_light(B, params)
+end
 
 dsl.render = dort.builder.render
 
@@ -102,6 +106,10 @@ function dsl.diffuse_light(params)
   params.transform = apply_builder_transform(params.transform)
   return dort.light.make_diffuse(params)
 end
+function dsl.directional_light(params)
+  params.transform = apply_builder_transform(params.transform)
+  return dort.light.make_directional(params)
+end
 dsl.infinite_light = dort.light.make_infinite
 
 dsl.matte_material = dort.material.make_matte
@@ -110,6 +118,7 @@ dsl.metal_material = dort.material.make_metal
 dsl.mirror_material = dort.material.make_mirror
 dsl.glass_material = dort.material.make_glass
 dsl.rough_glass_material = dort.material.make_rough_glass
+dsl.phong_material = dort.material.make_phong
 dsl.bump_material = dort.material.make_bump
 
 dsl.random_sampler = dort.sampler.make_random

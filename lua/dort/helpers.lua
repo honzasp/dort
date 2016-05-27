@@ -14,6 +14,13 @@ function dort.builder.frame(B, callback)
   return b.pop_frame(B)
 end
 
+function dort.builder.add_diffuse_light(B, params)
+  local shape = params.shape
+  local light = dort.light.make_diffuse(params)
+  b.add_shape(B, shape, light)
+  b.add_light(B, light)
+end
+
 function dort.geometry.rotate_x_around(angle, origin)
   return 
     g.translate(origin:x(), origin:y(), origin:z()) *
@@ -39,4 +46,19 @@ function dort.geometry.scale_around(scale, origin)
   return g.translate(origin:x(), origin:y(), origin:z()) *
     g.scale(scale) *
     g.translate(-origin:x(), -origin:y(), -origin:z())
+end
+
+function dort.material.make_phong(params)
+  -- TODO: implement real Phong!
+  return dort.material.make_matte { 
+    color = params.color,
+  }
+end
+
+function dort.light.make_directional(params)
+  -- TODO: implement real directional light
+  return dort.light.make_point {
+    point = g.point(0, 0, 0) - params.direction * 100,
+    intensity = 1e6 * params.radiance,
+  }
 end

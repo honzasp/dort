@@ -16,6 +16,7 @@ namespace dort {
       {"__tostring", lua_vector_tostring},
       {"__add", lua_geometry_add},
       {"__sub", lua_geometry_sub},
+      {"__mul", lua_geometry_mul},
       {"__eq", lua_geometry_eq},
       {0, 0},
     };
@@ -27,6 +28,7 @@ namespace dort {
       {"__tostring", lua_point_tostring},
       {"__add", lua_geometry_add},
       {"__sub", lua_geometry_sub},
+      {"__mul", lua_geometry_mul},
       {"__eq", lua_geometry_eq},
       {0, 0},
     };
@@ -104,6 +106,8 @@ namespace dort {
       lua_push_point(l, lua_check_vector(l, 1) + lua_check_point(l, 2));
     } else if(lua_test_point(l, 1) && lua_test_vector(l, 2)) {
       lua_push_point(l, lua_check_point(l, 1) + lua_check_vector(l, 2));
+    } else if(lua_test_point(l, 1) && lua_test_point(l, 2)) {
+      lua_push_point(l, lua_check_point(l, 1) + lua_check_point(l, 2));
     } else if(lua_test_vector(l, 1) && lua_test_vector(l, 2)) {
       lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
     } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
@@ -124,6 +128,16 @@ namespace dort {
       lua_push_vec3i(l, lua_check_vec3i(l, 1) - lua_check_vec3i(l, 2));
     } else {
       luaL_error(l, "Wrong combination of arguments to -");
+    }
+    return 1;
+  }
+  int lua_geometry_mul(lua_State* l) {
+    if(lua_test_point(l, 1)) {
+      lua_push_point(l, lua_check_point(l, 1) * luaL_checknumber(l, 2));
+    } else if(lua_test_vector(l, 1)) {
+      lua_push_vector(l, lua_check_vector(l, 1) * luaL_checknumber(l, 2));
+    } else {
+      luaL_error(l, "Wrong combination of arguments to *");
     }
     return 1;
   }

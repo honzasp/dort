@@ -188,8 +188,11 @@ namespace dort {
     }
 
     Spectrum path_contrib = light_radiance / (light_ray_pdf * light_pdf);
-    Intersection isect;
-    while(scene.intersect(ray, isect)) {
+    for(uint32_t depth = 0; depth < this->max_light_depth; ++depth) {
+      Intersection isect;
+      if(!scene.intersect(ray, isect)) {
+        break;
+      }
       auto bsdf = isect.get_bsdf();
 
       Vector bounce_wi;

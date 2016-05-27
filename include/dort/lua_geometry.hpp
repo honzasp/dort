@@ -14,6 +14,7 @@ namespace dort {
 
   int lua_geometry_add(lua_State* l);
   int lua_geometry_sub(lua_State* l);
+  int lua_geometry_mul(lua_State* l);
   int lua_geometry_eq(lua_State* l);
 
   int lua_vector_make(lua_State* l);

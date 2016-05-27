@@ -16,6 +16,7 @@ namespace dort {
     };
 
     uint32_t max_depth;
+    uint32_t max_light_depth;
     std::vector<LightSamplesIdxs> light_samples_idxs;
     std::vector<BsdfSamplesIdxs> bsdf_samples_idxs;
     SampleIdx light_set_idx;
@@ -30,12 +31,14 @@ namespace dort {
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
         uint32_t max_depth,
+        uint32_t max_light_depth,
         uint32_t light_set_count,
         uint32_t path_count,
         float g_limit,
         float roulette_threshold):
       Renderer(scene, film, sampler),
       max_depth(max_depth),
+      max_light_depth(max_light_depth),
       light_set_count(light_set_count),
       path_count(path_count),
       g_limit(g_limit),
