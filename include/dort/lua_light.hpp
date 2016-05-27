@@ -6,6 +6,7 @@ namespace dort {
 
   int lua_open_light(lua_State* l);
   int lua_light_make_point(lua_State* l);
+  int lua_light_make_directional(lua_State* l);
   int lua_light_make_diffuse(lua_State* l);
   int lua_light_make_infinite(lua_State* l);
 

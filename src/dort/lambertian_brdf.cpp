@@ -14,8 +14,8 @@ namespace dort {
   Spectrum LambertianBrdf::sample_f(const Vector& wo, Vector& out_wi,
       float& out_pdf, float u1, float u2) const
   {
-    out_wi = cosine_hemisphere_sample(u1, u2);
-    out_pdf = cosine_hemisphere_pdf(out_wi);
+    out_wi = Vector(cosine_hemisphere_sample(u1, u2));
+    out_pdf = cosine_hemisphere_pdf(out_wi.v);
     if(wo.v.z < 0.f) {
       out_wi.v.z = -out_wi.v.z;
     }
@@ -24,7 +24,7 @@ namespace dort {
 
   float LambertianBrdf::f_pdf(const Vector& wo, const Vector& wi) const {
     if(Bsdf::same_hemisphere(wo, wi)) {
-      return cosine_hemisphere_pdf(wi);
+      return cosine_hemisphere_pdf(wi.v);
     } else {
       return 0.f;
     }

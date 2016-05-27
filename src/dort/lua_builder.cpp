@@ -102,6 +102,8 @@ namespace dort {
     scene->primitive = lua_make_aggregate(*lua_get_ctx(l),
         builder->state, std::move(builder->frame));
     scene->bounds = scene->primitive->bounds();
+    scene->centroid = scene->bounds.centroid();
+    scene->radius = scene->bounds.radius();
     scene->lights = std::move(builder->lights);
     scene->camera = std::move(builder->camera);
 

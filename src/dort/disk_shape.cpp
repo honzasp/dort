@@ -63,10 +63,10 @@ namespace dort {
   Point DiskShape::sample_point(float u1, float u2,
       Normal& out_n, float& out_ray_epsilon) const 
   {
-    Vector w = uniform_disk_sample(u1, u2);
+    Vec2 w = uniform_disk_sample(u1, u2);
     out_n = Normal(0.f, 0.f, 1.f);
     out_ray_epsilon = 1e-3f;
-    return Point(w.v.x * this->radius, w.v.y * this->radius, this->z_coord);
+    return Point(w.x * this->radius, w.y * this->radius, this->z_coord);
   }
 
   float DiskShape::point_pdf(const Point&) const {

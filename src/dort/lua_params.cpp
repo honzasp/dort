@@ -40,6 +40,12 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return pt;
   }
+  Vector lua_param_vector(lua_State* l, int params_idx, const char* param_name) {
+    lua_getfield(l, params_idx, param_name);
+    Vector pt = lua_check_vector(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return pt;
+  }
   Spectrum lua_param_spectrum(lua_State* l, int params_idx, const char* param_name) {
     lua_getfield(l, params_idx, param_name);
     Spectrum spec = lua_check_spectrum(l, -1);

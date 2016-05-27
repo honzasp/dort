@@ -7,6 +7,9 @@
 namespace dort {
   struct Scene {
     Box bounds;
+    Point centroid;
+    float radius;
+
     std::unique_ptr<Primitive> primitive;
     std::vector<std::shared_ptr<Light>> lights;
     std::vector<std::shared_ptr<Mesh>> meshes;

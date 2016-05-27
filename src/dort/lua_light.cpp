@@ -1,4 +1,5 @@
 #include "dort/diffuse_light.hpp"
+#include "dort/directional_light.hpp"
 #include "dort/infinite_light.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
@@ -16,6 +17,7 @@ namespace dort {
 
     const luaL_Reg light_funs[] = {
       {"make_point", lua_light_make_point},
+      {"make_directional", lua_light_make_directional},
       {"make_diffuse", lua_light_make_diffuse},
       {"make_infinite", lua_light_make_infinite},
       {0, 0},
@@ -34,6 +36,18 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     lua_push_light(l, std::make_shared<PointLight>(transform.apply(point), intensity));
+    return 1;
+  }
+
+  int lua_light_make_directional(lua_State* l) {
+    int p = 1;
+    auto direction = lua_param_vector(l, p, "direction");
+    auto radiance = lua_param_spectrum(l, p, "radiance");
+    auto transform = lua_param_transform_opt(l, p, "transform", identity());
+    lua_params_check_unused(l, p);
+
+    lua_push_light(l, std::make_shared<DirectionalLight>(
+          transform.apply(direction), radiance));
     return 1;
   }
 

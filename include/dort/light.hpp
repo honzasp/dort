@@ -7,10 +7,13 @@
 
 namespace dort {
   enum LightFlags: uint8_t {
-    LIGHT_DELTA = 1 << 0,
-    LIGHT_AREA = 1 << 1,
-    LIGHT_BACKGROUND = 1 << 2,
+    LIGHT_DELTA_POS = 1,
+    LIGHT_DELTA_DIR = 2,
+    LIGHT_AREA = 4,
+    LIGHT_BACKGROUND = 8,
   };
+  constexpr LightFlags LIGHT_DELTA = LightFlags(
+      LIGHT_DELTA_POS | LIGHT_DELTA_DIR);
   constexpr LightFlags LIGHT_ALL = LightFlags(
       LIGHT_DELTA | LIGHT_AREA | LIGHT_BACKGROUND);
 

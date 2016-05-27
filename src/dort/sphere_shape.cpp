@@ -60,10 +60,10 @@ namespace dort {
   Point SphereShape::sample_point(float u1, float u2,
       Normal& out_n, float& out_ray_epsilon) const 
   {
-    Vector w = uniform_sphere_sample(u1, u2);
+    Vec3 w = uniform_sphere_sample(u1, u2);
     out_n = Normal(w);
     out_ray_epsilon = 5e-3f * this->radius;
-    return Point() + w * this->radius;
+    return Point() + Vector(w * this->radius);
   }
 
   float SphereShape::point_pdf(const Point&) const {
@@ -83,13 +83,12 @@ namespace dort {
     float inv_dist = 1.f / dist;
     float cos_theta_max = sqrt(dist_squared - this->radius * this->radius) * inv_dist;
 
-    Vector cone_vec = uniform_cone_sample(cos_theta_max, u1, u2);
+    Vec3 cone_vec = uniform_cone_sample(cos_theta_max, u1, u2);
     Vector cone_z = -Vector(eye.v) * inv_dist;
     Vector cone_x, cone_y;
     coordinate_system(cone_z, cone_x, cone_y);
 
-    Vector ray_dir = cone_x * cone_vec.v.x +
-      cone_y * cone_vec.v.y + cone_z * cone_vec.v.z;
+    Vector ray_dir = cone_x * cone_vec.x + cone_y * cone_vec.y + cone_z * cone_vec.z;
     Ray ray(eye, ray_dir);
     float t_hit;
     if(!this->solve_hit_t(ray, t_hit)) {

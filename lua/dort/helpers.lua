@@ -54,11 +54,3 @@ function dort.material.make_phong(params)
     color = params.color,
   }
 end
-
-function dort.light.make_directional(params)
-  -- TODO: implement real directional light
-  return dort.light.make_point {
-    point = g.point(0, 0, 0) - params.direction * 100,
-    intensity = 1e6 * params.radiance,
-  }
-end

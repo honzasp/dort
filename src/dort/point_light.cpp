@@ -7,8 +7,8 @@ namespace dort {
       Ray& out_ray, Normal& out_nn, float& out_pdf,
       LightRaySample sample) const
   {
-    Vector wi = uniform_sphere_sample(sample.uv_dir.x, sample.uv_dir.y);
-    out_ray = Ray(this->pt, wi, 0.f);
+    Vec3 wi = uniform_sphere_sample(sample.uv_dir.x, sample.uv_dir.y);
+    out_ray = Ray(this->pt, Vector(wi), 0.f);
     out_nn = Normal(wi);
     out_pdf = uniform_sphere_pdf();
     return this->intensity;

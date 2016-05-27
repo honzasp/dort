@@ -22,7 +22,7 @@ namespace dort {
     float ray_epsilon;
     Point shape_p = this->shape->sample_point(sample.uv_pos.x, sample.uv_pos.y,
         shape_n, ray_epsilon);
-    Vector shape_wo = uniform_hemisphere_sample(sample.uv_dir.x, sample.uv_dir.y);
+    Vector shape_wo = Vector(uniform_hemisphere_sample(sample.uv_dir.x, sample.uv_dir.y));
     if(dot(shape_wo, shape_n) < 0.f) {
       shape_wo = -shape_wo;
     }

@@ -253,7 +253,7 @@ local sampler = stratified_sampler {
 }
 
 function render_direct(scene, scene_name)
-  write_png_image(scene_name .. "_direct.png", render(scene, {
+  write_png_image("box_" .. scene_name .. "_direct.png", render(scene, {
     x_res = res, y_res = res,
     sampler = sampler,
     filter = filter,
@@ -262,22 +262,22 @@ function render_direct(scene, scene_name)
 end
 
 function render_igi(scene, scene_name)
-  write_png_image(scene_name .. "_igi.png", render(scene, {
+  write_png_image("box_" .. scene_name .. "_igi.png", render(scene, {
     x_res = res, y_res = res,
     sampler = sampler,
     filter = filter,
     renderer = "igi",
     light_sets = samples * samples,
-    light_paths = 16,
+    light_paths = 256,
   }))
 end
 
 render_igi(scene_ggbs_s, "ggbs_s")
-render_igi(scene_ggbs_p, "ggbs_p")
-render_igi(scene_ggbs_b, "ggbs_b")
-render_igi(scene_gglm_d, "gglm_d")
+--render_igi(scene_ggbs_p, "ggbs_p")
+--render_igi(scene_ggbs_b, "ggbs_b")
+--render_igi(scene_gglm_d, "gglm_d")
 
 render_direct(scene_ggbs_s, "ggbs_s")
-render_direct(scene_ggbs_p, "ggbs_p")
-render_direct(scene_ggbs_b, "ggbs_b")
-render_direct(scene_gglm_d, "gglm_d")
+--render_direct(scene_ggbs_p, "ggbs_p")
+--render_direct(scene_ggbs_b, "ggbs_b")
+--render_direct(scene_gglm_d, "gglm_d")

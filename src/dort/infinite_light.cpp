@@ -6,16 +6,16 @@ namespace dort {
       Ray& out_ray, Normal& out_nn, float& out_pdf,
       LightRaySample sample) const
   {
-    Vector dir = uniform_sphere_sample(sample.uv_dir.x, sample.uv_dir.y);
-    Vector disk_p = uniform_disk_sample(sample.uv_pos.x, sample.uv_pos.y);
-    Point center = scene.bounds.centroid();
-    float radius = scene.bounds.radius();
+    Vec3 dir = uniform_sphere_sample(sample.uv_dir.x, sample.uv_dir.y);
+    Vec2 disk_p = uniform_disk_sample(sample.uv_pos.x, sample.uv_pos.y);
+    const Point& center = scene.centroid;
+    float radius = scene.radius;
 
     Vector s, t;
-    coordinate_system(dir, s, t);
-    Point orig = center - radius * dir + disk_p.v.x * s + disk_p.v.y * t;
+    coordinate_system(Vector(dir), s, t);
+    Point orig = center - Vector(radius * dir) + disk_p.x * s + disk_p.y * t;
 
-    out_ray = Ray(orig, dir, 0.f);
+    out_ray = Ray(orig, Vector(dir), 0.f);
     out_nn = Normal(dir);
     out_pdf = uniform_sphere_pdf() * uniform_disk_pdf();
     return this->radiance;
@@ -25,7 +25,7 @@ namespace dort {
       Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
       LightSample sample) const
   {
-    out_wi = uniform_sphere_sample(sample.uv_pos.x, sample.uv_pos.y);
+    out_wi = Vector(uniform_sphere_sample(sample.uv_pos.x, sample.uv_pos.y));
     out_pdf = uniform_sphere_pdf();
     out_shadow.init_point_dir(eye, eye_epsilon, out_wi);
     return this->radiance;
@@ -40,6 +40,6 @@ namespace dort {
   }
 
   Spectrum InfiniteLight::approximate_power(const Scene& scene) const {
-    return PI * square(scene.bounds.radius()) * this->radiance;
+    return PI * square(scene.radius) * this->radiance;
   }
 }
