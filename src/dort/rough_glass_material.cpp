@@ -37,7 +37,7 @@ namespace dort {
               reflect, FresnelDielectric(eta)));
       }
       if(!transmit.is_black()) {
-        bsdf->add(std::make_unique<SpecularBtdf>(
+        bsdf->add(std::make_unique<SpecularBtdf<FresnelDielectric>>(
               transmit, FresnelDielectric(eta)));
       }
     }

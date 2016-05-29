@@ -18,13 +18,14 @@ namespace dort {
     virtual float f_pdf(const Vector& wo, const Vector& wi) const override final;
   };
 
+  template<class F>
   class SpecularBtdf final: public Bxdf {
     Spectrum transmittance;
-    FresnelDielectric fresnel;
+    F fresnel;
   public:
-    SpecularBtdf(const Spectrum& transmittance, FresnelDielectric fresnel):
+    SpecularBtdf(const Spectrum& transmittance, F fresnel):
       Bxdf(BxdfFlags(BSDF_TRANSMISSION | BSDF_SPECULAR)),
-      transmittance(transmittance), fresnel(fresnel) { }
+      transmittance(transmittance), fresnel(std::move(fresnel)) { }
 
     virtual Spectrum f(const Vector& wo, const Vector& wi) const override final;
     virtual Spectrum sample_f(const Vector& wo, Vector& out_wi,
@@ -33,5 +34,6 @@ namespace dort {
   };
 
   template<class F>
-  float specular_reflectance(const F& fresnel, const Vector& wo, Vector& out_wi);
+  float specular_reflectance(const F& fresnel, const Vector& wo,
+      Vector& out_transmit_wi);
 }
