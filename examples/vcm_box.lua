@@ -272,6 +272,18 @@ function render_igi(scene, scene_name)
   }))
 end
 
+function render_sppm(scene, scene_name)
+  write_rgbe_image("box_sppm_" .. scene_name .. ".hdr", render(scene, {
+    x_res = res, y_res = res,
+    sampler = sampler,
+    filter = filter,
+    renderer = "sppm",
+    light_paths = 400*1000,
+    hdr = true,
+  }))
+end
+
+
 function render_pt(scene, scene_name)
   write_png_image("box_pt_" .. scene_name .. ".png", render(scene, {
     x_res = res, y_res = res,
@@ -283,8 +295,8 @@ function render_pt(scene, scene_name)
   }))
 end
 
-render_igi(scene_ggbs_s, "ggbs_s")
 --[[
+render_igi(scene_ggbs_s, "ggbs_s")
 render_igi(scene_ggbs_p, "ggbs_p")
 render_igi(scene_ggbs_b, "ggbs_b")
 render_igi(scene_gglm_d, "gglm_c")
@@ -303,3 +315,8 @@ render_pt(scene_ggbs_p, "ggbs_p")
 render_pt(scene_ggbs_b, "ggbs_b")
 render_pt(scene_gglm_d, "gglm_c")
 --]]
+
+render_sppm(scene_ggbs_s, "ggbs_s")
+render_sppm(scene_ggbs_p, "ggbs_p")
+render_sppm(scene_ggbs_b, "ggbs_b")
+render_sppm(scene_gglm_d, "gglm_c")

@@ -22,6 +22,7 @@
 #include "dort/random_sampler.hpp"
 #include "dort/rng.hpp"
 #include "dort/scene.hpp"
+#include "dort/sppm_renderer.hpp"
 #include "dort/thread_pool.hpp"
 #include "dort/triangle_shape.hpp"
 #include "dort/triangle_shape_primitive.hpp"
@@ -524,6 +525,13 @@ namespace dort {
           scene, film, sampler,
           max_depth, max_light_depth, light_set_count, path_count,
           g_limit, roulette_threshold);
+    } else if(method == "sppm") {
+      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      uint32_t max_photon_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
+      uint32_t photon_path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
+      renderer = std::make_shared<SppmRenderer>(
+          scene, film, sampler,
+          max_depth, max_photon_depth, photon_path_count);
     } else {
       return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
     }

@@ -16,6 +16,8 @@ namespace dort {
     BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR);
   constexpr BxdfFlags BSDF_ALL = BxdfFlags(
     BSDF_ALL_TYPES | BSDF_REFLECTION | BSDF_TRANSMISSION);
+  constexpr BxdfFlags BSDF_DELTA = BxdfFlags(
+    BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR);
 
   struct Bxdf {
     BxdfFlags flags;

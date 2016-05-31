@@ -1,6 +1,5 @@
 #pragma once
 #include "dort/bsdf.hpp"
-#include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
 #include "dort/renderer.hpp"
 
@@ -51,7 +50,6 @@ namespace dort {
         const Scene& scene, Sampler& sampler) override final;
     Spectrum sample_virtual_lights(const Scene& scene,
         const LightingGeom& isect_geom, const Bsdf& isect_bsdf, Sampler& sampler) const;
-    DiscreteDistrib1d compute_light_distrib(const Scene& scene) const;
     std::vector<std::vector<VirtualLight>> compute_light_sets(CtxG& ctx,
         const Scene& scene, Sampler& sampler) const;
     void compute_light_path(const Scene& scene,

@@ -104,23 +104,12 @@ namespace dort {
     return radiance;
   }
 
-  DiscreteDistrib1d IgiRenderer::compute_light_distrib(const Scene& scene) const {
-    std::vector<float> powers(scene.lights.size());
-    for(uint32_t i = 0; i < scene.lights.size(); ++i) {
-      const auto& light = scene.lights.at(i);
-      float power = light->approximate_power(scene).average();
-      float weight = float(light->num_samples);
-      powers.at(i) = power * weight;
-    }
-    return DiscreteDistrib1d(powers);
-  }
-
   std::vector<std::vector<IgiRenderer::VirtualLight>> 
   IgiRenderer::compute_light_sets(CtxG& ctx, const Scene& scene, Sampler& sampler) const
   {
     uint32_t set_count = this->light_set_count;
     uint32_t path_count = this->path_count;
-    DiscreteDistrib1d light_distrib(this->compute_light_distrib(scene));
+    DiscreteDistrib1d light_distrib(Renderer::compute_light_distrib(scene));
     std::vector<std::vector<VirtualLight>> sets(set_count);
     std::vector<std::mutex> sets_mutexes(set_count);
 

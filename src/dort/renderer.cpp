@@ -2,6 +2,7 @@
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
 #include "dort/geometry.hpp"
+#include "dort/light.hpp"
 #include "dort/renderer.hpp"
 #include "dort/sampler.hpp"
 #include "dort/scene.hpp"
@@ -44,6 +45,17 @@ namespace dort {
       std::unique_lock<std::mutex> film_lock(film_mutex);
       this->film->add_tile(film_rect.p_min, tile_film);
     });
+  }
+
+  DiscreteDistrib1d Renderer::compute_light_distrib(const Scene& scene) {
+    std::vector<float> powers(scene.lights.size());
+    for(uint32_t i = 0; i < scene.lights.size(); ++i) {
+      const auto& light = scene.lights.at(i);
+      float power = light->approximate_power(scene).average();
+      float weight = float(light->num_samples);
+      powers.at(i) = power * weight;
+    }
+    return DiscreteDistrib1d(powers);
   }
 
   void Renderer::render_tile(CtxG&, Recti tile_rect, 
