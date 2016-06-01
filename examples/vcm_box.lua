@@ -285,7 +285,7 @@ function render_sppm(scene, scene_name)
     max_light_depth = 10,
     max_depth = 10,
     hdr = true,
-    parallel_mode = "automatic",
+    parallel_mode = "parallel_iterations",
   }))
 end
 
@@ -322,7 +322,7 @@ render_pt(scene_ggbs_b, "ggbs_b")
 render_pt(scene_gglm_d, "gglm_c")
 --]]
 
-render_sppm(scene_ggbs_s, "ggbs_s")
---render_sppm(scene_ggbs_p, "ggbs_p")
-render_sppm(scene_ggbs_b, "ggbs_b")
-render_sppm(scene_gglm_d, "gglm_c")
+--render_sppm(scene_ggbs_s, "ggbs_s")
+render_sppm(scene_ggbs_p, "ggbs_p")
+--render_sppm(scene_ggbs_b, "ggbs_b")
+--render_sppm(scene_gglm_d, "gglm_c")

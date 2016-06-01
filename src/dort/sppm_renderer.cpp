@@ -1,4 +1,5 @@
 #include <mutex>
+#include "dort/atomic_film.hpp"
 #include "dort/camera.hpp"
 #include "dort/ctx.hpp"
 #include "dort/film.hpp"
@@ -37,13 +38,13 @@ namespace dort {
         samplers.push_back(sampler->split());
       }
 
-      std::mutex film_mutex;
+      AtomicFilm shared_film(this->film->x_res, this->film->y_res);
       fork_join(*ctx.pool, this->iteration_count, [&](uint32_t i) {
         Film local_film(this->film->x_res, this->film->y_res, this->film->filter);
         this->iteration_serial(local_film, *samplers.at(i), radii.at(i));
-        std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->film->add_tile(Vec2i(0, 0), local_film);
+        shared_film.add_tile(Vec2i(0, 0), local_film);
       });
+      *this->film = std::move(shared_film).into_film(std::move(this->film->filter));
     } else {
       for(uint32_t i = 0; i < this->iteration_count; ++i) {
         this->iteration_parallel(ctx, *this->film, *this->sampler, radii.at(i));

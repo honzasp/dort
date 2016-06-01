@@ -3,6 +3,8 @@
 
 namespace dort {
   struct RgbSpectrum {
+    static constexpr uint32_t SAMPLES = 3;
+
     Vec3 rgb;
 
     RgbSpectrum(): rgb() {}
@@ -21,6 +23,9 @@ namespace dort {
       return (1.f / 3.f) * (this->rgb.x + this->rgb.y + this->rgb.z); 
     }
     bool is_black() const { return this->rgb == Vec3(0.f, 0.f, 0.f); }
+
+    float sample(uint32_t i) const { return this->rgb[i]; }
+    void sample(uint32_t i, float x) { this->rgb[i] = x; }
   };
 
   inline RgbSpectrum operator+(const RgbSpectrum& s1, const RgbSpectrum& s2) {
@@ -28,6 +33,9 @@ namespace dort {
   }
   inline RgbSpectrum operator-(const RgbSpectrum& s1, const RgbSpectrum& s2) {
     return RgbSpectrum(s1.rgb - s2.rgb);
+  }
+  inline RgbSpectrum operator-(const RgbSpectrum& s1) {
+    return RgbSpectrum(-s1.rgb);
   }
   inline RgbSpectrum operator*(float a, const RgbSpectrum& s) {
     return RgbSpectrum(a * s.rgb);

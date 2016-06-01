@@ -26,6 +26,8 @@ namespace dort {
   class ThreadPool;
   class Transform;
 
+  struct AtomicFilm;
+  struct AtomicSpectrum;
   struct Box;
   struct Boxi;
   struct Bxdf;
