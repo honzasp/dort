@@ -246,7 +246,7 @@ local scene_ggbs_b = box_scene {
 
 
 local res = 512
-local samples = 6
+local samples = 1
 local filter = mitchell_filter { radius = 1.5 }
 local sampler = stratified_sampler {
   samples_per_x = samples, samples_per_y = samples,
@@ -278,8 +278,12 @@ function render_sppm(scene, scene_name)
     sampler = sampler,
     filter = filter,
     renderer = "sppm",
-    light_paths = 800*1000,
+    light_paths = 10*1000,
+    iterations = 24,
+    initial_radius = 0.1,
+    alpha = 0.7,
     max_light_depth = 10,
+    max_depth = 10,
     hdr = true,
   }))
 end
@@ -318,6 +322,6 @@ render_pt(scene_gglm_d, "gglm_c")
 --]]
 
 render_sppm(scene_ggbs_s, "ggbs_s")
-render_sppm(scene_ggbs_p, "ggbs_p")
+--render_sppm(scene_ggbs_p, "ggbs_p")
 render_sppm(scene_ggbs_b, "ggbs_b")
 render_sppm(scene_gglm_d, "gglm_c")

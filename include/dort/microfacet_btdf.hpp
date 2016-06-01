@@ -10,7 +10,7 @@ namespace dort {
     G geom;
   public:
     MicrofacetBtdf(const Spectrum& transmittance, D distrib, F fresnel, G geom):
-      Bxdf(BxdfFlags(BSDF_TRANSMISSION | BSDF_GLOSSY)),
+      Bxdf(BSDF_TRANSMISSION | BSDF_GLOSSY),
       transmittance(transmittance),
       distrib(std::move(distrib)),
       fresnel(std::move(fresnel)),

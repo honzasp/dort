@@ -36,7 +36,7 @@ namespace dort {
   struct LightSample {
     Vec2 uv_pos;
 
-    explicit LightSample(Sampler& sampler);
+    explicit LightSample(Rng& rng);
     LightSample(Sampler& sampler, const LightSamplesIdxs& idxs, uint32_t n);
     static LightSamplesIdxs request(Sampler& sampler, uint32_t count);
   };
@@ -53,7 +53,7 @@ namespace dort {
 
     LightRaySample(Vec2 uv_pos, Vec2 uv_dir):
       uv_pos(uv_pos), uv_dir(uv_dir) { }
-    explicit LightRaySample(Sampler& sampler);
+    explicit LightRaySample(Rng& rng);
     LightRaySample(Sampler& sampler, const LightRaySamplesIdxs& idxs, uint32_t n);
     static LightRaySamplesIdxs request(Sampler& sampler, uint32_t count);
   };

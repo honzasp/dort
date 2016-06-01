@@ -6,7 +6,7 @@ namespace dort {
     Spectrum reflectance;
   public:
     LambertianBrdf(const Spectrum& reflectance):
-      Bxdf(BxdfFlags(BSDF_REFLECTION | BSDF_DIFFUSE)),
+      Bxdf(BSDF_REFLECTION | BSDF_DIFFUSE),
       reflectance(reflectance) 
     { }
 

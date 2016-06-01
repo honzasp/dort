@@ -3,31 +3,46 @@
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
 #include "dort/photon_map.hpp"
-#include "dort/sample_renderer.hpp"
+#include "dort/renderer.hpp"
 
 namespace dort {
-  class SppmRenderer final: public SampleRenderer {
+  class SppmRenderer final: public Renderer {
+    float initial_radius;
+    uint32_t iteration_count;
     uint32_t max_depth;
     uint32_t max_photon_depth;
     uint32_t photon_path_count;
-    PhotonMap photon_map;
+    float alpha;
+
+    DiscreteDistrib1d light_distrib;
+    SampleIdx pixel_pos_idx;
   public:
     SppmRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
+        float initial_radius,
+        uint32_t iteration_count,
         uint32_t max_depth,
         uint32_t max_photon_depth,
-        uint32_t photon_path_count):
-      SampleRenderer(scene, film, sampler),
+        uint32_t photon_path_count,
+        float alpha):
+      Renderer(scene, film, sampler),
+      initial_radius(initial_radius),
+      iteration_count(iteration_count),
       max_depth(max_depth),
       max_photon_depth(max_photon_depth),
-      photon_path_count(photon_path_count)
+      photon_path_count(photon_path_count),
+      alpha(alpha)
     { }
 
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
-        uint32_t depth, Sampler& sampler) const override final;
+    virtual void render(CtxG& ctx) override final;
   private:
-    virtual void preprocess(CtxG& ctx,
-        const Scene& scene, Sampler& sampler) override final;
+    void iteration(CtxG& ctx, Film& film, Sampler& sampler, float radius) const;
+    void gather_pixel(Film& film, Sampler& sampler,
+        const PhotonMap& photon_map, float radius,
+        uint32_t x, uint32_t y, uint32_t s) const;
+    Spectrum gather_ray(Ray ray, Sampler& sampler,
+        const PhotonMap& photon_map, float radius) const;
+    PhotonMap compute_photon_map(CtxG& ctx, Rng rng) const;
   };
 }

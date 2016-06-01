@@ -9,7 +9,7 @@ namespace dort {
     F fresnel;
   public:
     SpecularBrdf(const Spectrum& reflectance, F fresnel):
-      Bxdf(BxdfFlags(BSDF_REFLECTION | BSDF_SPECULAR)),
+      Bxdf(BSDF_REFLECTION | BSDF_SPECULAR),
       reflectance(reflectance), fresnel(std::move(fresnel)) { }
 
     virtual Spectrum f(const Vector& wo, const Vector& wi) const override final;
@@ -24,7 +24,7 @@ namespace dort {
     F fresnel;
   public:
     SpecularBtdf(const Spectrum& transmittance, F fresnel):
-      Bxdf(BxdfFlags(BSDF_TRANSMISSION | BSDF_SPECULAR)),
+      Bxdf(BSDF_TRANSMISSION | BSDF_SPECULAR),
       transmittance(transmittance), fresnel(std::move(fresnel)) { }
 
     virtual Spectrum f(const Vector& wo, const Vector& wi) const override final;

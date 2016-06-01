@@ -4,7 +4,7 @@
 
 namespace dort {
   OrenNayarBrdf::OrenNayarBrdf(const Spectrum& reflectance, float sigma):
-    Bxdf(BxdfFlags(BSDF_REFLECTION | BSDF_DIFFUSE)),
+    Bxdf(BSDF_REFLECTION | BSDF_DIFFUSE),
     reflectance(reflectance)
   {
     this->a = 1.f - square(sigma) / (2.f * (square(sigma) + 0.33f));

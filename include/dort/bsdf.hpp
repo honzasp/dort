@@ -6,18 +6,29 @@
 
 namespace dort {
   enum BxdfFlags: uint8_t {
-    BSDF_REFLECTION = 1 << 0,
-    BSDF_TRANSMISSION = 1 << 1,
-    BSDF_DIFFUSE = 1 << 2,
-    BSDF_GLOSSY = 1 << 3,
-    BSDF_SPECULAR = 1 << 4,
+    BSDF_REFLECTION = 1,
+    BSDF_TRANSMISSION = 2,
+    BSDF_DIFFUSE = 4,
+    BSDF_GLOSSY = 8,
+    BSDF_SPECULAR = 16,
   };
-  constexpr BxdfFlags BSDF_ALL_TYPES = BxdfFlags(
-    BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR);
-  constexpr BxdfFlags BSDF_ALL = BxdfFlags(
-    BSDF_ALL_TYPES | BSDF_REFLECTION | BSDF_TRANSMISSION);
-  constexpr BxdfFlags BSDF_DELTA = BxdfFlags(
-    BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR);
+
+  constexpr BxdfFlags operator|(BxdfFlags a, BxdfFlags b) {
+    return BxdfFlags(uint8_t(a) | uint8_t(b));
+  }
+  constexpr BxdfFlags operator&(BxdfFlags a, BxdfFlags b) {
+    return BxdfFlags(uint8_t(a) & uint8_t(b));
+  }
+  constexpr BxdfFlags operator~(BxdfFlags a) {
+    return BxdfFlags(~uint8_t(a));
+  }
+
+  constexpr BxdfFlags BSDF_ALL_TYPES =
+    BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR;
+  constexpr BxdfFlags BSDF_ALL =
+    BSDF_ALL_TYPES | BSDF_REFLECTION | BSDF_TRANSMISSION;
+  constexpr BxdfFlags BSDF_DELTA =
+    BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR;
 
   struct Bxdf {
     BxdfFlags flags;
@@ -45,7 +56,7 @@ namespace dort {
     Vec2 uv_pos;
     float u_component;
 
-    explicit BsdfSample(Sampler& sampler);
+    explicit BsdfSample(Rng& rng);
     BsdfSample(Sampler& sampler, const BsdfSamplesIdxs& idxs, uint32_t n);
     static BsdfSamplesIdxs request(Sampler& sampler, uint32_t count);
   };

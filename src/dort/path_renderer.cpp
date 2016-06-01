@@ -46,7 +46,7 @@ namespace dort {
             BsdfSample(sampler, this->bsdf_samples_idxs.at(bounces), 0));
       } else {
         lighting = uniform_sample_one_light(scene, geom, *bsdf, sampler,
-            sampler.random_1d(), LightSample(sampler), BsdfSample(sampler));
+            sampler.random_1d(), LightSample(sampler.rng), BsdfSample(sampler.rng));
       }
       assert(is_finite(lighting) && is_nonnegative(lighting));
       radiance += lighting * throughput;
@@ -60,7 +60,7 @@ namespace dort {
             BsdfSample(sampler, this->next_bsdf_samples_idxs.at(bounces), 0));
       } else {
         bsdf_f = bsdf->sample_f(geom.wo, bsdf_wi, bsdf_pdf, BSDF_ALL, bsdf_flags,
-            BsdfSample(sampler));
+            BsdfSample(sampler.rng));
       }
 
       if(bsdf_f.is_black() || bsdf_pdf == 0.f) {

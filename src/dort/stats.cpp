@@ -51,8 +51,6 @@ namespace dort {
     { "scene isect_p", UINT32_MAX / 256 },
     { "film add_sample", UINT32_MAX / 256 },
     { "film add_tile", UINT32_MAX / 16 },
-    { "sampler start_pixel", UINT32_MAX / 256 },
-    { "sampler start_pixel_sample", UINT32_MAX / 256 },
     { "rng float", UINT32_MAX / 1024 },
     { "rng uint32", UINT32_MAX / 1024 },
     { "bvh build", UINT32_MAX },

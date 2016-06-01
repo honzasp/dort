@@ -6,6 +6,14 @@ namespace dort {
     return scale(2.f / screen_diagonal.x, 2.f / screen_diagonal.y, 1.f);
   }
 
+  Ray Camera::cast_ray(Vec2 film_res, Vec2 film_pos) const {
+    float res = max(film_res.x, film_res.y);
+    Vec2 ndc_scale = 2.f / Vec2(res, -res);
+    Vec2 ndc_shift = Vec2(-film_res.x/ res, film_res.y / res);
+    Vec2 ndc_pos = film_pos * ndc_scale + ndc_shift;
+    return this->generate_ray(ndc_pos);
+  }
+
   OrthographicCamera::OrthographicCamera(
       const Transform& camera_to_world, Vec2 screen_diagonal)
   {

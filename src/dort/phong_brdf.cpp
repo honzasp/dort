@@ -4,7 +4,7 @@
 namespace dort {
   PhongBrdf::PhongBrdf(const Spectrum& k_diffuse,
       const Spectrum& k_glossy, float exponent):
-    Bxdf(BxdfFlags(BSDF_REFLECTION | BSDF_GLOSSY)),
+    Bxdf(BSDF_REFLECTION | BSDF_GLOSSY),
     k_diffuse(k_diffuse), k_glossy(k_glossy), exponent(exponent)
   { 
     float diffuse_weight = this->k_diffuse.average();

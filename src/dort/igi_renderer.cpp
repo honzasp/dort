@@ -188,7 +188,7 @@ namespace dort {
       float bounce_pdf;
       BxdfFlags bounce_flags;
       Spectrum bounce_f = bsdf->sample_f(-ray.dir, bounce_wi, bounce_pdf,
-          BSDF_ALL, bounce_flags, BsdfSample(sampler));
+          BSDF_ALL, bounce_flags, BsdfSample(sampler.rng));
       if(bounce_f.is_black() || bounce_pdf == 0.f) {
         break;
       }

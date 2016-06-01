@@ -3,9 +3,9 @@
 #include "dort/shape.hpp"
 
 namespace dort {
-  BsdfSample::BsdfSample(Sampler& sampler) {
-    this->uv_pos = sampler.random_2d();
-    this->u_component = sampler.random_1d();
+  BsdfSample::BsdfSample(Rng& rng) {
+    this->uv_pos = Vec2(rng.uniform_float(), rng.uniform_float());
+    this->u_component = rng.uniform_float();
   }
 
   BsdfSample::BsdfSample(Sampler& sampler, const BsdfSamplesIdxs& idxs, uint32_t n) {
@@ -44,9 +44,9 @@ namespace dort {
     Vector wi_local = this->world_to_local(wi);
 
     if(Bsdf::same_hemisphere(wo_local, wi_local)) {
-      flags = BxdfFlags(flags & ~BSDF_TRANSMISSION);
+      flags = flags & ~BSDF_TRANSMISSION;
     } else {
-      flags = BxdfFlags(flags & ~BSDF_REFLECTION);
+      flags = flags & ~BSDF_REFLECTION;
     }
 
     Spectrum f_sum;
@@ -98,9 +98,9 @@ namespace dort {
 
     BxdfFlags eval_flags;
     if(Bsdf::same_hemisphere(wo_local, wi_local)) {
-      eval_flags = BxdfFlags(flags & ~BSDF_TRANSMISSION);
+      eval_flags = flags & ~BSDF_TRANSMISSION;
     } else {
-      eval_flags = BxdfFlags(flags & ~BSDF_REFLECTION);
+      eval_flags = flags & ~BSDF_REFLECTION;
     }
 
     float sum_pdfs = sampled_pdf;

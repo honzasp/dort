@@ -8,6 +8,7 @@ namespace dort {
   public:
     virtual Ray generate_ray(Vec2 ndc) const = 0;
     static Transform screen_to_ndc(Vec2 screen_diagonal);
+    Ray cast_ray(Vec2 film_res, Vec2 film_pos) const;
   };
 
   class OrthographicCamera final: public Camera {

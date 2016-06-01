@@ -2,8 +2,8 @@
 #include "dort/primitive.hpp"
 
 namespace dort {
-  LightSample::LightSample(Sampler& sampler) {
-    this->uv_pos = sampler.random_2d();
+  LightSample::LightSample(Rng& rng) {
+    this->uv_pos = Vec2(rng.uniform_float(), rng.uniform_float());
   }
 
   LightSample::LightSample(Sampler& sampler, const LightSamplesIdxs& idxs, uint32_t n) {
@@ -17,9 +17,9 @@ namespace dort {
     return idxs;
   }
 
-  LightRaySample::LightRaySample(Sampler& sampler) {
-    this->uv_pos = sampler.random_2d();
-    this->uv_dir = sampler.random_2d();
+  LightRaySample::LightRaySample(Rng& rng) {
+    this->uv_pos = Vec2(rng.uniform_float(), rng.uniform_float());
+    this->uv_dir = Vec2(rng.uniform_float(), rng.uniform_float());
   }
 
   LightRaySample::LightRaySample(Sampler& sampler,

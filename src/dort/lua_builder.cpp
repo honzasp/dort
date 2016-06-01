@@ -526,12 +526,15 @@ namespace dort {
           max_depth, max_light_depth, light_set_count, path_count,
           g_limit, roulette_threshold);
     } else if(method == "sppm") {
+      float initial_radius = lua_param_float(l, p, "initial_radius");
+      uint32_t iteration_count = lua_param_uint32(l, p, "iterations");
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       uint32_t max_photon_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
       uint32_t photon_path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
+      float alpha = lua_param_float_opt(l, p, "alpha", 0.7f);
       renderer = std::make_shared<SppmRenderer>(
-          scene, film, sampler,
-          max_depth, max_photon_depth, photon_path_count);
+          scene, film, sampler, initial_radius, iteration_count,
+          max_depth, max_photon_depth, photon_path_count, alpha);
     } else {
       return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
     }

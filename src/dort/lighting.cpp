@@ -23,7 +23,7 @@ namespace dort {
       Spectrum light_radiance(0.f);
       for(uint32_t i = 0; i < light_idxs.count; ++i) {
         light_radiance += estimate_direct(scene, geom,
-            bsdf, *scene.lights.at(l), BxdfFlags(BSDF_ALL & ~(BSDF_SPECULAR)),
+            bsdf, *scene.lights.at(l), BSDF_ALL & ~BSDF_SPECULAR,
             LightSample(sampler, light_idxs, i),
             BsdfSample(sampler, bsdf_idxs, i));
       }
@@ -44,8 +44,8 @@ namespace dort {
       Spectrum light_radiance(0.f);
       for(uint32_t i = 0; i < num_samples; ++i) {
         light_radiance += estimate_direct(scene, geom,
-            bsdf, *light, BxdfFlags(BSDF_ALL & ~(BSDF_SPECULAR)),
-            LightSample(sampler), BsdfSample(sampler));
+            bsdf, *light, BSDF_ALL & ~BSDF_SPECULAR,
+            LightSample(sampler.rng), BsdfSample(sampler.rng));
       }
       assert(is_finite(light_radiance));
       radiance += light_radiance / float(num_samples);
@@ -62,7 +62,7 @@ namespace dort {
     uint32_t light_idx = clamp(floor_int32(num_lights * u_select),
         0, int32_t(scene.lights.size()) - 1);
     return num_lights * estimate_direct(scene, geom, bsdf,
-        *scene.lights.at(light_idx), BxdfFlags(BSDF_ALL & ~(BSDF_SPECULAR)),
+        *scene.lights.at(light_idx), BSDF_ALL & ~BSDF_SPECULAR,
         light_sample, bsdf_sample);
   }
 
@@ -70,7 +70,7 @@ namespace dort {
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler)
   {
     return uniform_sample_one_light(scene, geom, bsdf, sampler,
-        sampler.random_1d(), LightSample(sampler), BsdfSample(sampler));
+        sampler.random_1d(), LightSample(sampler.rng), BsdfSample(sampler.rng));
   }
 
   Spectrum estimate_direct(const Scene& scene,
@@ -156,8 +156,8 @@ namespace dort {
     float pdf;
     BxdfFlags sampled_flags;
     Spectrum bsdf_f = bsdf.sample_f(geom.wo, wi, pdf,
-        BxdfFlags(BSDF_SPECULAR | flags), sampled_flags,
-        BsdfSample(sampler));
+        BSDF_SPECULAR | flags, sampled_flags,
+        BsdfSample(sampler.rng));
     assert(is_finite(bsdf_f) && is_nonnegative(bsdf_f));
     if(!bsdf_f.is_black() && pdf != 0.f) {
       Ray spec_ray(geom.p, wi, geom.ray_epsilon, INFINITY);

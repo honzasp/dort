@@ -49,33 +49,19 @@ namespace dort {
       Recti tile_film_rect, Film& tile_film, Sampler& sampler) const
   {
     StatTimer t(TIMER_RENDER_TILE);
-
-    float x_res = float(this->film->x_res);
-    float y_res = float(this->film->y_res);
-    float res = max(x_res, y_res);
-    Vec2 ndc_scale = 2.f / Vec2(res, -res);
-    Vec2 ndc_shift = Vec2(-x_res / res, y_res / res);
+    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
 
     for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
       for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
-        {
-          StatTimer t(TIMER_SAMPLER_START_PIXEL);
-          sampler.start_pixel();
-        }
-
+        sampler.start_pixel();
         for(uint32_t s = 0; s < sampler.samples_per_pixel; ++s) {
-          {
-            StatTimer t(TIMER_SAMPLER_START_PIXEL_SAMPLE);
-            sampler.start_pixel_sample();
-          }
+          sampler.start_pixel_sample();
 
           Vec2 pixel_pos = sampler.get_sample_2d(this->pixel_pos_idx);
           Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
-          Vec2 ndc_pos = film_pos * ndc_scale + ndc_shift;
+          Ray ray(this->scene->camera->cast_ray(film_res, film_pos));
 
-          Ray ray(this->scene->camera->generate_ray(ndc_pos));
           Spectrum radiance = this->get_radiance(*this->scene, ray, 0, sampler);
-
           assert(is_finite(radiance));
           assert(is_nonnegative(radiance));
           if(is_finite(radiance) && is_nonnegative(radiance)) {
