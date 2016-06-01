@@ -15,7 +15,7 @@ namespace dort {
     this->preprocess(ctx, *this->scene, *this->sampler);
 
     StatTimer t(TIMER_RENDER);
-    Vec2i layout_tiles = this->layout_tiles(ctx);
+    Vec2i layout_tiles = Renderer::layout_tiles(ctx, *this->film, *this->sampler);
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
       Vec2(float(layout_tiles.x), float(layout_tiles.y));
     uint32_t job_count = layout_tiles.x * layout_tiles.y;
@@ -72,23 +72,5 @@ namespace dort {
         }
       }
     }
-  }
-
-  Vec2i SampleRenderer::layout_tiles(CtxG& ctx) const {
-    uint32_t min_jobs_per_thread = 32;
-    uint32_t max_samples_per_job = 1024;
-    uint32_t approx_jobs = max(1u, max(
-        ctx.pool->num_threads() * min_jobs_per_thread,
-        this->film->x_res * this->film->y_res *
-          this->sampler->samples_per_pixel / max_samples_per_job));
-
-    uint32_t tiles_x = round_up_power_of_two(approx_jobs);
-    uint32_t tiles_y = 1;
-    while(this->film->x_res * tiles_y < this->film->y_res * tiles_x) {
-      tiles_x = tiles_x / 2;
-      tiles_y = tiles_y * 2;
-    }
-
-    return Vec2i(tiles_x, tiles_y);
   }
 }

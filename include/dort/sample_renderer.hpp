@@ -22,6 +22,5 @@ namespace dort {
   private:
     void render_tile(CtxG& ctx, Recti tile_rect,
         Recti tile_film_rect, Film& tile_film, Sampler& sampler) const;
-    Vec2i layout_tiles(CtxG& ctx) const;
   };
 }

@@ -279,9 +279,9 @@ function render_sppm(scene, scene_name)
     filter = filter,
     renderer = "sppm",
     light_paths = 10*1000,
-    iterations = 24,
+    iterations = 40,
     initial_radius = 0.1,
-    alpha = 0.7,
+    alpha = 0.5,
     max_light_depth = 10,
     max_depth = 10,
     hdr = true,
@@ -321,7 +321,7 @@ render_pt(scene_ggbs_b, "ggbs_b")
 render_pt(scene_gglm_d, "gglm_c")
 --]]
 
-render_sppm(scene_ggbs_s, "ggbs_s")
---render_sppm(scene_ggbs_p, "ggbs_p")
-render_sppm(scene_ggbs_b, "ggbs_b")
-render_sppm(scene_gglm_d, "gglm_c")
+--render_sppm(scene_ggbs_s, "ggbs_s")
+render_sppm(scene_ggbs_p, "ggbs_p")
+--render_sppm(scene_ggbs_b, "ggbs_b")
+--render_sppm(scene_gglm_d, "gglm_c")

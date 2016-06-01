@@ -14,5 +14,8 @@ namespace dort {
       scene(scene), film(film), sampler(sampler) { }
     virtual ~Renderer() {}
     virtual void render(CtxG& ctx) = 0;
+
+    static Vec2i layout_tiles(const CtxG& ctx,
+        const Film& film, const Sampler& sampler);
   };
 }

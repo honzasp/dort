@@ -3,6 +3,7 @@
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
 #include "dort/photon_map.hpp"
+#include "dort/recti.hpp"
 #include "dort/renderer.hpp"
 
 namespace dort {
@@ -38,9 +39,9 @@ namespace dort {
     virtual void render(CtxG& ctx) override final;
   private:
     void iteration(CtxG& ctx, Film& film, Sampler& sampler, float radius) const;
-    void gather_pixel(Film& film, Sampler& sampler,
-        const PhotonMap& photon_map, float radius,
-        uint32_t x, uint32_t y, uint32_t s) const;
+    void gather_tile(const Film& film, Film& tile_film, Sampler& sampler,
+        Recti tile_rect, Recti tile_film_rect,
+        const PhotonMap& photon_map, float radius) const;
     Spectrum gather_ray(Ray ray, Sampler& sampler,
         const PhotonMap& photon_map, float radius) const;
     PhotonMap compute_photon_map(CtxG& ctx, Rng rng) const;

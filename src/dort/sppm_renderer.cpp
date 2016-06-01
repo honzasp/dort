@@ -1,9 +1,12 @@
+#include <mutex>
 #include "dort/camera.hpp"
+#include "dort/ctx.hpp"
 #include "dort/film.hpp"
-#include "dort/primitive.hpp"
 #include "dort/lighting.hpp"
 #include "dort/low_discrepancy.hpp"
+#include "dort/primitive.hpp"
 #include "dort/sppm_renderer.hpp"
+#include "dort/thread_pool.hpp"
 
 namespace dort {
   void SppmRenderer::render(CtxG& ctx) {
@@ -21,28 +24,59 @@ namespace dort {
       Sampler& sampler, float radius) const 
   {
     PhotonMap photon_map = this->compute_photon_map(ctx, sampler.rng.split());
-    for(uint32_t x = 0; x < film.x_res; ++x) {
-      for(uint32_t y = 0; y < film.y_res; ++y) {
+
+    Vec2i layout_tiles = Renderer::layout_tiles(ctx, film, sampler);
+    Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
+      Vec2(float(layout_tiles.x), float(layout_tiles.y));
+    uint32_t job_count = layout_tiles.x * layout_tiles.y;
+
+    std::vector<std::shared_ptr<Sampler>> samplers;
+    for(uint32_t i = 0; i < job_count; ++i) {
+      samplers.push_back(this->sampler->split());
+    }
+
+    std::mutex film_mutex;
+    fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
+      uint32_t tile_x = job_i % layout_tiles.x;
+      uint32_t tile_y = job_i / layout_tiles.x;
+      Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));
+      Vec2 corner_1f = corner_0f + tile_size;
+      Recti tile_rect(floor_vec2i(corner_0f), floor_vec2i(corner_1f));
+
+      Vec2 margin = film.filter.radius;
+      Recti film_rect(floor_vec2i(corner_0f - margin), ceil_vec2i(corner_1f + margin));
+      Vec2i film_size = film_rect.p_max - film_rect.p_min;
+      Film tile_film(film_size.x, film_size.y, film.filter);
+      this->gather_tile(film, tile_film, *samplers.at(job_i),
+        tile_rect, film_rect, photon_map, radius);
+
+      std::unique_lock<std::mutex> film_lock(film_mutex);
+      film.add_tile(film_rect.p_min, tile_film);
+    });
+  }
+
+  void SppmRenderer::gather_tile(const Film& film, Film& tile_film, Sampler& sampler,
+      Recti tile_rect, Recti tile_film_rect,
+      const PhotonMap& photon_map, float radius) const
+  {
+    Vec2 film_res = Vec2(float(film.x_res), float(film.y_res));
+    for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
+      for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
         sampler.start_pixel();
         for(uint32_t s = 0; s < sampler.samples_per_pixel; ++s) {
           sampler.start_pixel_sample();
-          this->gather_pixel(film, sampler, photon_map, radius, x, y, s);
+
+          Vec2 pixel_pos = sampler.get_sample_2d(this->pixel_pos_idx);
+          Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
+          Ray ray(this->scene->camera->cast_ray(film_res, film_pos));
+          Spectrum radiance = this->gather_ray(ray, sampler, photon_map, radius);
+
+          Vec2 tile_film_pos = film_pos -
+            Vec2(float(tile_film_rect.p_min.x), float(tile_film_rect.p_min.y));
+          tile_film.add_sample(tile_film_pos, radiance);
         }
       }
     }
-  }
-
-  void SppmRenderer::gather_pixel(Film& film, Sampler& sampler,
-      const PhotonMap& photon_map, float radius,
-      uint32_t x, uint32_t y, uint32_t) const
-  {
-    Vec2 pixel_pos = sampler.get_sample_2d(this->pixel_pos_idx);
-    Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
-    Vec2 film_res = Vec2(float(film.x_res), float(film.y_res));
-    Ray ray(this->scene->camera->cast_ray(film_res, film_pos));
-
-    Spectrum radiance = this->gather_ray(ray, sampler, photon_map, radius);
-    film.add_sample(film_pos, radiance);
   }
 
   Spectrum SppmRenderer::gather_ray(Ray ray, Sampler& sampler,
