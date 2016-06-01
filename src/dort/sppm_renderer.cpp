@@ -135,29 +135,52 @@ namespace dort {
     return radiance;
   }
 
-  PhotonMap SppmRenderer::compute_photon_map(CtxG&, Rng rng) const {
+  PhotonMap SppmRenderer::compute_photon_map(CtxG& ctx, Rng rng) const {
     uint32_t path_count = this->photon_path_count;
-    std::vector<float> light_idx_samples(low_discrepancy_1d(
-          1, path_count, rng));
-    std::vector<Vec2> light_pos_samples(low_discrepancy_2d(
-          1, path_count, rng));
-    std::vector<Vec2> light_dir_samples(low_discrepancy_2d(
-          1, path_count, rng));
+    uint32_t job_count = max(1u, ctx.pool->num_threads() * 4);
+
+    std::vector<Rng> rngs;
+    for(uint32_t i = 0; i < job_count; ++i) {
+      rngs.push_back(rng.split());
+    }
 
     std::vector<Photon> photons;
-    for(uint32_t path_i = 0; path_i < path_count; ++path_i) {
-      uint32_t light_i = light_distrib.sample(light_idx_samples.at(path_i));
+    std::mutex photons_mutex;
+
+    fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
+      uint32_t begin = uint64_t(job_i) * path_count / job_count;
+      uint32_t end = uint64_t(job_i + 1) * path_count / job_count;
+      std::vector<Photon> local_photons;
+      this->shoot_photons(local_photons, end - begin, std::move(rngs.at(job_i)));
+
+      std::unique_lock<std::mutex> photons_lock(photons_mutex);
+      for(Photon& photon: local_photons) {
+        photons.push_back(std::move(photon));
+      }
+    });
+
+    return PhotonMap(std::move(photons), path_count);
+  }
+
+  void SppmRenderer::shoot_photons(std::vector<Photon>& photons,
+      uint32_t count, Rng rng) const
+  {
+    std::vector<float> light_idx_samples(low_discrepancy_1d(1, count, rng));
+    std::vector<Vec2> light_pos_samples(low_discrepancy_2d(1, count, rng));
+    std::vector<Vec2> light_dir_samples(low_discrepancy_2d(1, count, rng));
+
+    for(uint32_t i = 0; i < count; ++i) {
+      uint32_t light_i = light_distrib.sample(light_idx_samples.at(i));
       float light_pdf = light_distrib.pdf(light_i);
       const Light& light = *this->scene->lights.at(light_i);
-      LightRaySample light_sample(light_pos_samples.at(path_i),
-          light_dir_samples.at(path_i));
+      LightRaySample light_sample(light_pos_samples.at(i), light_dir_samples.at(i));
 
       Ray ray;
       Normal prev_nn;
       float light_ray_pdf;
       Spectrum light_radiance = light.sample_ray_radiance(
           *this->scene, ray, prev_nn, light_ray_pdf, light_sample);
-      if(light_radiance.is_black() || light_ray_pdf == 0.f) {
+      if(light_radiance.is_black() || light_pdf == 0.f || light_ray_pdf == 0.f) {
         continue;
       }
 
@@ -172,6 +195,9 @@ namespace dort {
         bool has_non_delta = bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs();
 
         if(depth > 0 && has_non_delta) {
+          assert(is_finite(path_power));
+          assert(is_nonnegative(path_power));
+
           Photon photon;
           photon.power = path_power;
           photon.p = isect.world_diff_geom.p;
@@ -185,11 +211,12 @@ namespace dort {
         BxdfFlags bounce_flags;
         Spectrum bounce_f = bsdf->sample_f(-ray.dir, bounce_wi, bounce_pdf,
             BSDF_ALL, bounce_flags, BsdfSample(rng));
-        if(bounce_f.is_black() || bounce_pdf == 0.f) {
-          break;
-        }
         Spectrum bounce_contrib = bounce_f * (abs_dot(bounce_wi,
               isect.world_diff_geom.nn) / bounce_pdf);
+        if(bounce_pdf == 0.f || bounce_contrib.is_black()) {
+          break;
+        }
+
         path_power *= bounce_contrib;
 
         if(depth > 0) {
@@ -203,7 +230,5 @@ namespace dort {
         ray = Ray(isect.world_diff_geom.p, bounce_wi, isect.ray_epsilon);
       }
     }
-
-    return PhotonMap(std::move(photons), path_count);
   }
 }

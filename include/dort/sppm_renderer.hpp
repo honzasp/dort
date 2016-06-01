@@ -45,5 +45,6 @@ namespace dort {
     Spectrum gather_ray(Ray ray, Sampler& sampler,
         const PhotonMap& photon_map, float radius) const;
     PhotonMap compute_photon_map(CtxG& ctx, Rng rng) const;
+    void shoot_photons(std::vector<Photon>& photons, uint32_t count, Rng rng) const;
   };
 }

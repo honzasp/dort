@@ -278,7 +278,7 @@ function render_sppm(scene, scene_name)
     sampler = sampler,
     filter = filter,
     renderer = "sppm",
-    light_paths = 10*1000,
+    light_paths = 100*1000,
     iterations = 40,
     initial_radius = 0.1,
     alpha = 0.5,
