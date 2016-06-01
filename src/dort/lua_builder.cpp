@@ -532,9 +532,23 @@ namespace dort {
       uint32_t max_photon_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
       uint32_t photon_path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
       float alpha = lua_param_float_opt(l, p, "alpha", 0.7f);
+
+      std::string mode_str = lua_param_string_opt(l, p, "parallel_mode", "automatic");
+      SppmRenderer::ParallelMode parallel_mode;
+      if(mode_str == "automatic") {
+        parallel_mode = SppmRenderer::ParallelMode::Automatic;
+      } else if(mode_str == "serial_iterations") {
+        parallel_mode = SppmRenderer::ParallelMode::SerialIterations;
+      } else if(mode_str == "parallel_iterations") {
+        parallel_mode = SppmRenderer::ParallelMode::ParallelIterations;
+      } else {
+        return luaL_error(l, "Unrecognized SPPM parallel mode: %s", mode_str.c_str());
+      }
+
       renderer = std::make_shared<SppmRenderer>(
           scene, film, sampler, initial_radius, iteration_count,
-          max_depth, max_photon_depth, photon_path_count, alpha);
+          max_depth, max_photon_depth, photon_path_count, 
+          alpha, parallel_mode);
     } else {
       return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
     }

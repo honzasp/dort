@@ -13,17 +13,54 @@ namespace dort {
     this->light_distrib = compute_light_distrib(*this->scene);
     this->pixel_pos_idx = this->sampler->request_sample_2d();
 
-    float radius = this->initial_radius;
-    for(uint32_t i = 0; i < this->iteration_count; ++i) {
-      this->iteration(ctx, *this->film, *this->sampler, radius);
-      radius *= sqrt((float(i) + this->alpha) / (float(i) + 1.f));
+    auto mode = this->parallel_mode;
+    if(mode == ParallelMode::Automatic) {
+      if(ctx.pool->num_threads() >= this->iteration_count) {
+        mode = ParallelMode::ParallelIterations;
+      } else {
+        mode = ParallelMode::SerialIterations;
+      }
+    }
+
+    std::vector<float> radii(this->iteration_count);
+    {
+      float radius = this->initial_radius;
+      for(uint32_t i = 0; i < this->iteration_count; ++i) {
+        radii.at(i) = radius;
+        radius *= sqrt((float(i) + this->alpha) / (float(i) + 1.f));
+      }
+    }
+
+    if(mode == ParallelMode::ParallelIterations) {
+      std::vector<std::shared_ptr<Sampler>> samplers;
+      for(uint32_t i = 0; i < this->iteration_count; ++i) {
+        samplers.push_back(sampler->split());
+      }
+
+      std::mutex film_mutex;
+      fork_join(*ctx.pool, this->iteration_count, [&](uint32_t i) {
+        Film local_film(this->film->x_res, this->film->y_res, this->film->filter);
+        this->iteration_serial(local_film, *samplers.at(i), radii.at(i));
+        std::unique_lock<std::mutex> film_lock(film_mutex);
+        this->film->add_tile(Vec2i(0, 0), local_film);
+      });
+    } else {
+      for(uint32_t i = 0; i < this->iteration_count; ++i) {
+        this->iteration_parallel(ctx, *this->film, *this->sampler, radii.at(i));
+      }
     }
   }
 
-  void SppmRenderer::iteration(CtxG& ctx, Film& film,
+  void SppmRenderer::iteration_serial(Film& film, Sampler& sampler, float radius) const {
+    PhotonMap photon_map = this->compute_photon_map_serial(sampler.rng.split());
+    Recti film_rect(Vec2i(0, 0), Vec2i(film.x_res, film.y_res));
+    this->gather_tile(film, film, sampler, film_rect, film_rect, photon_map, radius);
+  }
+
+  void SppmRenderer::iteration_parallel(CtxG& ctx, Film& film,
       Sampler& sampler, float radius) const 
   {
-    PhotonMap photon_map = this->compute_photon_map(ctx, sampler.rng.split());
+    PhotonMap photon_map = this->compute_photon_map_parallel(ctx, sampler.rng.split());
 
     Vec2i layout_tiles = Renderer::layout_tiles(ctx, film, sampler);
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
@@ -135,7 +172,13 @@ namespace dort {
     return radiance;
   }
 
-  PhotonMap SppmRenderer::compute_photon_map(CtxG& ctx, Rng rng) const {
+  PhotonMap SppmRenderer::compute_photon_map_serial(Rng rng) const {
+    std::vector<Photon> photons;
+    this->shoot_photons(photons, this->photon_path_count, std::move(rng));
+    return PhotonMap(std::move(photons), this->photon_path_count);
+  }
+
+  PhotonMap SppmRenderer::compute_photon_map_parallel(CtxG& ctx, Rng rng) const {
     uint32_t path_count = this->photon_path_count;
     uint32_t job_count = max(1u, ctx.pool->num_threads() * 4);
 

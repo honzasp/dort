@@ -130,6 +130,21 @@ namespace dort {
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return x;
   }
+  std::string lua_param_string_opt(lua_State* l, int params_idx,
+      const char* param_name, const std::string& def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    std::string x;
+    if(lua_isnil(l, -1)) {
+      x = def;
+    } else {
+      size_t len;
+      const char* data = lua_tolstring(l, -1, &len);
+      x = std::string(data, len);
+    }
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return x;
+  }
   Spectrum lua_param_spectrum_opt(lua_State* l, int params_idx,
       const char* param_name, const Spectrum& def)
   {
@@ -169,14 +184,6 @@ namespace dort {
     auto sampler = lua_isnil(l, -1) ? def : lua_check_sampler(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return sampler;
-  }
-  std::string lua_param_string_opt(lua_State* l,
-      int params_idx, const char* param_name, const std::string& def)
-  {
-    lua_getfield(l, params_idx, param_name);
-    auto string = lua_isnil(l, -1) ? def : luaL_checkstring(l, -1);
-    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
-    return string;
   }
 
   bool lua_param_is_set(lua_State* l, int params_idx, const char* param_name) {
