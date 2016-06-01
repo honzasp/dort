@@ -83,8 +83,8 @@ namespace dort {
     }
 
     uint8_t split_axis = bounds.max_axis();
-    uint32_t mid = begin + (end - begin + 1) / 2 + 1;
-    assert(begin + 1 < mid); assert(mid <= end);
+    uint32_t mid = begin + (end - begin) / 2;
+    assert(begin < mid); assert(mid < end);
     std::nth_element(this->elements.begin() + begin,
         this->elements.begin() + mid, this->elements.begin() + end,
         [=](const Element& elem1, const Element& elem2) {
@@ -95,10 +95,10 @@ namespace dort {
     float split_pos = Traits::element_point(this->elements.at(begin)).v[split_axis];
 
     this->nodes.push_back(Node(split_pos, split_axis,
-          mid < end ? mid : Node::NO_RIGHT));
-    this->build_node(begin + 1, mid);
-    if(mid < end) {
-      this->build_node(mid, end);
+          mid + 1 < end ? mid + 1 : Node::NO_RIGHT));
+    this->build_node(begin + 1, mid + 1);
+    if(mid + 1 < end) {
+      this->build_node(mid + 1, end);
     }
   }
 

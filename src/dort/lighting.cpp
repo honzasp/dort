@@ -66,6 +66,13 @@ namespace dort {
         light_sample, bsdf_sample);
   }
 
+  Spectrum uniform_sample_one_light(const Scene& scene,
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler)
+  {
+    return uniform_sample_one_light(scene, geom, bsdf, sampler,
+        sampler.random_1d(), LightSample(sampler), BsdfSample(sampler));
+  }
+
   Spectrum estimate_direct(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf,
       const Light& light, BxdfFlags bxdf_flags,
@@ -152,7 +159,7 @@ namespace dort {
         BxdfFlags(BSDF_SPECULAR | flags), sampled_flags,
         BsdfSample(sampler));
     assert(is_finite(bsdf_f) && is_nonnegative(bsdf_f));
-    if(!bsdf_f.is_black() && pdf > 0) {
+    if(!bsdf_f.is_black() && pdf != 0.f) {
       Ray spec_ray(geom.p, wi, geom.ray_epsilon, INFINITY);
       Spectrum radiance = renderer.get_radiance(scene, spec_ray, depth + 1, sampler);
       return radiance * bsdf_f * (abs_dot(wi, geom.nn) / pdf);

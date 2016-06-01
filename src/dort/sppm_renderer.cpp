@@ -30,17 +30,23 @@ namespace dort {
     geom.ray_epsilon = isect.ray_epsilon;
 
     std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
-    radiance += this->photon_map.estimate_radiance(geom.p, geom.nn,
-        geom.wo, *bsdf, 0.02f);
 
-    if(depth < this->max_depth) {
-      Spectrum reflection = trace_specular(*this, scene,
-          geom, *bsdf, BSDF_REFLECTION, depth, sampler);
-      Spectrum transmission = trace_specular(*this, scene,
-          geom, *bsdf, BSDF_TRANSMISSION, depth, sampler);
-      assert(is_finite(reflection) && is_nonnegative(reflection));
-      assert(is_finite(transmission) && is_nonnegative(transmission));
-      radiance += reflection + transmission;
+    Vector bsdf_wi;
+    float bsdf_pdf;
+    BxdfFlags bsdf_flags;
+    Spectrum bsdf_f = bsdf->sample_f(geom.wo, bsdf_wi, bsdf_pdf,
+        BSDF_ALL, bsdf_flags, BsdfSample(sampler));
+    if(depth < this->max_depth && bsdf_flags & (BSDF_GLOSSY | BSDF_SPECULAR)) {
+      if(bsdf_pdf != 0.f && !bsdf_f.is_black()) {
+        Ray recursive_ray(geom.p, bsdf_wi, geom.ray_epsilon);
+        Spectrum recursive = this->get_radiance(scene,
+            recursive_ray, depth + 1, sampler);
+        radiance += recursive * bsdf_f * (abs_dot(bsdf_wi, geom.nn) / bsdf_pdf);
+      }
+    } else {
+      radiance += this->photon_map.estimate_radiance(geom.p, geom.nn,
+          geom.wo, *bsdf, 0.02f);
+      radiance += uniform_sample_one_light(scene, geom, *bsdf, sampler);
     }
 
     return radiance;
@@ -62,28 +68,29 @@ namespace dort {
       uint32_t light_i = light_distrib.sample(light_idx_samples.at(path_i));
       float light_pdf = light_distrib.pdf(light_i);
       const Light& light = *scene.lights.at(light_i);
+      LightRaySample light_sample(light_pos_samples.at(path_i),
+          light_dir_samples.at(path_i));
 
       Ray ray;
       Normal prev_nn;
       float light_ray_pdf;
       Spectrum light_radiance = light.sample_ray_radiance(
-          scene, ray, prev_nn, light_ray_pdf,
-          LightRaySample(light_pos_samples.at(path_i),
-            light_dir_samples.at(path_i)));
+          scene, ray, prev_nn, light_ray_pdf, light_sample);
       if(light_radiance.is_black() || light_ray_pdf == 0.f) {
         return;
       }
 
-      Spectrum path_power = light_radiance * abs_dot(ray.dir, prev_nn) 
-        / (light_ray_pdf * light_pdf);
+      Spectrum path_power = light_radiance * (abs_dot(ray.dir, prev_nn) 
+        / (light_ray_pdf * light_pdf));
       for(uint32_t depth = 0; depth < this->max_photon_depth; ++depth) {
         Intersection isect;
         if(!scene.intersect(ray, isect)) {
           break;
         }
         auto bsdf = isect.get_bsdf();
+        bool has_non_delta = bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs();
 
-        if(bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs()) {
+        if(depth > 0 && has_non_delta) {
           Photon photon;
           photon.power = path_power;
           photon.p = isect.world_diff_geom.p;
@@ -102,12 +109,16 @@ namespace dort {
         }
         Spectrum bounce_contrib = bounce_f * (abs_dot(bounce_wi,
               isect.world_diff_geom.nn) / bounce_pdf);
+        path_power *= bounce_contrib;
 
-        float survive_prob = min(0.95f, bounce_contrib.average());
-        if(sampler.random_1d() > survive_prob) {
-          break;
+        if(depth > 0) {
+          float survive_prob = min(0.95f, bounce_contrib.average());
+          if(sampler.random_1d() > survive_prob) {
+            break;
+          }
+          path_power /= survive_prob;
         }
-        path_power = path_power * bounce_contrib / survive_prob;
+
         ray = Ray(isect.world_diff_geom.p, bounce_wi, isect.ray_epsilon);
       }
     }

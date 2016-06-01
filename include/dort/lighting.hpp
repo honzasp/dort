@@ -22,6 +22,8 @@ namespace dort {
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
       float u_select, const LightSample& light_sample,
       const BsdfSample& bsdf_sample);
+  Spectrum uniform_sample_one_light(const Scene& scene,
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler);
 
   Spectrum estimate_direct(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf,

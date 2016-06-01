@@ -54,6 +54,21 @@ namespace dort {
   inline RgbSpectrum operator+=(RgbSpectrum& s1, const RgbSpectrum& s2) {
     return s1 = s1 + s2;
   }
+  inline RgbSpectrum operator-=(RgbSpectrum& s1, const RgbSpectrum& s2) {
+    return s1 = s1 - s2;
+  }
+  inline RgbSpectrum operator*=(RgbSpectrum& s1, const RgbSpectrum& s2) {
+    return s1 = s1 * s2;
+  }
+  inline RgbSpectrum operator/=(RgbSpectrum& s1, const RgbSpectrum& s2) {
+    return s1 = s1 / s2;
+  }
+  inline RgbSpectrum operator*=(RgbSpectrum& s1, float a) {
+    return s1 = s1 * a;
+  }
+  inline RgbSpectrum operator/=(RgbSpectrum& s1, float a) {
+    return s1 = s1 / a;
+  }
 
   inline bool is_finite(const RgbSpectrum& s) {
     return is_finite(s.rgb);
