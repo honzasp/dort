@@ -49,7 +49,7 @@ namespace dort {
     return radiance;
   }
 
-  void IgiRenderer::do_preprocess(CtxG& ctx, const Scene& scene, Sampler& sampler) {
+  void IgiRenderer::preprocess(CtxG& ctx, const Scene& scene, Sampler& sampler) {
     this->light_sets = this->compute_light_sets(ctx, scene, sampler);
 
     this->light_set_idx = sampler.request_sample_1d();
@@ -109,7 +109,7 @@ namespace dort {
   {
     uint32_t set_count = this->light_set_count;
     uint32_t path_count = this->path_count;
-    DiscreteDistrib1d light_distrib(Renderer::compute_light_distrib(scene));
+    DiscreteDistrib1d light_distrib(compute_light_distrib(scene));
     std::vector<std::vector<VirtualLight>> sets(set_count);
     std::vector<std::mutex> sets_mutexes(set_count);
 

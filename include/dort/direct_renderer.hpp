@@ -1,10 +1,10 @@
 #pragma once
 #include "dort/bsdf.hpp"
 #include "dort/light.hpp"
-#include "dort/renderer.hpp"
+#include "dort/sample_renderer.hpp"
 
 namespace dort {
-  class DirectRenderer final: public Renderer {
+  class DirectRenderer final: public SampleRenderer {
     uint32_t max_depth;
     std::vector<LightSamplesIdxs> light_samples_idxs;
     std::vector<BsdfSamplesIdxs> bsdf_samples_idxs;
@@ -13,12 +13,12 @@ namespace dort {
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
         uint32_t max_depth):
-      Renderer(scene, film, sampler), max_depth(max_depth)
+      SampleRenderer(scene, film, sampler), max_depth(max_depth)
     { }
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
         uint32_t depth, Sampler& sampler) const override final;
   private:
-    virtual void do_preprocess(CtxG& ctx,
+    virtual void preprocess(CtxG& ctx,
         const Scene& scene, Sampler& sampler) override final;
   };
 }

@@ -1,10 +1,10 @@
 #pragma once
 #include "dort/bsdf.hpp"
 #include "dort/light.hpp"
-#include "dort/renderer.hpp"
+#include "dort/sample_renderer.hpp"
 
 namespace dort {
-  class IgiRenderer final: public Renderer {
+  class IgiRenderer final: public SampleRenderer {
     struct VirtualLight {
       Point p;
       Normal nn;
@@ -35,7 +35,7 @@ namespace dort {
         uint32_t path_count,
         float g_limit,
         float roulette_threshold):
-      Renderer(scene, film, sampler),
+      SampleRenderer(scene, film, sampler),
       max_depth(max_depth),
       max_light_depth(max_light_depth),
       light_set_count(light_set_count),
@@ -46,7 +46,7 @@ namespace dort {
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
         uint32_t depth, Sampler& sampler) const override final;
   private:
-    virtual void do_preprocess(CtxG& ctx,
+    virtual void preprocess(CtxG& ctx,
         const Scene& scene, Sampler& sampler) override final;
     Spectrum sample_virtual_lights(const Scene& scene,
         const LightingGeom& isect_geom, const Bsdf& isect_bsdf, Sampler& sampler) const;

@@ -1,7 +1,7 @@
 #include "dort/lighting.hpp"
 #include "dort/monte_carlo.hpp"
 #include "dort/primitive.hpp"
-#include "dort/renderer.hpp"
+#include "dort/sample_renderer.hpp"
 #include "dort/stats.hpp"
 
 namespace dort {
@@ -146,7 +146,7 @@ namespace dort {
     return light_contrib + bsdf_contrib;
   }
 
-  Spectrum trace_specular(const Renderer& renderer,
+  Spectrum trace_specular(const SampleRenderer& renderer,
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler)
   {
@@ -166,5 +166,16 @@ namespace dort {
     } else {
       return Spectrum(0.f);
     }
+  }
+
+  DiscreteDistrib1d compute_light_distrib(const Scene& scene) {
+    std::vector<float> powers(scene.lights.size());
+    for(uint32_t i = 0; i < scene.lights.size(); ++i) {
+      const auto& light = scene.lights.at(i);
+      float power = light->approximate_power(scene).average();
+      float weight = float(light->num_samples);
+      powers.at(i) = power * weight;
+    }
+    return DiscreteDistrib1d(powers);
   }
 }

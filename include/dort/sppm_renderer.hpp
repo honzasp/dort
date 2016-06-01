@@ -3,10 +3,10 @@
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
 #include "dort/photon_map.hpp"
-#include "dort/renderer.hpp"
+#include "dort/sample_renderer.hpp"
 
 namespace dort {
-  class SppmRenderer final: public Renderer {
+  class SppmRenderer final: public SampleRenderer {
     uint32_t max_depth;
     uint32_t max_photon_depth;
     uint32_t photon_path_count;
@@ -18,7 +18,7 @@ namespace dort {
         uint32_t max_depth,
         uint32_t max_photon_depth,
         uint32_t photon_path_count):
-      Renderer(scene, film, sampler),
+      SampleRenderer(scene, film, sampler),
       max_depth(max_depth),
       max_photon_depth(max_photon_depth),
       photon_path_count(photon_path_count)
@@ -27,7 +27,7 @@ namespace dort {
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
         uint32_t depth, Sampler& sampler) const override final;
   private:
-    virtual void do_preprocess(CtxG& ctx,
+    virtual void preprocess(CtxG& ctx,
         const Scene& scene, Sampler& sampler) override final;
   };
 }

@@ -539,7 +539,6 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     CtxG& ctx = *lua_get_ctx(l);
-    renderer->preprocess(ctx);
     renderer->render(ctx);
 
     if(hdr) {

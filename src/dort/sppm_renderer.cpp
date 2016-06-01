@@ -52,8 +52,8 @@ namespace dort {
     return radiance;
   }
 
-  void SppmRenderer::do_preprocess(CtxG&, const Scene& scene, Sampler& sampler) {
-    DiscreteDistrib1d light_distrib(Renderer::compute_light_distrib(scene));
+  void SppmRenderer::preprocess(CtxG&, const Scene& scene, Sampler& sampler) {
+    DiscreteDistrib1d light_distrib(compute_light_distrib(scene));
 
     uint32_t path_count = this->photon_path_count;
     std::vector<float> light_idx_samples(low_discrepancy_1d(

@@ -3,19 +3,17 @@
 #include "dort/filter.hpp"
 #include "dort/geometry.hpp"
 #include "dort/light.hpp"
-#include "dort/renderer.hpp"
+#include "dort/sample_renderer.hpp"
 #include "dort/sampler.hpp"
 #include "dort/scene.hpp"
 #include "dort/stats.hpp"
 #include "dort/thread_pool.hpp"
 
 namespace dort {
-  void Renderer::preprocess(CtxG& ctx) {
+  void SampleRenderer::render(CtxG& ctx) {
     this->pixel_pos_idx = this->sampler->request_sample_2d();
-    this->do_preprocess(ctx, *this->scene, *this->sampler);
-  }
+    this->preprocess(ctx, *this->scene, *this->sampler);
 
-  void Renderer::render(CtxG& ctx) {
     StatTimer t(TIMER_RENDER);
     Vec2i layout_tiles = this->layout_tiles(ctx);
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
@@ -47,18 +45,7 @@ namespace dort {
     });
   }
 
-  DiscreteDistrib1d Renderer::compute_light_distrib(const Scene& scene) {
-    std::vector<float> powers(scene.lights.size());
-    for(uint32_t i = 0; i < scene.lights.size(); ++i) {
-      const auto& light = scene.lights.at(i);
-      float power = light->approximate_power(scene).average();
-      float weight = float(light->num_samples);
-      powers.at(i) = power * weight;
-    }
-    return DiscreteDistrib1d(powers);
-  }
-
-  void Renderer::render_tile(CtxG&, Recti tile_rect, 
+  void SampleRenderer::render_tile(CtxG&, Recti tile_rect, 
       Recti tile_film_rect, Film& tile_film, Sampler& sampler) const
   {
     StatTimer t(TIMER_RENDER_TILE);
@@ -101,7 +88,7 @@ namespace dort {
     }
   }
 
-  Vec2i Renderer::layout_tiles(CtxG& ctx) const {
+  Vec2i SampleRenderer::layout_tiles(CtxG& ctx) const {
     uint32_t min_jobs_per_thread = 32;
     uint32_t max_samples_per_job = 1024;
     uint32_t approx_jobs = max(1u, max(

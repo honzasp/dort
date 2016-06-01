@@ -1,5 +1,6 @@
 #pragma once
 #include "dort/bsdf.hpp"
+#include "dort/discrete_distrib_1d.hpp"
 #include "dort/geometry.hpp"
 #include "dort/light.hpp"
 
@@ -29,7 +30,9 @@ namespace dort {
       const LightingGeom& geom, const Bsdf& bsdf,
       const Light& light, BxdfFlags bxdf_flags,
       LightSample light_sample, BsdfSample bsdf_sample);
-  Spectrum trace_specular(const Renderer& renderer,
+  Spectrum trace_specular(const SampleRenderer& renderer,
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler);
+
+  DiscreteDistrib1d compute_light_distrib(const Scene& scene);
 }
