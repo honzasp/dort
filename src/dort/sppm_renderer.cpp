@@ -15,7 +15,7 @@ namespace dort {
 
     auto mode = this->parallel_mode;
     if(mode == ParallelMode::Automatic) {
-      if(ctx.pool->num_threads() >= this->iteration_count) {
+      if(ctx.pool->num_threads() <= this->iteration_count) {
         mode = ParallelMode::ParallelIterations;
       } else {
         mode = ParallelMode::SerialIterations;
