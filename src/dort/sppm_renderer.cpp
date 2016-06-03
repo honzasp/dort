@@ -1,4 +1,5 @@
 #include <mutex>
+#include <shared_mutex>
 #include "dort/camera.hpp"
 #include "dort/ctx.hpp"
 #include "dort/film.hpp"
@@ -52,7 +53,7 @@ namespace dort {
   }
 
   void SppmRenderer::iteration_serial(Film& film, Sampler& sampler, float radius) const {
-    PhotonMap photon_map = this->compute_photon_map_serial(sampler.rng.split());
+    PhotonMap photon_map = this->compute_photon_map_serial(sampler.rng);
     Recti film_rect(Vec2i(0, 0), Vec2i(film.x_res, film.y_res));
     this->gather_tile(film, film, sampler, film_rect, film_rect, photon_map, radius);
   }
@@ -60,7 +61,7 @@ namespace dort {
   void SppmRenderer::iteration_parallel(CtxG& ctx, Film& film,
       Sampler& sampler, float radius) const 
   {
-    PhotonMap photon_map = this->compute_photon_map_parallel(ctx, sampler.rng.split());
+    PhotonMap photon_map = this->compute_photon_map_parallel(ctx, sampler.rng);
 
     Vec2i layout_tiles = Renderer::layout_tiles(ctx, film, sampler);
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
@@ -172,15 +173,16 @@ namespace dort {
     return radiance;
   }
 
-  PhotonMap SppmRenderer::compute_photon_map_serial(Rng rng) const {
+  PhotonMap SppmRenderer::compute_photon_map_serial(Rng& rng) const {
     std::vector<Photon> photons;
-    this->shoot_photons(photons, this->photon_path_count, std::move(rng));
+    this->shoot_photons(photons, this->photon_path_count, rng);
     return PhotonMap(std::move(photons), this->photon_path_count);
   }
 
-  PhotonMap SppmRenderer::compute_photon_map_parallel(CtxG& ctx, Rng rng) const {
-    uint32_t path_count = this->photon_path_count;
-    uint32_t job_count = max(1u, ctx.pool->num_threads() * 4);
+  PhotonMap SppmRenderer::compute_photon_map_parallel(CtxG& ctx, Rng& rng) const {
+    uint32_t target_path_count = this->photon_path_count;
+    uint32_t job_count = max(1u, ctx.pool->num_threads());
+    uint32_t block_size = clamp(target_path_count / (4 * job_count), 128u, 1024u);
 
     std::vector<Rng> rngs;
     for(uint32_t i = 0; i < job_count; ++i) {
@@ -188,25 +190,57 @@ namespace dort {
     }
 
     std::vector<Photon> photons;
-    std::mutex photons_mutex;
+    std::atomic<uint32_t> photon_count(0);
+    std::atomic<uint32_t> path_count(0);
+    std::shared_timed_mutex photons_mutex;
+
+    auto ensure_photons_size = [&](uint32_t min_size) {
+      std::unique_lock<std::shared_timed_mutex> resize_lock(photons_mutex);
+      if(min_size <= photons.size()) {
+        return;
+      }
+      photons.resize(min_size);
+      photons.resize(photons.capacity());
+    };
+
+    auto add_photons = [&](const std::vector<Photon>& block) {
+      std::shared_lock<std::shared_timed_mutex> write_lock(photons_mutex);
+      uint32_t block_size = block.size();
+      uint32_t block_begin = photon_count.fetch_add(block_size);
+      if(block_begin + block_size > photons.size()) {
+        write_lock.unlock();
+        ensure_photons_size(block_begin + block_size);
+        write_lock.lock();
+      }
+
+      for(uint32_t i = 0; i < block_size; ++i) {
+        photons.at(block_begin + i) = block.at(i);
+      }
+    };
 
     fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
-      uint32_t begin = uint64_t(job_i) * path_count / job_count;
-      uint32_t end = uint64_t(job_i + 1) * path_count / job_count;
-      std::vector<Photon> local_photons;
-      this->shoot_photons(local_photons, end - begin, std::move(rngs.at(job_i)));
+      Rng rng(std::move(rngs.at(job_i)));
 
-      std::unique_lock<std::mutex> photons_lock(photons_mutex);
-      for(Photon& photon: local_photons) {
-        photons.push_back(std::move(photon));
+      std::vector<Photon> block_photons;
+      for(;;) {
+        uint32_t prev_path_count = path_count.fetch_add(block_size);
+        if(prev_path_count >= target_path_count) {
+          break;
+        }
+
+        block_photons.clear();
+        this->shoot_photons(block_photons,
+          min(block_size, target_path_count - prev_path_count), rng);
+        add_photons(block_photons);
       }
     });
 
-    return PhotonMap(std::move(photons), path_count);
+    photons.resize(photon_count.load());
+    return PhotonMap(std::move(photons), target_path_count);
   }
 
   void SppmRenderer::shoot_photons(std::vector<Photon>& photons,
-      uint32_t count, Rng rng) const
+      uint32_t count, Rng& rng) const
   {
     std::vector<float> light_idx_samples(low_discrepancy_1d(1, count, rng));
     std::vector<Vec2> light_pos_samples(low_discrepancy_2d(1, count, rng));
