@@ -7,14 +7,17 @@ namespace dort {
     Spectrum intensity;
   public:
     PointLight(const Point& pt, const Spectrum& intensity):
-      Light(LIGHT_DELTA, 1), pt(pt), intensity(intensity) {}
+      Light(LIGHT_DELTA_POS, 1), pt(pt), intensity(intensity) {}
+
     virtual Spectrum sample_ray_radiance(const Scene& scene, 
-        Ray& out_ray, Normal& out_nn, float& out_pdf,
+        Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,
         LightRaySample sample) const override final;
-    virtual Spectrum sample_radiance(const Point& eye, float eye_epsilon,
-        Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
+    virtual Spectrum sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
+        Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow, 
         LightSample sample) const override final;
-    virtual float radiance_pdf(const Point& eye, const Vector& wi) const override final;
+    virtual float pivot_radiance_pdf(const Point& pivot,
+        const Vector& wi) const override final;
+
     virtual Spectrum background_radiance(const Ray& ray) const override final;
     virtual Spectrum approximate_power(const Scene& scene) const override final;
   };

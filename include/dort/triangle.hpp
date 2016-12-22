@@ -10,7 +10,8 @@ namespace dort {
     bool hit_p(const Ray& ray) const;
     Box bounds() const;
     float area() const;
-    Point sample_point(float u1, float u2, Normal& out_n, float& out_ray_epsilon) const;
+    Point sample_point(Vec2 uv, float& out_pos_pdf,
+        Normal& out_n, float& out_ray_epsilon) const;
     float point_pdf(const Point& pt) const;
   };
 

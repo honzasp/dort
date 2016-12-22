@@ -50,6 +50,7 @@ namespace dort {
   {
     StatTimer t(TIMER_RENDER_TILE);
     Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+    const Camera& camera = *this->scene->camera;
 
     for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
       for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
@@ -59,15 +60,19 @@ namespace dort {
 
           Vec2 pixel_pos = sampler.get_sample_2d(this->pixel_pos_idx);
           Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
-          Ray ray(this->scene->camera->cast_ray(film_res, film_pos));
+          Ray camera_ray;
+          float camera_pos_pdf, camera_dir_pdf;
+          Spectrum importance = camera.sample_ray_importance(film_res, film_pos,
+              camera_ray, camera_pos_pdf, camera_dir_pdf, CameraSample(sampler.rng));
+          float camera_ray_pdf = camera_pos_pdf * camera_dir_pdf;
 
-          Spectrum radiance = this->get_radiance(*this->scene, ray, 0, sampler);
+          Spectrum radiance = this->get_radiance(*this->scene, camera_ray, 0, sampler);
           assert(is_finite(radiance));
           assert(is_nonnegative(radiance));
           if(is_finite(radiance) && is_nonnegative(radiance)) {
             Vec2 tile_film_pos = film_pos -
               Vec2(float(tile_film_rect.p_min.x), float(tile_film_rect.p_min.y));
-            tile_film.add_sample(tile_film_pos, radiance);
+            tile_film.add_sample(tile_film_pos, radiance * importance / camera_ray_pdf);
           }
         }
       }

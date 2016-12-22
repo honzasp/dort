@@ -118,6 +118,9 @@ namespace dort {
   inline Vec3 floor(const Vec3& v) {
     return Vec3(floor(v.x), floor(v.y), floor(v.z));
   }
+  inline Vec3 sqrt(const Vec3& v) {
+    return Vec3(sqrt(v.x), sqrt(v.y), sqrt(v.z));
+  }
 
   inline Vec3 permute(const Vec3& v, int32_t rot) {
     assert(rot >= 0 && rot < 3);

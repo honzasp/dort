@@ -1,4 +1,5 @@
 #include "dort/polygon_shape.hpp"
+#include "dort/rng.hpp"
 
 namespace dort {
   PolygonShape::PolygonShape(std::vector<Vec2> vertices):
@@ -8,6 +9,7 @@ namespace dort {
     for(auto vertex: this->vertices) {
       this->rect_bounds = union_rect(this->rect_bounds, vertex);
     }
+    this->poly_area = this->compute_area();
   }
 
   bool PolygonShape::hit(const Ray& ray, float& out_t_hit,
@@ -46,26 +48,34 @@ namespace dort {
   }
 
   float PolygonShape::area() const {
-    float double_area = 0.f;
-    uint32_t n = this->vertices.size();
-    for(uint32_t i = 0; i < n; ++i) {
-      float x_i = this->vertices.at(i).x;
-      float y_ip = this->vertices.at(i == n - 1 ? 0 : i + 1).y;
-      float y_im = this->vertices.at(i == 0 ? n - 1 : i - 1).y;
-      double_area += x_i * (y_ip - y_im);
-    }
-
-    return 0.5f * abs(double_area);
+    return this->poly_area;
   }
 
-  Point PolygonShape::sample_point(float, float, Normal&, float&) const {
-    assert(false && "Sampling from polygons is not implemented");
+  Point PolygonShape::sample_point(Vec2 uv, float& out_pos_pdf,
+      Normal& out_n, float& out_ray_epsilon) const
+  {
+    Rng rng(floor_uint32(uv.x * 10729 + uv.y * 23801));
+
+    for(uint32_t i = 0; i < 100; ++i) {
+      Vec2 point = this->rect_bounds.sample(uv);
+      if(!this->point_in_polygon(point)) {
+        uv = Vec2(rng.uniform_float(), rng.uniform_float());
+        continue;
+      }
+      out_pos_pdf = 1.f / this->area();
+      out_n = Normal(0.f, 0.f, 1.f);
+      out_ray_epsilon = 1e-3f;
+      return Point(point.x, point.y, 0.f);
+    }
+
+    out_pos_pdf = 0.f;
+    out_n = Normal(0.f, 0.f, 1.f);
+    out_ray_epsilon = 1e-3f;
     return Point();
   }
 
   float PolygonShape::point_pdf(const Point&) const {
-    assert(false && "Sampling from polygons is not implemented");
-    return 0.f;
+    return 1.f / this->area();
   }
 
   bool PolygonShape::ray_hit_plane(const Ray& ray,
@@ -100,6 +110,18 @@ namespace dort {
       v0 = v1;
     }
     return isects % 2 == 1;
+  }
+
+  float PolygonShape::compute_area() const {
+    float double_area = 0.f;
+    uint32_t n = this->vertices.size();
+    for(uint32_t i = 0; i < n; ++i) {
+      float x_i = this->vertices.at(i).x;
+      float y_ip = this->vertices.at(i == n - 1 ? 0 : i + 1).y;
+      float y_im = this->vertices.at(i == 0 ? n - 1 : i - 1).y;
+      double_area += x_i * (y_ip - y_im);
+    }
+    return 0.5f * abs(double_area);
   }
 }
 

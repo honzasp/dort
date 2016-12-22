@@ -11,28 +11,30 @@ namespace dort {
   }
 
   Spectrum DirectionalLight::sample_ray_radiance(const Scene& scene, 
-      Ray& out_ray, Normal& out_nn, float& out_pdf, LightRaySample sample) const 
+      Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,
+      LightRaySample sample) const 
   {
     Vec2 disk_p = uniform_disk_sample(sample.uv_pos.x, sample.uv_pos.y);
     Point orig = scene.centroid - Vector(scene.radius * this->direction)
       + disk_p.x * this->s + disk_p.y * this->t;
     out_ray = Ray(orig, this->direction, 0.f);
     out_nn = Normal(this->direction);
-    out_pdf = uniform_disk_pdf() / (PI * square(scene.radius));
+    out_pos_pdf = uniform_disk_pdf() / (PI * square(scene.radius));
+    out_dir_pdf = 1.f;
     return this->radiance;
   }
 
-  Spectrum DirectionalLight::sample_radiance(const Point& eye, float eye_epsilon,
-      Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
-      LightSample) const
+  Spectrum DirectionalLight::sample_pivot_radiance(const Point& pivot,
+      float pivot_epsilon, Vector& out_wi, float& out_dir_pdf,
+      ShadowTest& out_shadow, LightSample) const
   {
     out_wi = -this->direction;
-    out_pdf = 1.f;
-    out_shadow.init_point_dir(eye, eye_epsilon, out_wi);
+    out_dir_pdf = 1.f;
+    out_shadow.init_point_dir(pivot, pivot_epsilon, out_wi);
     return this->radiance;
   }
 
-  float DirectionalLight::radiance_pdf(const Point&, const Vector&) const {
+  float DirectionalLight::pivot_radiance_pdf(const Point&, const Vector&) const {
     return 0.f;
   }
 

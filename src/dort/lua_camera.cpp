@@ -13,7 +13,7 @@ namespace dort {
 
     const luaL_Reg camera_funs[] = {
       {"make_ortho", lua_camera_make_ortho},
-      {"make_perspective", lua_camera_make_perspective},
+      {"make_pinhole", lua_camera_make_pinhole},
       {0, 0},
     };
 
@@ -25,27 +25,21 @@ namespace dort {
   int lua_camera_make_ortho(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
-    float screen_x = lua_param_float(l, p, "screen_x");
-    float screen_y = lua_param_float(l, p, "screen_y");
+    float dimension = lua_param_float(l, p, "dimension");
     lua_params_check_unused(l, p);
 
-    lua_push_camera(l, std::make_shared<OrthographicCamera>(transform,
-          Vec2(screen_x, screen_y)));
+    lua_push_camera(l, std::make_shared<OrthographicCamera>(transform, dimension));
     return 1;
   }
 
-  int lua_camera_make_perspective(lua_State* l) {
+  int lua_camera_make_pinhole(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform(l, p, "transform");
-    float screen_x = lua_param_float_opt(l, p, "screen_x", 2.f);
-    float screen_y = lua_param_float_opt(l, p, "screen_y", 2.f);
     float fov = lua_param_float_opt(l, p, "fov", PI * 0.5f);
-    float z_near = lua_param_float_opt(l, p, "z_near", 1e0f);
-    float z_far = lua_param_float_opt(l, p, "z_far", 1e3f);
     lua_params_check_unused(l, p);
 
-    lua_push_camera(l, std::make_shared<PerspectiveCamera>(transform,
-          Vec2(screen_x, screen_y), clamp(fov, 1e-2f, PI), z_near, z_far));
+    lua_push_camera(l, std::make_shared<PinholeCamera>(transform,
+          clamp(fov, 1e-2f, PI)));
     return 1;
   }
 

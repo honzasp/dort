@@ -124,6 +124,9 @@ namespace dort {
   inline float abs_dot(const Vector& vec, const Normal& norm) {
     return abs(dot(vec.v, norm.v));
   }
+  inline float abs_dot(const Normal& norm, const Vector& vec) {
+    return abs(dot(norm.v, vec.v));
+  }
   inline float abs_dot(const Normal& norm1, const Normal& norm2) {
     return abs(dot(norm1.v, norm2.v));
   }

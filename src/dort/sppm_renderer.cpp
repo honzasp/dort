@@ -98,6 +98,8 @@ namespace dort {
       const PhotonMap& photon_map, float radius) const
   {
     Vec2 film_res = Vec2(float(film.x_res), float(film.y_res));
+    const Camera& camera = *this->scene->camera;
+
     for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
       for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
         sampler.start_pixel();
@@ -106,12 +108,16 @@ namespace dort {
 
           Vec2 pixel_pos = sampler.get_sample_2d(this->pixel_pos_idx);
           Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
-          Ray ray(this->scene->camera->cast_ray(film_res, film_pos));
-          Spectrum radiance = this->gather_ray(ray, sampler, photon_map, radius);
+          Ray camera_ray;
+          float camera_pos_pdf, camera_dir_pdf;
+          Spectrum importance = camera.sample_ray_importance(film_res, film_pos,
+              camera_ray, camera_pos_pdf, camera_dir_pdf, CameraSample(sampler.rng));
+          Spectrum radiance = this->gather_ray(camera_ray, sampler, photon_map, radius);
+          float camera_ray_pdf = camera_pos_pdf * camera_dir_pdf;
 
           Vec2 tile_film_pos = film_pos -
             Vec2(float(tile_film_rect.p_min.x), float(tile_film_rect.p_min.y));
-          tile_film.add_sample(tile_film_pos, radiance);
+          tile_film.add_sample(tile_film_pos, importance * radiance / camera_ray_pdf);
         }
       }
     }
@@ -141,26 +147,26 @@ namespace dort {
       LightingGeom geom;
       geom.p = isect.world_diff_geom.p;
       geom.nn = isect.world_diff_geom.nn;
-      geom.wo = normalize(-ray.dir);
+      geom.wo_camera = normalize(-ray.dir);
       geom.ray_epsilon = isect.ray_epsilon;
 
       std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
       BxdfFlags NON_DIFFUSE = BSDF_ALL & ~BSDF_DIFFUSE;
       if(depth + 1 < this->max_depth && bsdf->num_bxdfs(NON_DIFFUSE) > 0) {
         Vector bsdf_wi;
-        float bsdf_pdf;
+        float wi_bsdf_pdf;
         BxdfFlags bsdf_flags;
-        Spectrum bsdf_f = bsdf->sample_f(geom.wo, bsdf_wi, bsdf_pdf,
-            NON_DIFFUSE, bsdf_flags, BsdfSample(sampler.rng));
-        if(bsdf_pdf == 0.f || bsdf_f.is_black()) {
+        Spectrum bsdf_f = bsdf->sample_light_f(geom.wo_camera, NON_DIFFUSE,
+            bsdf_wi, wi_bsdf_pdf, bsdf_flags, BsdfSample(sampler.rng));
+        if(wi_bsdf_pdf == 0.f || bsdf_f.is_black()) {
           break;
         }
 
         ray = Ray(geom.p, bsdf_wi, geom.ray_epsilon);
-        weight *= bsdf_f * (abs_dot(bsdf_wi, geom.nn) / bsdf_pdf);
+        weight *= bsdf_f * (abs_dot(bsdf_wi, geom.nn) / wi_bsdf_pdf);
       } else {
         Spectrum photon_radiance = photon_map.estimate_radiance(
-            geom.p, geom.nn, geom.wo, *bsdf, radius);
+            geom.p, geom.nn, geom.wo_camera, *bsdf, radius);
         Spectrum direct_radiance = uniform_sample_one_light(
             *this->scene, geom, *bsdf, sampler);
         assert(is_finite(photon_radiance) && is_nonnegative(photon_radiance));
@@ -254,9 +260,10 @@ namespace dort {
 
       Ray ray;
       Normal prev_nn;
-      float light_ray_pdf;
+      float light_pos_pdf, light_dir_pdf;
       Spectrum light_radiance = light.sample_ray_radiance(
-          *this->scene, ray, prev_nn, light_ray_pdf, light_sample);
+          *this->scene, ray, prev_nn, light_pos_pdf, light_dir_pdf, light_sample);
+      float light_ray_pdf = light_pos_pdf * light_dir_pdf;
       if(light_radiance.is_black() || light_pdf == 0.f || light_ray_pdf == 0.f) {
         continue;
       }
@@ -286,8 +293,8 @@ namespace dort {
         Vector bounce_wi;
         float bounce_pdf;
         BxdfFlags bounce_flags;
-        Spectrum bounce_f = bsdf->sample_f(-ray.dir, bounce_wi, bounce_pdf,
-            BSDF_ALL, bounce_flags, BsdfSample(rng));
+        Spectrum bounce_f = bsdf->sample_camera_f(-ray.dir, BSDF_ALL,
+            bounce_wi, bounce_pdf, bounce_flags, BsdfSample(rng));
         Spectrum bounce_contrib = bounce_f * (abs_dot(bounce_wi,
               isect.world_diff_geom.nn) / bounce_pdf);
         if(bounce_pdf == 0.f || bounce_contrib.is_black()) {

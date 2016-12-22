@@ -19,6 +19,12 @@ namespace dort {
         this->p_min.x <= pt.x && pt.x <= this->p_max.x &&
         this->p_min.y <= pt.y && pt.y <= this->p_max.y;
     }
+
+    Vec2 sample(Vec2 uv) const {
+      return Vec2(
+        lerp(uv.x, this->p_min.x, this->p_max.x),
+        lerp(uv.y, this->p_min.y, this->p_max.y));
+    }
   };
 
   Rect union_rect(const Rect& rect, Vec2 pt);

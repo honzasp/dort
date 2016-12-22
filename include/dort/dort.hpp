@@ -9,6 +9,7 @@ namespace dort {
   class AreaLight;
   class Bsdf;
   class Camera;
+  class DiscreteDistrib1d;
   class Filter;
   class FramePrimitive;
   class GeometricPrimitive;
@@ -43,6 +44,7 @@ namespace dort {
   struct PrimitiveMesh;
   struct Ray;
   struct RgbSpectrum;
+  struct SampleIdx;
   struct Scene;
   struct ShadowTest;
   struct Tex2;

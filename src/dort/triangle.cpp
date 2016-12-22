@@ -59,16 +59,17 @@ namespace dort {
     return 0.5f * length(cross(e1, e2));
   }
 
-  Point Triangle::sample_point(float u1, float u2,
+  Point Triangle::sample_point(Vec2 uv, float& out_pos_pdf,
       Normal& out_n, float& out_ray_epsilon) const 
   {
     Vector e1 = this->p[1] - this->p[0];
     Vector e2 = this->p[2] - this->p[0];
 
-    float s = sqrt(u1);
+    float s = sqrt(uv.x);
     float b1 = 1.f - s;
-    float b2 = u2 * s;
+    float b2 = uv.y * s;
 
+    out_pos_pdf = 1.f / this->area();
     out_n = Normal(normalize(cross(e2, e1)));
     out_ray_epsilon = 1e-3f;
     return p[0] + b1 * e1 + b2 * e2;

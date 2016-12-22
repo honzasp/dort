@@ -4,58 +4,57 @@
 
 namespace dort {
   OrenNayarBrdf::OrenNayarBrdf(const Spectrum& reflectance, float sigma):
-    Bxdf(BSDF_REFLECTION | BSDF_DIFFUSE),
+    SymmetricBxdf(BSDF_REFLECTION | BSDF_DIFFUSE),
     reflectance(reflectance)
   {
-    this->a = 1.f - square(sigma) / (2.f * (square(sigma) + 0.33f));
+    this->a = 1.f - 0.5f * square(sigma) / (square(sigma) + 0.33f);
     this->b = 0.45f * square(sigma) / (square(sigma) + 0.09f);
   }
 
-  Spectrum OrenNayarBrdf::f(const Vector& wo, const Vector& wi) const {
-    float cos_theta_i = Bsdf::abs_cos_theta(wi);
-    float sin_theta_i = Bsdf::sin_theta(wi);
-    float cos_theta_o = Bsdf::abs_cos_theta(wo);
-    float sin_theta_o = Bsdf::sin_theta(wo);
+  Spectrum OrenNayarBrdf::eval_f(const Vector& wi_light, const Vector& wo_camera) const {
+    float cos_theta_i = Bsdf::abs_cos_theta(wi_light);
+    float sin_theta_i = Bsdf::sin_theta(wi_light);
+    float cos_theta_o = Bsdf::abs_cos_theta(wo_camera);
+    float sin_theta_o = Bsdf::sin_theta(wo_camera);
 
-    if(sin_theta_i == 0.f || sin_theta_o == 0.f) {
-      return this->reflectance * INV_PI * this->a;
-    } else if(cos_theta_i == 0.f && cos_theta_o == 0.f) {
-      return Spectrum(0.f);
+    if(cos_theta_i < 1e-3 || cos_theta_o < 1e-3) {
+      return Spectrum();
     }
 
-    float sin_alpha;
-    float tan_beta;
-    if(cos_theta_i < cos_theta_o) {
-      sin_alpha = sin_theta_i;
-      tan_beta = sin_theta_o / cos_theta_o;
-    } else {
+    float cos_phi_diff = abs(sin_theta_i * sin_theta_o) > 1e-3f
+      ? (wi_light.v.x * wo_camera.v.x + wi_light.v.y * wo_camera.v.y) 
+        / (sin_theta_i * sin_theta_o) : 0.f;
+    if(cos_phi_diff <= 0.f) {
+      return this->reflectance * (INV_PI * this->a);
+    }
+
+    float sin_alpha, tan_beta;
+    if(cos_theta_i >= cos_theta_o) {
       sin_alpha = sin_theta_o;
       tan_beta = sin_theta_i / cos_theta_i;
-    }
-
-    float cos_diff_phi = (wi.v.x * wo.v.x + wi.v.y * wo.v.y) /
-      (sin_theta_i * sin_theta_o);
-
-    return this->reflectance * INV_PI * (this->a + 
-        this->b * max(0.f, cos_diff_phi) * sin_alpha * tan_beta);
-  }
-
-  Spectrum OrenNayarBrdf::sample_f(const Vector& wo, Vector& out_wi,
-      float& out_pdf, float u1, float u2) const
-  {
-    out_wi = Vector(cosine_hemisphere_sample(u1, u2));
-    if(wo.v.z < 0.f) {
-      out_wi.v.z = -out_wi.v.z;
-    }
-    out_pdf = cosine_hemisphere_pdf(out_wi.v.z);
-    return this->f(wo, out_wi);
-  }
-
-  float OrenNayarBrdf::f_pdf(const Vector& wo, const Vector& wi) const {
-    if(Bsdf::same_hemisphere(wo, wi)) {
-      return cosine_hemisphere_pdf(wi.v.z);
     } else {
+      sin_alpha = sin_theta_i;
+      tan_beta = sin_theta_o / cos_theta_o;
+    }
+    return this->reflectance * (INV_PI * (this->a +
+        this->b * cos_phi_diff * sin_alpha * tan_beta));
+  }
+
+  Spectrum OrenNayarBrdf::sample_symmetric_f(const Vector& w_fix,
+      Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const
+  {
+    out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
+    out_dir_pdf = cosine_hemisphere_pdf(out_w_gen.v.z);
+    if(w_fix.v.z < 0.f) {
+      out_w_gen.v.z = -out_w_gen.v.z;
+    }
+    return this->eval_f(w_fix, out_w_gen);
+  }
+
+  float OrenNayarBrdf::symmetric_f_pdf(const Vector& w_gen, const Vector& w_fix) const {
+    if(!Bsdf::same_hemisphere(w_gen, w_fix)) {
       return 0.f;
     }
+    return cosine_hemisphere_pdf(w_gen.v.z);
   }
 }

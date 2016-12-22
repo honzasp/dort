@@ -8,7 +8,7 @@ namespace dort {
   struct LightingGeom {
     Point p;
     Normal nn;
-    Vector wo;
+    Vector wo_camera;
     float ray_epsilon;
   };
 

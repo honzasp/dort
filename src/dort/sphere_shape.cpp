@@ -54,13 +54,14 @@ namespace dort {
   }
 
   float SphereShape::area() const {
-    return FOUR_PI * this->radius * this->radius;
+    return FOUR_PI * square(this->radius);
   }
 
-  Point SphereShape::sample_point(float u1, float u2,
+  Point SphereShape::sample_point(Vec2 uv, float& out_pos_pdf,
       Normal& out_n, float& out_ray_epsilon) const 
   {
-    Vec3 w = uniform_sphere_sample(u1, u2);
+    Vec3 w = uniform_sphere_sample(uv.x, uv.y);
+    out_pos_pdf = uniform_sphere_pdf() / this->area();
     out_n = Normal(w);
     out_ray_epsilon = 5e-3f * this->radius;
     return Point() + Vector(w * this->radius);
@@ -70,26 +71,32 @@ namespace dort {
     return uniform_sphere_pdf() / this->area();
   }
 
-  Point SphereShape::sample_point_eye(const Point& eye,
-      float u1, float u2, Normal& out_n) const
+  Point SphereShape::sample_point_pivot(const Point& pivot, Vec2 uv,
+      float& out_dir_pdf, Normal& out_n, float& out_ray_epsilon) const
   {
-    float dist_squared = length_squared(eye.v);
-    if(dist_squared - this->radius * this->radius < 1e-3) {
-      float ray_epsilon;
-      return this->sample_point(u1, u2, out_n, ray_epsilon);
-    }
+    float dist_squared = length_squared(pivot.v);
+    if(dist_squared - square(this->radius) < 1e-3) {
+      Vec3 w = uniform_sphere_sample(uv.x, uv.y);
+      Point pt = Point() + Vector(w * this->radius);
+      float area_pdf = uniform_sphere_pdf() / this->area();
+      out_dir_pdf = area_pdf * abs_dot(normalize(pivot - pt), Vector(w))
+        / length_squared(pivot - pt);
+      out_n = Normal(w);
+      out_ray_epsilon = 5e-3f * this->radius;
+      return pt;
+    } 
 
     float dist = sqrt(dist_squared);
     float inv_dist = 1.f / dist;
-    float cos_theta_max = sqrt(dist_squared - this->radius * this->radius) * inv_dist;
+    float cos_theta_max = sqrt(dist_squared - square(this->radius)) * inv_dist;
 
-    Vec3 cone_vec = uniform_cone_sample(cos_theta_max, u1, u2);
-    Vector cone_z = -Vector(eye.v) * inv_dist;
+    Vec3 cone_vec = uniform_cone_sample(cos_theta_max, uv.x, uv.y);
+    Vector cone_z = -Vector(pivot.v) * inv_dist;
     Vector cone_x, cone_y;
     coordinate_system(cone_z, cone_x, cone_y);
 
     Vector ray_dir = cone_x * cone_vec.x + cone_y * cone_vec.y + cone_z * cone_vec.z;
-    Ray ray(eye, ray_dir);
+    Ray ray(pivot, ray_dir);
     float t_hit;
     if(!this->solve_hit_t(ray, t_hit)) {
       t_hit = dist;
@@ -97,17 +104,19 @@ namespace dort {
 
     Point pt = ray.point_t(t_hit);
     out_n = Normal(pt.v) / this->radius;
+    out_ray_epsilon = 5e-3f * this->radius;
+    out_dir_pdf = this->point_pivot_pdf(pivot, normalize(pt - pivot));
     return pt;
   }
 
-  float SphereShape::point_eye_pdf(const Point& eye, const Vector& w) const {
-    float dist_squared = length_squared(eye.v);
-    if(dist_squared - this->radius * this->radius < 1e-3) {
-      return Shape::point_eye_pdf(eye, w);
+  float SphereShape::point_pivot_pdf(const Point& pivot, const Vector& w) const {
+    float dist_squared = length_squared(pivot.v);
+    float radius_squared = square(this->radius);
+    if(dist_squared - radius_squared < 1e-3) {
+      return Shape::point_pivot_pdf(pivot, w);
     }
     float dist = sqrt(dist_squared);
-    float inv_dist = 1.f / dist;
-    float cos_theta_max = sqrt(dist_squared - this->radius * this->radius) * inv_dist;
+    float cos_theta_max = sqrt(dist_squared - radius_squared) / dist;
     return uniform_cone_pdf(cos_theta_max);
   }
 

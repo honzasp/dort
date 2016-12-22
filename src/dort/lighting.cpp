@@ -23,7 +23,7 @@ namespace dort {
       Spectrum light_radiance(0.f);
       for(uint32_t i = 0; i < light_idxs.count; ++i) {
         light_radiance += estimate_direct(scene, geom,
-            bsdf, *scene.lights.at(l), BSDF_ALL & ~BSDF_SPECULAR,
+            bsdf, *scene.lights.at(l), BSDF_ALL & ~BSDF_DELTA,
             LightSample(sampler, light_idxs, i),
             BsdfSample(sampler, bsdf_idxs, i));
       }
@@ -44,7 +44,7 @@ namespace dort {
       Spectrum light_radiance(0.f);
       for(uint32_t i = 0; i < num_samples; ++i) {
         light_radiance += estimate_direct(scene, geom,
-            bsdf, *light, BSDF_ALL & ~BSDF_SPECULAR,
+            bsdf, *light, BSDF_ALL & ~BSDF_DELTA,
             LightSample(sampler.rng), BsdfSample(sampler.rng));
       }
       assert(is_finite(light_radiance));
@@ -62,7 +62,7 @@ namespace dort {
     uint32_t light_idx = clamp(floor_int32(num_lights * u_select),
         0, int32_t(scene.lights.size()) - 1);
     return num_lights * estimate_direct(scene, geom, bsdf,
-        *scene.lights.at(light_idx), BSDF_ALL & ~BSDF_SPECULAR,
+        *scene.lights.at(light_idx), BSDF_ALL & ~BSDF_DELTA,
         light_sample, bsdf_sample);
   }
 
@@ -84,20 +84,20 @@ namespace dort {
 
     {
       Vector wi;
-      float light_pdf;
+      float wi_light_pdf;
       ShadowTest shadow;
-      Spectrum light_radiance = light.sample_radiance(geom.p,
-        geom.ray_epsilon, wi, light_pdf, shadow, light_sample);
-      if(!light_radiance.is_black() && light_pdf > 0.f) {
-        Spectrum bsdf_f = bsdf.f(geom.wo, wi, bxdf_flags);
+      Spectrum light_radiance = light.sample_pivot_radiance(geom.p,
+        geom.ray_epsilon, wi, wi_light_pdf, shadow, light_sample);
+      if(!light_radiance.is_black() && wi_light_pdf > 0.f) {
+        Spectrum bsdf_f = bsdf.eval_f(geom.wo_camera, wi, bxdf_flags);
         if(!bsdf_f.is_black() && (shadow.visible(scene))) {
           float weight = 1.f;
           if(!(light.flags & LIGHT_DELTA)) {
-            float bsdf_pdf = bsdf.f_pdf(geom.wo, wi, bxdf_flags);
-            weight = mis_power_heuristic(1, light_pdf, 1, bsdf_pdf);
+            float wi_bsdf_pdf = bsdf.light_f_pdf(wi, geom.wo_camera, bxdf_flags);
+            weight = mis_power_heuristic(1, wi_light_pdf, 1, wi_bsdf_pdf);
           }
           light_contrib = bsdf_f * light_radiance * (abs_dot(wi, geom.nn) 
-            * weight / light_pdf);
+            * weight / wi_light_pdf);
           assert(is_finite(light_contrib) && is_nonnegative(bsdf_contrib));
         }
       }
@@ -105,15 +105,15 @@ namespace dort {
 
     if(!(light.flags & LIGHT_DELTA)) {
       Vector wi;
-      float bsdf_pdf;
+      float wi_bsdf_pdf;
       BxdfFlags sampled_flags;
-      Spectrum bsdf_f = bsdf.sample_f(geom.wo, wi, bsdf_pdf, bxdf_flags,
-          sampled_flags, bsdf_sample);
-      if(!bsdf_f.is_black() && bsdf_pdf > 0.f) {
+      Spectrum bsdf_f = bsdf.sample_light_f(geom.wo_camera, bxdf_flags,
+          wi, wi_bsdf_pdf, sampled_flags, bsdf_sample);
+      if(!bsdf_f.is_black() && wi_bsdf_pdf > 0.f) {
         float weight = 1.f;
-        if(!(sampled_flags & BSDF_SPECULAR)) {
-          float light_pdf = light.radiance_pdf(geom.p, wi);
-          weight = mis_power_heuristic(1, bsdf_pdf, 1, light_pdf);
+        if(!(sampled_flags & BSDF_DELTA)) {
+          float wi_light_pdf = light.pivot_radiance_pdf(geom.p, wi);
+          weight = mis_power_heuristic(1, wi_bsdf_pdf, 1, wi_light_pdf);
         }
 
         Spectrum light_radiance(0.f);
@@ -128,8 +128,6 @@ namespace dort {
               light_radiance = area_light->emitted_radiance(
                   light_isect.world_diff_geom.p, light_isect.world_diff_geom.nn, -wi);
             }
-          } else if(light.flags & LIGHT_BACKGROUND) {
-            light_radiance = light.background_radiance(light_ray);
           }
         } else if(light.flags & LIGHT_BACKGROUND) {
           if(!scene.intersect_p(light_ray)) {
@@ -138,7 +136,7 @@ namespace dort {
         }
 
         bsdf_contrib = bsdf_f * light_radiance * (abs_dot(wi, geom.nn)
-          * weight / bsdf_pdf);
+          * weight / wi_bsdf_pdf);
         assert(is_finite(bsdf_contrib) && is_nonnegative(bsdf_contrib));
       }
     }
@@ -153,16 +151,15 @@ namespace dort {
     StatTimer t(TIMER_TRACE_SPECULAR);
 
     Vector wi;
-    float pdf;
+    float wi_pdf;
     BxdfFlags sampled_flags;
-    Spectrum bsdf_f = bsdf.sample_f(geom.wo, wi, pdf,
-        BSDF_SPECULAR | flags, sampled_flags,
-        BsdfSample(sampler.rng));
+    Spectrum bsdf_f = bsdf.sample_light_f(geom.wo_camera, BSDF_DELTA | flags,  
+        wi, wi_pdf, sampled_flags, BsdfSample(sampler.rng));
     assert(is_finite(bsdf_f) && is_nonnegative(bsdf_f));
-    if(!bsdf_f.is_black() && pdf != 0.f) {
+    if(!bsdf_f.is_black() && wi_pdf != 0.f) {
       Ray spec_ray(geom.p, wi, geom.ray_epsilon, INFINITY);
       Spectrum radiance = renderer.get_radiance(scene, spec_ray, depth + 1, sampler);
-      return radiance * bsdf_f * (abs_dot(wi, geom.nn) / pdf);
+      return radiance * bsdf_f * (abs_dot(wi, geom.nn) / wi_pdf);
     } else {
       return Spectrum(0.f);
     }

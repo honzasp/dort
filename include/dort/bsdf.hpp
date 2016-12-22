@@ -7,10 +7,22 @@
 namespace dort {
   enum BxdfFlags: uint8_t {
     BSDF_REFLECTION = 1,
+      ///< The BSDF component scatters light in the incident hemisphere
     BSDF_TRANSMISSION = 2,
+      ///< The BSDF component scatters light in the hemisphere opposite to the
+      /// incident direction.
     BSDF_DIFFUSE = 4,
+      ///< The BSDF scatters light in a large solid angle (the contribution of a
+      /// random pair of directions is likely to be nonzero).
     BSDF_GLOSSY = 8,
-    BSDF_SPECULAR = 16,
+      ///< The BSDF scatters light in a small solid angle (the contribution of a
+      /// random pair of directions is likely to be very small or zero).
+    BSDF_DELTA = 16,
+      ///< The BSDF scatters light by a delta distribution (the contribution of
+      /// a random pair of directions is always zero).
+
+    BSDF_ALL_TYPES = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_DELTA,
+    BSDF_ALL = BSDF_ALL_TYPES | BSDF_REFLECTION | BSDF_TRANSMISSION,
   };
 
   constexpr BxdfFlags operator|(BxdfFlags a, BxdfFlags b) {
@@ -23,12 +35,6 @@ namespace dort {
     return BxdfFlags(~uint8_t(a));
   }
 
-  constexpr BxdfFlags BSDF_ALL_TYPES =
-    BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR;
-  constexpr BxdfFlags BSDF_ALL =
-    BSDF_ALL_TYPES | BSDF_REFLECTION | BSDF_TRANSMISSION;
-  constexpr BxdfFlags BSDF_DELTA =
-    BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR;
 
   struct Bxdf {
     BxdfFlags flags;
@@ -40,10 +46,34 @@ namespace dort {
       return (this->flags & test) == this->flags;
     }
 
-    virtual Spectrum f(const Vector& wo, const Vector& wi) const = 0;
-    virtual Spectrum sample_f(const Vector& wo, Vector& out_wi,
-        float& out_pdf, float u1, float u2) const = 0;
-    virtual float f_pdf(const Vector& wo, const Vector& wi) const = 0;
+    virtual Spectrum eval_f(const Vector& wi_light, const Vector& wo_camera) const = 0;
+    virtual Spectrum sample_light_f(const Vector& wo_camera,
+        Vector& out_wi_light, float& out_dir_pdf, Vec2 uv) const = 0;
+    virtual Spectrum sample_camera_f(const Vector& wi_light,
+        Vector& out_wo_camera, float& out_dir_pdf, Vec2 uv) const = 0;
+    virtual float light_f_pdf(const Vector& wi_light_gen,
+        const Vector& wo_camera_fix) const = 0;
+    virtual float camera_f_pdf(const Vector& wo_camera_gen,
+        const Vector& wi_light_fix) const = 0;
+  };
+
+  struct SymmetricBxdf: public Bxdf {
+    SymmetricBxdf(BxdfFlags flags): Bxdf(flags) { }
+
+    virtual Spectrum sample_light_f(const Vector& wo_camera,
+        Vector& out_wi_light, float& out_dir_pdf, Vec2 uv) const override final;
+    virtual Spectrum sample_camera_f(const Vector& wi_light,
+        Vector& out_wo_camera, float& out_dir_pdf, Vec2 uv) const override final;
+    virtual float light_f_pdf(const Vector& wi_light_gen,
+        const Vector& wo_camera_fix) const override final;
+    virtual float camera_f_pdf(const Vector& wo_camera_gen,
+        const Vector& wi_light_fix) const override final;
+
+  protected:
+    virtual Spectrum sample_symmetric_f(const Vector& w_fix,
+        Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const = 0;
+    virtual float symmetric_f_pdf(const Vector& w_gen,
+        const Vector& w_fix) const = 0;
   };
 
   struct BsdfSamplesIdxs {
@@ -61,7 +91,7 @@ namespace dort {
     static BsdfSamplesIdxs request(Sampler& sampler, uint32_t count);
   };
 
-  class Bsdf {
+  class Bsdf final {
     // TODO: use a small_vector
     std::vector<std::unique_ptr<Bxdf>> bxdfs;
     Vector nn;
@@ -72,10 +102,45 @@ namespace dort {
     Bsdf(const DiffGeom& diff_geom, const Normal& nn_geom);
     void add(std::unique_ptr<Bxdf> bxdf);
 
-    Spectrum f(const Vector& wo, const Vector& wi, BxdfFlags flags) const;
-    Spectrum sample_f(const Vector& wo, Vector& out_wi, float& out_pdf,
-        BxdfFlags flags, BxdfFlags& out_flags, BsdfSample sample) const;
-    float f_pdf(const Vector& wo, const Vector& wi, BxdfFlags flags) const;
+    /// Evaluates the BSDF for the pair of directions.
+    /// Vector wi_light points to the light, while wo_camera points to the
+    /// camera. Compontents that do not match flags are ignored. Delta
+    /// components are ignored (even if the two directions match exactly).
+    Spectrum eval_f(const Vector& wi_light, const Vector& wo_camera,
+        BxdfFlags flags) const;
+
+    /// Samples a direction to light.
+    /// Given a direction to camera (wo_camera), samples a direction to light
+    /// and returns the bsdf value in this direction. If a delta component is
+    /// sampled, it is assumed to be evaluated under an integral over the
+    /// wi_light direction and the return value and pdf are coefficients of the
+    /// respective delta distribution 
+    Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags flags,
+        Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
+        BsdfSample sample) const;
+    
+    /// Samples a direction to camera.
+    /// Given a direction to light (wi_light), samples a direction to camera and
+    /// returns the bsdf value in this direction. The handling of delta
+    /// components is the same as in sample_light_f().
+    Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags flags,
+        Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
+        BsdfSample sample) const;
+
+    /// Computes the pdf of sample_light_f().
+    /// Returns the probability of sampling the light direction wi_light_gen
+    /// given wo_camera_fix from sample_light_f(). The pdf is w.r.t. solid
+    /// angle. Delta distributions are ignored (even if the directions would
+    /// match exactly).
+    float light_f_pdf(const Vector& wi_light_gen, const Vector& wo_camera_fix,
+        BxdfFlags flags) const;
+
+    /// Computes the pdf of sample_camera_f().
+    /// Returns the probability of sampling the camera direction wo_camera_gen
+    /// given light direction wi_light_fix from sample_camera_f().
+    float camera_f_pdf(const Vector& wo_camera_gen, const Vector& wi_light_fix,
+        BxdfFlags flags) const;
+
     uint32_t num_bxdfs(BxdfFlags flags) const;
     uint32_t num_bxdfs() const { return this->bxdfs.size(); }
 
@@ -118,5 +183,13 @@ namespace dort {
     static float cos_phi(const Vector& w) {
       return w.v.x / sin_theta(w);
     }
+  private:
+    template<bool FIX_IS_CAMERA>
+    Spectrum sample_f(const Vector& w_fix, BxdfFlags flags,
+        Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
+        BsdfSample sample) const;
+
+    template<bool FIX_IS_CAMERA>
+    float f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags flags) const;
   };
 }

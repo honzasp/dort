@@ -1,42 +1,42 @@
 #pragma once
 #include "dort/dort.hpp"
 #include "dort/math.hpp"
+#include "dort/spectrum.hpp"
 
 namespace dort {
-  float fresnel_conductor(float eta, float k, float cos_i);
-  float fresnel_dielectric(float eta, float cos_i, float cos_t);
+  float fresnel_dielectric(float cos_i, float eta_i, float eta_t);
+  Spectrum fresnel_conductor(float cos_i, Spectrum eta_i, Spectrum eta_t, Spectrum k);
 
-  struct Fresnel {
-    float eta;
-    float inv_eta;
-    explicit Fresnel(float eta): eta(eta), inv_eta(1.f / eta) { }
-  };
+  struct FresnelConductor {
+    Spectrum eta_outside;
+    Spectrum eta_inside;
+    Spectrum k_inside;
+    FresnelConductor(Spectrum eta_outside, Spectrum eta_inside, Spectrum k_inside):
+      eta_outside(eta_outside), eta_inside(eta_inside), k_inside(k_inside) { }
 
-  struct FresnelConductor: public Fresnel {
-    float k;
-    FresnelConductor(float eta, float k):
-      Fresnel(eta), k(k) { }
-
-    float reflectance(float cos_i, float) const {
-      return fresnel_conductor(this->eta, this->k, abs(cos_i));
+    Spectrum reflectance(float cos_i) const {
+      return fresnel_conductor(cos_i,
+          this->eta_outside, this->eta_inside, this->k_inside);
     }
   };
 
-  struct FresnelDielectric: public Fresnel {
-    explicit FresnelDielectric(float eta): Fresnel(eta) { }
+  struct FresnelDielectric {
+    float eta_outside;
+    float eta_inside;
+    FresnelDielectric(float eta_outside, float eta_inside):
+      eta_outside(eta_outside), eta_inside(eta_inside) { }
 
-    float reflectance(float cos_i, float cos_t) const {
-      return fresnel_dielectric(cos_i > 0.f ? this->eta : this->inv_eta,
-          abs(cos_i), abs(cos_t));
+    Spectrum reflectance(float cos_i) const {
+      return Spectrum(fresnel_dielectric(cos_i, this->eta_outside, this->eta_inside));
     }
   };
 
-  struct FresnelConstant: public Fresnel {
+  struct FresnelConstant {
     float reflect;
+    FresnelConstant(float reflectance): reflect(reflectance) { }
 
-    FresnelConstant(float eta, float reflectance):
-      Fresnel(eta), reflect(reflectance) { }
-
-    float reflectance(float, float) const { return this->reflect; }
+    float reflectance(float) const {
+      return this->reflect; 
+    }
   };
 }

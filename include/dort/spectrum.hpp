@@ -70,6 +70,13 @@ namespace dort {
     return s1 = s1 / a;
   }
 
+  inline RgbSpectrum square(RgbSpectrum s) {
+    return s * s;
+  }
+  inline RgbSpectrum sqrt(RgbSpectrum s) {
+    return RgbSpectrum(sqrt(s.rgb));
+  }
+
   inline bool is_finite(const RgbSpectrum& s) {
     return is_finite(s.rgb);
   }

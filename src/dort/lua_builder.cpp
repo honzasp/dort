@@ -1,3 +1,4 @@
+#include "dort/bdpt_renderer.hpp"
 #include "dort/bvh_primitive.hpp"
 #include "dort/camera.hpp"
 #include "dort/direct_renderer.hpp"
@@ -512,6 +513,10 @@ namespace dort {
     } else if(method == "pt" || method == "path") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<PathRenderer>(
+          scene, film, sampler, max_depth);
+    } else if(method == "bdpt") {
+      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      renderer = std::make_shared<BdptRenderer>(
           scene, film, sampler, max_depth);
     } else if(method == "igi") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);

@@ -50,13 +50,14 @@ namespace dort {
     return TWO_PI * this->radius * (this->z_max - this->z_min);
   }
 
-  Point CylinderShape::sample_point(float u1, float u2,
+  Point CylinderShape::sample_point(Vec2 uv, float& out_pos_pdf,
       Normal& out_n, float& out_ray_epsilon) const 
   {
-    float z = lerp(u1, this->z_min, this->z_max);
-    float phi = TWO_PI * u2;
+    float z = lerp(uv.x, this->z_min, this->z_max);
+    float phi = TWO_PI * uv.y;
     float cos_phi = cos(phi);
     float sin_phi = sin(phi);
+    out_pos_pdf = 1.f / this->area();
     out_n = Normal(cos_phi, sin_phi, 0.f);
     out_ray_epsilon = 5e-3f;
     return Point(cos_phi * this->radius, sin_phi * this->radius, z);

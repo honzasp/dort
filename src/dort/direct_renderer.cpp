@@ -28,7 +28,7 @@ namespace dort {
     LightingGeom geom;
     geom.p = isect.world_diff_geom.p;
     geom.nn = isect.world_diff_geom.nn;
-    geom.wo = normalize(-ray.dir);
+    geom.wo_camera = normalize(-ray.dir);
     geom.ray_epsilon = isect.ray_epsilon;
 
     std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
@@ -43,7 +43,7 @@ namespace dort {
       Spectrum refraction = trace_specular(*this, scene,
           geom, *bsdf, BSDF_TRANSMISSION, depth, sampler);
       assert(is_finite(reflection) && is_nonnegative(reflection));
-      assert(is_finite(refraction) && is_nonnegative(reflection));
+      assert(is_finite(refraction) && is_nonnegative(refraction));
       radiance += reflection + refraction;
     }
 

@@ -17,7 +17,7 @@ namespace dort {
       [&](const Photon& photon, float dist_square, float radius_square) {
         (void)dist_square;
         if(dot(photon.nn, nn) >= 0.7f) {
-          power += photon.power * bsdf.f(wo, photon.wi, BSDF_ALL);
+          power += photon.power * bsdf.eval_f(photon.wi, wo, BSDF_ALL);
         }
         return radius_square;
       });

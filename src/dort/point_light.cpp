@@ -4,27 +4,28 @@
 
 namespace dort {
   Spectrum PointLight::sample_ray_radiance(const Scene&, 
-      Ray& out_ray, Normal& out_nn, float& out_pdf,
+      Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,
       LightRaySample sample) const
   {
     Vec3 wi = uniform_sphere_sample(sample.uv_dir.x, sample.uv_dir.y);
     out_ray = Ray(this->pt, Vector(wi), 0.f);
     out_nn = Normal(wi);
-    out_pdf = uniform_sphere_pdf();
+    out_pos_pdf = 1.f;
+    out_dir_pdf = uniform_sphere_pdf();
     return this->intensity;
   }
 
-  Spectrum PointLight::sample_radiance(const Point& eye, float eye_epsilon,
-      Vector& out_wi, float& out_pdf, ShadowTest& out_shadow,
+  Spectrum PointLight::sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
+      Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow, 
       LightSample) const
   {
-    out_wi = normalize(this->pt - eye);
-    out_pdf = 1.f;
-    out_shadow.init_point_point(eye, eye_epsilon, this->pt, 0.f);
-    return this->intensity / length_squared(this->pt - eye);
+    out_wi = normalize(this->pt - pivot);
+    out_dir_pdf = 1.f;
+    out_shadow.init_point_point(pivot, pivot_epsilon, this->pt, 0.f);
+    return this->intensity / length_squared(this->pt - pivot);
   }
 
-  float PointLight::radiance_pdf(const Point&, const Vector&) const {
+  float PointLight::pivot_radiance_pdf(const Point&, const Vector&) const {
     return 0.f;
   }
 

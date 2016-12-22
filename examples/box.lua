@@ -62,7 +62,7 @@ local scene = define_scene(function()
     add_shape(cube())
   end)
 
-  camera(perspective_camera {
+  camera(pinhole_camera {
     transform = look_at(
       point(278, 273, -800),
       point(278, 273, 0),
@@ -93,17 +93,15 @@ local scene = define_scene(function()
   end)
 end)
 
-write_png_image("box_igi.png", render(scene, {
+write_png_image("box_v2.png", render(scene, {
   x_res = 256, y_res = 256,
   max_depth = 10,
   sampler = stratified_sampler {
-    samples_per_x = 2,
-    samples_per_y = 2,
+    samples_per_x = 1,
+    samples_per_y = 1,
   },
   filter = mitchell_filter {
     radius = 1.5,
   },
-  renderer = "igi",
-  light_sets = 4,
-  light_paths = 32,
+  renderer = "direct",
 }))

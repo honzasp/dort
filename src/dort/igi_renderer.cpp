@@ -27,10 +27,10 @@ namespace dort {
     LightingGeom geom;
     geom.p = isect.world_diff_geom.p;
     geom.nn = isect.world_diff_geom.nn;
-    geom.wo = normalize(-ray.dir);
+    geom.wo_camera = normalize(-ray.dir);
     geom.ray_epsilon = isect.ray_epsilon;
 
-    std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
+    auto bsdf = isect.get_bsdf();
     radiance += uniform_sample_all_lights(scene, geom, *bsdf, sampler,
         make_slice(this->light_samples_idxs),
         make_slice(this->bsdf_samples_idxs));
@@ -72,8 +72,8 @@ namespace dort {
     Spectrum radiance;
     for(const VirtualLight& light: light_set) {
       Vector isect_wi = normalize(light.p - isect_geom.p);
-      Spectrum isect_f = isect_bsdf.f(isect_geom.wo, isect_wi, BSDF_ALL);
-      Spectrum light_f = light.bsdf->f(-isect_wi, light.wi, BSDF_ALL);
+      Spectrum isect_f = isect_bsdf.eval_f(isect_wi, isect_geom.wo_camera, BSDF_ALL);
+      Spectrum light_f = light.bsdf->eval_f(light.wi, -isect_wi, BSDF_ALL);
       float g = abs_dot(isect_wi, isect_geom.nn) * abs_dot(isect_wi, light.nn)
         / length_squared(isect_geom.p - light.p);
       g = min(g, this->g_limit);
@@ -169,14 +169,15 @@ namespace dort {
 
     Ray ray;
     Normal prev_nn;
-    float light_ray_pdf;
+    float ray_pos_pdf, ray_dir_pdf;
     Spectrum light_radiance = light.sample_ray_radiance(
-        scene, ray, prev_nn, light_ray_pdf, light_sample);
-    if(light_radiance.is_black() || light_ray_pdf == 0.f) {
+        scene, ray, prev_nn, ray_pos_pdf, ray_dir_pdf, light_sample);
+    float ray_pdf = ray_pos_pdf * ray_dir_pdf;
+    if(light_radiance.is_black() || ray_pdf == 0.f) {
       return;
     }
 
-    Spectrum path_contrib = light_radiance / (light_ray_pdf * light_pdf);
+    Spectrum path_contrib = light_radiance / (ray_pdf * light_pdf);
     for(uint32_t depth = 0; depth < this->max_light_depth; ++depth) {
       Intersection isect;
       if(!scene.intersect(ray, isect)) {
@@ -184,19 +185,19 @@ namespace dort {
       }
       auto bsdf = isect.get_bsdf();
 
-      Vector bounce_wi;
-      float bounce_pdf;
+      Vector bounce_wo;
+      float bounce_dir_pdf;
       BxdfFlags bounce_flags;
-      Spectrum bounce_f = bsdf->sample_f(-ray.dir, bounce_wi, bounce_pdf,
-          BSDF_ALL, bounce_flags, BsdfSample(sampler.rng));
-      if(bounce_f.is_black() || bounce_pdf == 0.f) {
+      Spectrum bounce_f = bsdf->sample_camera_f(-ray.dir, BSDF_ALL, 
+          bounce_wo, bounce_dir_pdf, bounce_flags, BsdfSample(sampler.rng));
+      if(bounce_f.is_black() || bounce_dir_pdf == 0.f) {
         break;
       }
 
       Spectrum bounce_contrib = bounce_f 
-        * (abs_dot(bounce_wi, isect.world_diff_geom.nn) / bounce_pdf);
+        * (abs_dot(bounce_wo, isect.world_diff_geom.nn) / bounce_dir_pdf);
 
-      if(!(bounce_flags & BSDF_SPECULAR)) {
+      if(!(bounce_flags & BSDF_DELTA)) {
         VirtualLight virt;
         virt.p = isect.world_diff_geom.p;
         virt.nn = isect.world_diff_geom.nn;
@@ -213,7 +214,7 @@ namespace dort {
         path_contrib = path_contrib / survive_prob;
       }
 
-      ray = Ray(isect.world_diff_geom.p, bounce_wi, isect.ray_epsilon);
+      ray = Ray(isect.world_diff_geom.p, bounce_wo, isect.ray_epsilon);
       path_contrib = path_contrib * bounce_contrib;
     }
   }

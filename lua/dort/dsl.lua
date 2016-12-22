@@ -59,7 +59,7 @@ end
 dsl.render = dort.builder.render
 
 dsl.ortho_camera = dort.camera.make_ortho
-dsl.perspective_camera = dort.camera.make_perspective
+dsl.pinhole_camera = dort.camera.make_pinhole
 
 dsl.box_filter = dort.filter.make_box
 dsl.triangle_filter = dort.filter.make_triangle

@@ -89,39 +89,43 @@ namespace dort {
     return 24.f;
   }
 
-  Point CubeShape::sample_point(float u1, float u2,
+  Point CubeShape::sample_point(Vec2 uv, float& out_pos_pdf,
       Normal& out_n, float& out_ray_epsilon) const 
   {
     float fface;
-    float x = modf(6.f * u1, &fface);
-    float y = u2;
+    float x = modf(6.f * uv.x, &fface);
+    float y = uv.y;
 
     int32_t face = floor_int32(fface);
     int32_t axis = face / 2;
     bool negative = face % 2 != 0;
+    out_pos_pdf = 1.f/this->area();
     out_n = Normal(permute(Vec3(negative ? -1.f : 1.f, 0.f, 0.f), axis));
     out_ray_epsilon = 1e-3f;
     return Point(permute(Vec3(negative ? -1.f : 1.f, x, y), axis));
   }
 
   float CubeShape::point_pdf(const Point&) const {
-    return 1.f/24.f;
+    return 1.f/this->area();
   }
 
-  Point CubeShape::sample_point_eye(const Point& eye,
-      float u1, float u2, Normal& out_n) const 
+  Point CubeShape::sample_point_pivot(const Point& pivot, Vec2 uv,
+      float& out_dir_pdf, Normal& out_n, float& out_ray_epsilon) const 
   {
     float faxis;
-    float x = modf(3.f * u1, &faxis);
-    float y = u2;
-
+    float x = modf(3.f * uv.x, &faxis);
+    float y = uv.y;
     int32_t axis = floor_int32(faxis);
-    bool negative = eye.v[axis] < 0.f;
+    bool negative = pivot.v[axis] < 0.f;
+
+    auto pt = Point(permute(Vec3(negative ? -1.f : 1.f, x, y), axis));
     out_n = Normal(permute(Vec3(negative ? -1.f : 1.f, 0.f, 0.f), axis));
-    return Point(permute(Vec3(negative ? -1.f : 1.f, x, y), axis));
+    out_dir_pdf = this->point_pivot_pdf(pivot, pivot - pt);
+    out_ray_epsilon = 1e-3f;
+    return pt;
   }
 
-  float CubeShape::point_eye_pdf(const Point& eye, const Vector& w) const {
-    return Shape::point_eye_pdf(eye, w);
+  float CubeShape::point_pivot_pdf(const Point& pivot, const Vector& w) const {
+    return Shape::point_pivot_pdf(pivot, w);
   }
 }

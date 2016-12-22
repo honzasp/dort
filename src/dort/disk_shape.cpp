@@ -60,10 +60,11 @@ namespace dort {
     return PI * square(this->radius);
   }
 
-  Point DiskShape::sample_point(float u1, float u2,
-      Normal& out_n, float& out_ray_epsilon) const 
+  Point DiskShape::sample_point(Vec2 uv,
+      float& out_pos_pdf, Normal& out_n, float& out_ray_epsilon) const 
   {
-    Vec2 w = uniform_disk_sample(u1, u2);
+    Vec2 w = uniform_disk_sample(uv.x, uv.y);
+    out_pos_pdf = INV_PI * square(this->inv_radius);
     out_n = Normal(0.f, 0.f, 1.f);
     out_ray_epsilon = 1e-3f;
     return Point(w.x * this->radius, w.y * this->radius, this->z_coord);

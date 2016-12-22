@@ -4,13 +4,9 @@
 namespace dort {
   class MirrorMaterial final: public Material {
     std::shared_ptr<TextureGeom<Spectrum>> reflectance;
-    std::shared_ptr<TextureGeom<float>> eta;
   public:
-    MirrorMaterial(std::shared_ptr<TextureGeom<Spectrum>> reflectance,
-        std::shared_ptr<TextureGeom<float>> eta):
-      reflectance(reflectance),
-      eta(eta)
-    { }
+    MirrorMaterial(std::shared_ptr<TextureGeom<Spectrum>> reflectance):
+      reflectance(reflectance) { }
 
     virtual std::unique_ptr<Bsdf> get_bsdf(
         const DiffGeom& shading_geom, const Normal& nn_geom) const override final;

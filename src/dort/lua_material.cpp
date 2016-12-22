@@ -83,11 +83,9 @@ namespace dort {
     int p = 1;
     auto reflect = lua_param_texture_opt(l, p, "color",
         const_texture(Spectrum(1.f))).check<Spectrum>(l);
-    auto eta = lua_param_texture_opt(l, p, "eta",
-        const_texture(1.5f)).check<float>(l);
     lua_params_check_unused(l, p);
 
-    lua_push_material(l, std::make_shared<MirrorMaterial>(reflect, eta));
+    lua_push_material(l, std::make_shared<MirrorMaterial>(reflect));
     return 1;
   }
 

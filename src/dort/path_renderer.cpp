@@ -34,7 +34,7 @@ namespace dort {
       LightingGeom geom;
       geom.p = isect.world_diff_geom.p;
       geom.nn = isect.world_diff_geom.nn;
-      geom.wo = normalize(-next_ray.dir);
+      geom.wo_camera = normalize(-next_ray.dir);
       geom.ray_epsilon = isect.ray_epsilon;
       auto bsdf = isect.get_bsdf();
 
@@ -54,14 +54,11 @@ namespace dort {
       Vector bsdf_wi;
       float bsdf_pdf;
       BxdfFlags bsdf_flags;
-      Spectrum bsdf_f;
-      if(bounces < this->next_bsdf_samples_idxs.size()) {
-        bsdf_f = bsdf->sample_f(geom.wo, bsdf_wi, bsdf_pdf, BSDF_ALL, bsdf_flags,
-            BsdfSample(sampler, this->next_bsdf_samples_idxs.at(bounces), 0));
-      } else {
-        bsdf_f = bsdf->sample_f(geom.wo, bsdf_wi, bsdf_pdf, BSDF_ALL, bsdf_flags,
-            BsdfSample(sampler.rng));
-      }
+      Spectrum bsdf_f = bsdf->sample_light_f(geom.wo_camera, BSDF_ALL,
+          bsdf_wi, bsdf_pdf, bsdf_flags,
+          bounces < this->next_bsdf_samples_idxs.size()
+            ? BsdfSample(sampler, this->next_bsdf_samples_idxs.at(bounces), 0)
+            : BsdfSample(sampler.rng));
 
       if(bsdf_f.is_black() || bsdf_pdf == 0.f) {
         break;
@@ -70,7 +67,7 @@ namespace dort {
       assert(is_finite(throughput) && is_nonnegative(throughput));
 
       next_ray = Ray(geom.p, bsdf_wi, geom.ray_epsilon);
-      last_bxdf_was_specular = bsdf_flags & BSDF_SPECULAR;
+      last_bxdf_was_specular = bsdf_flags & BSDF_DELTA;
 
       if(bounces > this->max_depth / 2) {
         float term_prob = max(0.05f, 1.f - throughput.average());
