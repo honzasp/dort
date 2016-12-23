@@ -25,6 +25,18 @@ namespace dort {
     return this->intensity / length_squared(this->pt - pivot);
   }
 
+  float PointLight::ray_origin_radiance_pdf(const Scene&,
+      const Point&, const Vector&) const 
+  {
+    return 0.f;
+  }
+
+  float PointLight::ray_dir_radiance_pdf(const Scene&,
+      const Vector&, const Point&, const Normal&) const
+  {
+    return 0.f;
+  }
+
   float PointLight::pivot_radiance_pdf(const Point&, const Vector&) const {
     return 0.f;
   }

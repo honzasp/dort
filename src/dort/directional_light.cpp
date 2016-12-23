@@ -34,6 +34,18 @@ namespace dort {
     return this->radiance;
   }
 
+  float DirectionalLight::ray_origin_radiance_pdf(const Scene&,
+      const Point&, const Vector&) const 
+  {
+    return 0.f;
+  }
+
+  float DirectionalLight::ray_dir_radiance_pdf(const Scene&,
+      const Vector&, const Point&, const Normal&) const
+  {
+    return 0.f;
+  }
+
   float DirectionalLight::pivot_radiance_pdf(const Point&, const Vector&) const {
     return 0.f;
   }

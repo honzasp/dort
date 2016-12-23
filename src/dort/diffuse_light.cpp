@@ -63,6 +63,18 @@ namespace dort {
     }
   }
 
+  float DiffuseLight::ray_origin_radiance_pdf(const Scene&,
+      const Point& origin_gen, const Vector&) const 
+  {
+    return this->shape->point_pdf(origin_gen);
+  }
+
+  float DiffuseLight::ray_dir_radiance_pdf(const Scene&,
+      const Vector& wo_gen, const Point&, const Normal& nn_fix) const
+  {
+    return dot(wo_gen, nn_fix) > 0.f ? INV_TWO_PI : 0.f;
+  }
+
   float DiffuseLight::pivot_radiance_pdf(const Point& pivot, const Vector& wi) const {
     Point shape_pivot = this->shape_to_world.apply_inv(pivot);
     Vector shape_wi = normalize(this->shape_to_world.apply_inv(wi));

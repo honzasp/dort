@@ -8,10 +8,12 @@ namespace dort {
     return this->primitive->get_bsdf(*this);
   }
 
+  const AreaLight* Intersection::get_area_light() const {
+    return this->primitive->get_area_light(this->frame_diff_geom);
+  }
+
   Spectrum Intersection::emitted_radiance(const Vector& wo) const {
-    const AreaLight* area_light = this->primitive->get_area_light(
-        this->frame_diff_geom);
-    if(area_light) {
+    if(const AreaLight* area_light = this->get_area_light()) {
       return area_light->emitted_radiance(this->world_diff_geom.p,
           this->world_diff_geom.nn, wo);
     } else {

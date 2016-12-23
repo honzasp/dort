@@ -70,13 +70,18 @@ namespace dort {
     /// Samples a direction of a ray from the camera through pivot.
     /// The direction out_wo points to the camera and out_shadow is initialized
     /// with an occlusion test. The pdf is w.r.t. the solid angle at pivot.
-    ///
-    /// The pdf of the direction
     virtual Spectrum sample_pivot_importance(Vec2 film_res,
         const Point& pivot, float pivot_epsilon,
         Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
         Vec2& out_film_pos, CameraSample sample) const = 0;
 
+    /// Computes the pdf of sampling ray in the direction, given its origin,
+    /// from sample_ray_importance().
+    /// Returns the pdf of sampling ray with direction dir_gen, given the ray
+    /// origin and the film position, from sample_ray_importance(). The pdf is
+    /// w.r.t. the solid angle at origin.
+    virtual float ray_dir_importance_pdf(Vec2 film_res, Vec2 film_pos,
+        const Vector& wi_gen, const Point& origin_fix) const = 0;
   protected:
     static Vec2 film_to_normal(Vec2 film_res, Vec2 film_pos);
     static Vec2 normal_to_film(Vec2 film_res, Vec2 normal_pos);
@@ -98,6 +103,8 @@ namespace dort {
         const Point& pivot, float pivot_epsilon,
         Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
         Vec2& out_film_pos, CameraSample sample) const override final;
+    virtual float ray_dir_importance_pdf(Vec2 film_res, Vec2 film_pos,
+        const Vector& wi_gen, const Point& origin_fix) const override final;
   };
 
   /// Pinhole camera has a pinhole lens at the origin of the camera space and
@@ -115,6 +122,8 @@ namespace dort {
         const Point& pivot, float pivot_epsilon,
         Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
         Vec2& out_film_pos, CameraSample sample) const override final;
+    virtual float ray_dir_importance_pdf(Vec2 film_res, Vec2 film_pos,
+        const Vector& wi_gen, const Point& origin_fix) const override final;
   };
 
   /*

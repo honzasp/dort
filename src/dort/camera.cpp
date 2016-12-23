@@ -82,6 +82,12 @@ namespace dort {
     return Spectrum(1.f);
   }
 
+  float OrthographicCamera::ray_dir_importance_pdf(Vec2, Vec2,
+      const Vector&, const Point&) const
+  {
+    return 0.f;
+  }
+
 
   PinholeCamera::PinholeCamera(const Transform& camera_to_world, float fov):
     Camera(CameraFlags(CAMERA_LENS_POS_DELTA | CAMERA_LENS_DIR_DELTA
@@ -128,4 +134,12 @@ namespace dort {
     out_film_pos = film_pos;
     return Spectrum(1.f);
   }
+
+  float PinholeCamera::ray_dir_importance_pdf(Vec2, Vec2,
+      const Vector&, const Point&) const
+  {
+    return 0.f;
+  }
+
+
 }

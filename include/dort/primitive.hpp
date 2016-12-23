@@ -18,6 +18,7 @@ namespace dort {
     };
 
     std::unique_ptr<Bsdf> get_bsdf() const;
+    const AreaLight* get_area_light() const;
     Spectrum emitted_radiance(const Vector& wo) const;
   };
 

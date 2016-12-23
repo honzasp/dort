@@ -95,6 +95,27 @@ namespace dort {
         Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow, 
         LightSample sample) const = 0;
 
+    /// Computes the pdf of sampling a ray origin from sample_ray_radiance(),
+    /// given its direction.
+    /// Returns the pdf of sampling a ray with the origin from
+    /// sample_ray_radiance() when the direction is fixed. The pdf is w.r.t. the
+    /// area measure.
+    /// If the flag LIGHT_DELTA_POS is set or if this is not area light, the pdf
+    /// is always 0.
+    virtual float ray_origin_radiance_pdf(const Scene& scene,
+        const Point& origin_gen, const Vector& wo_fix) const = 0;
+
+    /// Computes the pdf of sampling ray in the direction, given its origin,
+    /// from sample_ray_radiance().
+    /// Returns the pdf of sampling the direction wo_gen given origin and normal
+    /// from sample_ray_radiance. The origin and normal is assumed to lie on the
+    /// light (it is assumed to be produced by sample_ray_radiance()). The pdf
+    /// is w.r.t. the solid angle at origin.
+    /// If the distribution of direction is a delta distribution, the pdf is
+    /// always 0.
+    virtual float ray_dir_radiance_pdf(const Scene& scene,
+        const Vector& wo_gen, const Point& origin_fix, const Normal& nn_fix) const = 0;
+
     /// Computes the pdf of sampling the direction from pivot in
     /// sample_pivot_radiance.
     /// The pdf is w.r.t. the solid angle at pivot.

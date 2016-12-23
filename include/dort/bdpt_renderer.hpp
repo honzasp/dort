@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include "dort/bsdf.hpp"
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
@@ -12,6 +13,7 @@ namespace dort {
   class BdptRenderer final: public SampleRenderer {
     uint32_t max_depth;
     DiscreteDistrib1d light_distrib;
+    std::unordered_map<const Light*, float> light_distrib_pdfs;
   public:
     BdptRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
@@ -64,21 +66,25 @@ namespace dort {
       Point p;
       Normal nn;
       std::unique_ptr<Bsdf> bsdf;
-      const AreaLight* area_light;
+      const AreaLight* area_light; ///< Area light at point p or nullptr.
       float p_epsilon;
-      float fwd_pdf;
-      float bwd_pdf;
+      float fwd_area_pdf; 
+      float bwd_area_pdf;
       Spectrum alpha;
     };
 
-    std::vector<Vertex> random_light_walk(const Scene& scene, Rng& rng) const;
+    std::vector<Vertex> random_light_walk(const Scene& scene,
+        const Light*& out_light, Rng& rng) const;
     std::vector<Vertex> random_camera_walk(const Scene& scene,
         const Ray& ray, Rng& rng) const;
-    Spectrum path_contrib(const Scene& scene, Vec2 film_res, Rng& rng,
+    Spectrum path_contrib(const Scene& scene, Vec2 film_res,
+        const Light& light, const Camera& camera, Rng& rng,
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t, Vec2& out_film_pos) const;
-    float path_weight(const std::vector<Vertex>& light_walk,
+    float path_weight(const Scene& scene, Vec2 film_res, Vec2 film_pos,
+        const Light& light, const Camera& camera,
+        const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t) const;
   };
