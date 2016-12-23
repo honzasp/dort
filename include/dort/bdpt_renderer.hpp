@@ -68,7 +68,6 @@ namespace dort {
       float p_epsilon;
       float fwd_pdf;
       float bwd_pdf;
-      float bwd_geom;
       Spectrum alpha;
     };
 

@@ -6,8 +6,8 @@ namespace dort {
   {
     float pos_pdf;
     Point pt = this->sample_point(uv, pos_pdf, out_n, out_ray_epsilon);
-    out_dir_pdf = pos_pdf * abs_dot(out_n, normalize(pivot - pt))
-      / length_squared(pivot - pt);
+    out_dir_pdf = pos_pdf * length_squared(pivot - pt)
+      / abs_dot(out_n, normalize(pivot - pt));
     return pt;
   }
 

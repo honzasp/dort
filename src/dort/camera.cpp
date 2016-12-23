@@ -87,7 +87,7 @@ namespace dort {
     Camera(CameraFlags(CAMERA_LENS_POS_DELTA | CAMERA_LENS_DIR_DELTA
         | CAMERA_FILM_PIVOT_POS_DELTA), camera_to_world)
   {
-    this->project_dimension = 0.5f * tan(0.5f * fov);
+    this->project_dimension = 2.f * tan(0.5f * fov);
   }
 
   Spectrum PinholeCamera::sample_ray_importance(Vec2 film_res, Vec2 film_pos,

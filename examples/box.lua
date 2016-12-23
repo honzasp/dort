@@ -66,7 +66,7 @@ local scene = define_scene(function()
     transform = look_at(
       point(278, 273, -800),
       point(278, 273, 0),
-      vector(0, 1, 0)) * scale(-1, 1, 1),
+      vector(0, 1, 0)) * scale(1, -1, 1),
     fov = 0.686,
   })
 
@@ -93,15 +93,15 @@ local scene = define_scene(function()
   end)
 end)
 
-write_png_image("box_v2.png", render(scene, {
+write_png_image("box_v2_bdpt.png", render(scene, {
   x_res = 256, y_res = 256,
   max_depth = 10,
   sampler = stratified_sampler {
-    samples_per_x = 1,
-    samples_per_y = 1,
+    samples_per_x = 6,
+    samples_per_y = 6,
   },
   filter = mitchell_filter {
     radius = 1.5,
   },
-  renderer = "direct",
+  renderer = "bdpt",
 }))
