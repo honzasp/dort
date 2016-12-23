@@ -97,8 +97,8 @@ write_png_image("box_v2_bdpt.png", render(scene, {
   x_res = 256, y_res = 256,
   max_depth = 10,
   sampler = stratified_sampler {
-    samples_per_x = 6,
-    samples_per_y = 6,
+    samples_per_x = 4,
+    samples_per_y = 4,
   },
   filter = mitchell_filter {
     radius = 1.5,

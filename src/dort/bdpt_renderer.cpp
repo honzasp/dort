@@ -9,10 +9,8 @@ namespace dort {
   // TODO: use optimized direct lighting when appropriate
   // TODO: connect light vertices directly to camera vertex (requires direct
   // Renderer subclass)
-  // TODO: sample BSDFs from both directions correctly
-  // TODO: optimize path pdfs and contribution computation
   // TODO: correctly handle delta distributions in BSDFs
-  // TODO: add contributions from background lights
+  // TODO: correctly handle background (infinite area) lights
   Spectrum BdptRenderer::get_radiance(const Scene& scene, Ray& ray,
       uint32_t, Sampler& sampler) const
   {
@@ -103,6 +101,13 @@ namespace dort {
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_y.p);
       if(dist_squared < 1e-9f) { break; }
 
+      Spectrum alpha_scale = prev_bsdf_f * (abs_dot(prev_y.nn, wi) / fwd_dir_pdf);
+      if(bounces >= 2) {
+        float rr_prob = min(alpha_scale.average(), 0.9f);
+        if(rng.uniform_float() > rr_prob) { break; }
+        alpha_scale /= rr_prob;
+      }
+
       Vertex y;
       y.p = isect.world_diff_geom.p;
       y.p_epsilon = isect.ray_epsilon;
@@ -111,7 +116,7 @@ namespace dort {
       y.area_light = nullptr;
       y.fwd_area_pdf = fwd_dir_pdf * abs_dot(y.nn, wi) / dist_squared;
       y.bwd_area_pdf = SIGNALING_NAN;
-      y.alpha = prev_y.alpha * prev_bsdf_f * (abs_dot(prev_y.nn, wi) / fwd_dir_pdf);
+      y.alpha = prev_y.alpha * alpha_scale;
       if(y.alpha.is_black()) {
         break;
       }
@@ -163,6 +168,13 @@ namespace dort {
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_z.p);
       if(dist_squared < 1e-9f) { break; }
 
+      Spectrum alpha_scale = prev_bsdf_f * (abs_dot(prev_z.nn, wo) / fwd_dir_pdf);
+      if(bounces >= 2) {
+        float rr_prob = min(alpha_scale.average(), 0.9f);
+        if(rng.uniform_float() > rr_prob) { break; }
+        alpha_scale /= rr_prob;
+      }
+
       Vertex z;
       z.p = isect.world_diff_geom.p;
       z.p_epsilon = isect.ray_epsilon;
@@ -171,7 +183,7 @@ namespace dort {
       z.area_light = isect.get_area_light();
       z.fwd_area_pdf = fwd_dir_pdf * abs_dot(z.nn, wo) / dist_squared;;
       z.bwd_area_pdf = SIGNALING_NAN;
-      z.alpha = prev_z.alpha * prev_bsdf_f * (abs_dot(prev_z.nn, wo) / fwd_dir_pdf);
+      z.alpha = prev_z.alpha * alpha_scale;
       if(z.alpha.is_black()) {
         break;
       }
