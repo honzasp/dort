@@ -111,8 +111,8 @@ for i = 0, iters - 1 do
   write_png_image("anim_box_bdpt_" .. i .. ".png", render(scene, {
     x_res = 256, y_res = 256,
     sampler = stratified_sampler {
-      samples_per_x = 1,
-      samples_per_y = 1,
+      samples_per_x = 2,
+      samples_per_y = 2,
     },
     filter = mitchell_filter {
       radius = 1.5,

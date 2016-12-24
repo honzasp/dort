@@ -20,7 +20,6 @@ namespace dort {
     std::vector<Vertex> light_walk = this->random_light_walk(scene, light, sampler.rng);
     std::vector<Vertex> camera_walk = this->random_camera_walk(scene, ray, sampler.rng);
 
-    //std::printf("%lu %lu\n", light_walk.size(), camera_walk.size());
     Spectrum contrib(0.f);
     for(uint32_t s = 1; s <= light_walk.size(); ++s) {
       for(uint32_t t = 1; t <= camera_walk.size(); ++t) {
@@ -32,7 +31,6 @@ namespace dort {
         float path_weight = this->path_weight(scene, film_res, film_pos, *light, camera,
             light_walk, camera_walk, s, t);
         Spectrum weighted_contrib = path_contrib * path_weight;
-        //std::printf("  %d,%d: %g %g\n", s, t, path_contrib.average(), path_weight);
         if(t == 1) {
           // TODO: splat the path_value to the film
         } else {
@@ -41,7 +39,6 @@ namespace dort {
       }
     }
 
-    //std::printf("  = %g\n", contrib.average());
     return contrib;
   }
 
@@ -78,6 +75,7 @@ namespace dort {
     y0.fwd_area_pdf = light_pos_pdf * light_pick_pdf;
     y0.bwd_area_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
+    y0.is_delta = false;
     walk.push_back(std::move(y0));
 
     Spectrum prev_bsdf_f(1.f);
@@ -94,10 +92,10 @@ namespace dort {
       Vector wo;
       float wo_pdf;
       BxdfFlags bsdf_flags;
-      Spectrum bsdf_f = bsdf->sample_camera_f(wi, BSDF_ALL & (~BSDF_DELTA),
+      Spectrum bsdf_f = bsdf->sample_camera_f(wi, BSDF_ALL,
           wo, wo_pdf, bsdf_flags, BsdfSample(rng));
 
-      float bwd_dir_pdf = bsdf->light_f_pdf(wi, wo, BSDF_ALL & (~BSDF_DELTA));
+      float bwd_dir_pdf = bsdf->light_f_pdf(wi, wo, BSDF_ALL);
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_y.p);
       if(dist_squared < 1e-9f) { break; }
 
@@ -114,14 +112,17 @@ namespace dort {
       y.nn = isect.world_diff_geom.nn;
       y.bsdf = std::move(bsdf);
       y.area_light = nullptr;
-      y.fwd_area_pdf = fwd_dir_pdf * abs_dot(y.nn, wi) / dist_squared;
+      y.fwd_area_pdf = prev_y.is_delta ? fwd_dir_pdf
+        : fwd_dir_pdf * abs_dot(y.nn, wi) / dist_squared;
       y.bwd_area_pdf = SIGNALING_NAN;
       y.alpha = prev_y.alpha * alpha_scale;
+      y.is_delta = bsdf_flags & BSDF_DELTA;
       if(y.alpha.is_black()) {
         break;
       }
 
-      prev_y.bwd_area_pdf = bwd_dir_pdf * abs_dot(prev_y.nn, wi) / dist_squared;
+      prev_y.bwd_area_pdf = y.is_delta ? wo_pdf
+        : bwd_dir_pdf * abs_dot(prev_y.nn, wi) / dist_squared;
       prev_bsdf_f = bsdf_f;
       fwd_dir_pdf = wo_pdf;
       light_ray = Ray(y.p, wo, isect.ray_epsilon);
@@ -161,10 +162,10 @@ namespace dort {
       Vector wi;
       float wi_pdf;
       BxdfFlags bsdf_flags;
-      Spectrum bsdf_f = bsdf->sample_light_f(wo, BSDF_ALL & (~BSDF_DELTA),
+      Spectrum bsdf_f = bsdf->sample_light_f(wo, BSDF_ALL,
           wi, wi_pdf, bsdf_flags, BsdfSample(rng));
 
-      float bwd_dir_pdf = bsdf->camera_f_pdf(wo, wi, BSDF_ALL & (~BSDF_DELTA));
+      float bwd_dir_pdf = bsdf->camera_f_pdf(wo, wi, BSDF_ALL);
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_z.p);
       if(dist_squared < 1e-9f) { break; }
 
@@ -181,14 +182,17 @@ namespace dort {
       z.nn = isect.world_diff_geom.nn;
       z.bsdf = std::move(bsdf);
       z.area_light = isect.get_area_light();
-      z.fwd_area_pdf = fwd_dir_pdf * abs_dot(z.nn, wo) / dist_squared;;
+      z.fwd_area_pdf = prev_z.is_delta ? fwd_dir_pdf
+        : fwd_dir_pdf * abs_dot(z.nn, wo) / dist_squared;;
       z.bwd_area_pdf = SIGNALING_NAN;
       z.alpha = prev_z.alpha * alpha_scale;
+      z.is_delta = bsdf_flags & BSDF_DELTA;
       if(z.alpha.is_black()) {
         break;
       }
 
-      prev_z.bwd_area_pdf = bwd_dir_pdf * abs_dot(prev_z.nn, wo) / dist_squared;
+      prev_z.bwd_area_pdf = z.is_delta ? wi_pdf
+        : bwd_dir_pdf * abs_dot(prev_z.nn, wo) / dist_squared;
       prev_bsdf_f = bsdf_f;
       fwd_dir_pdf = wi_pdf;
       camera_ray = Ray(z.p, wi, isect.ray_epsilon);
@@ -318,7 +322,7 @@ namespace dort {
     if(t >= 2) {
       Vector camera_wo = normalize(camera_walk.at(t - 2).p - last_camera.p);
       last_light_bwd_dir_pdf = last_camera.bsdf->light_f_pdf(
-          connect_wi, camera_wo, BSDF_ALL & (~BSDF_DELTA));
+          connect_wi, camera_wo, BSDF_ALL);
     } else if(t == 1) {
       last_light_bwd_dir_pdf = camera.ray_dir_importance_pdf(film_res, film_pos,
           connect_wi, last_camera.p);
@@ -334,7 +338,7 @@ namespace dort {
     if(s >= 2) {
       Vector light_wi = normalize(light_walk.at(s - 2).p - last_light.p);
       last_camera_bwd_dir_pdf = last_light.bsdf->camera_f_pdf(
-          -connect_wi, light_wi, BSDF_ALL & (~BSDF_DELTA));
+          -connect_wi, light_wi, BSDF_ALL);
     } else if(s == 1) {
       // TODO: this is probably not correct, because we sample a new light for
       // this case in path_contrib(), so the pdf is different. However, I guess
@@ -359,7 +363,9 @@ namespace dort {
       float yi_bwd_pdf = i < s - 1 ? yi.bwd_area_pdf : last_light_bwd_pdf;
       assert(yi.fwd_area_pdf > 0.f); assert(is_finite(yi_bwd_pdf));
       ri_light = ri_light * yi_bwd_pdf / yi.fwd_area_pdf;
-      inv_weight_sum += ri_light;
+      if(!yi.is_delta) {
+        inv_weight_sum += ri_light;
+      }
     }
 
     float ri_camera = 1.f;
@@ -369,8 +375,9 @@ namespace dort {
       assert(zi.fwd_area_pdf > 0.f); assert(is_finite(zi_bwd_pdf));
       ri_camera = ri_camera * zi_bwd_pdf / zi.fwd_area_pdf;
       // TODO: paths with t == 1 are ignored now
-      if(i == 1) { continue; }
-      inv_weight_sum += ri_camera;
+      if(i != 1 && !zi.is_delta) {
+        inv_weight_sum += ri_camera;
+      }
     }
 
     assert(is_finite(inv_weight_sum));

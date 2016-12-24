@@ -66,11 +66,12 @@ namespace dort {
       Point p;
       Normal nn;
       std::unique_ptr<Bsdf> bsdf;
-      const AreaLight* area_light; ///< Area light at point p or nullptr.
+      const AreaLight* area_light;
       float p_epsilon;
       float fwd_area_pdf; 
       float bwd_area_pdf;
       Spectrum alpha;
+      bool is_delta;
     };
 
     std::vector<Vertex> random_light_walk(const Scene& scene,
