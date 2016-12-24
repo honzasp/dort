@@ -1,12 +1,15 @@
 local _ENV = require "dort/dsl"
 
-local scene = define_scene(function()
+function make_boxes(left_angle, right_angle)
   local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
   local green = matte_material { color = rgb(0, 0.5, 0) }
   local red = matte_material { color = rgb(0.5, 0, 0) }
 
-  local right_box = mirror_material { color = rgb(1, 1, 1) }
-  local left_box = glass_material { color = rgb(1, 1, 1) }
+  local mirror = mirror_material { color = rgb(1, 1, 1) }
+  local glass = glass_material { color = rgb(1, 1, 1), eta = 1.5 }
+
+  local left_box = glass
+  local right_box = mirror
 
   block(function()
     local m = mesh {
@@ -51,7 +54,7 @@ local scene = define_scene(function()
     material(left_box)
     transform(
         translate(185, 82.5, 169)
-      * rotate_y(-0.29) 
+      * rotate_y(-0.29 + left_angle) 
       * scale(165 / 2))
     add_shape(cube())
   end)
@@ -60,7 +63,7 @@ local scene = define_scene(function()
     material(right_box)
     transform(
         translate(368, 165, 351) 
-      * rotate_y(-1.27) 
+      * rotate_y(-1.27 + right_angle) 
       * scale(165 / 2, 330 / 2, 165 / 2))
     add_shape(cube())
   end)
@@ -94,17 +97,27 @@ local scene = define_scene(function()
       })
     end
   end)
-end)
+end
 
-write_png_image("specular_box_direct.png", render(scene, {
-  x_res = 256, y_res = 256,
-  max_depth = 10,
-  sampler = stratified_sampler {
-    samples_per_x = 2,
-    samples_per_y = 2,
-  },
-  filter = mitchell_filter {
-    radius = 1.5,
-  },
-  renderer = "direct",
-}))
+local iters = 20
+--local i = 14; do
+for i = 0, iters - 1 do
+  local left_angle = 0.5 * pi * i / iters
+  local right_angle = 0.2 * pi * i / iters
+  local scene = define_scene(function()
+    make_boxes(left_angle, right_angle)
+  end)
+
+  write_png_image("anim_box_bdpt_" .. i .. ".png", render(scene, {
+    x_res = 256, y_res = 256,
+    sampler = stratified_sampler {
+      samples_per_x = 1,
+      samples_per_y = 1,
+    },
+    filter = mitchell_filter {
+      radius = 1.5,
+    },
+    renderer = "bdpt",
+  }))
+  print(i)
+end

@@ -38,13 +38,10 @@ namespace dort {
     stat_sample_int(DISTRIB_INT_BSDF_NUM_BXDFS, bsdf->num_bxdfs());
 
     if(depth < this->max_depth) {
-      Spectrum reflection = trace_specular(*this, scene,
-          geom, *bsdf, BSDF_REFLECTION, depth, sampler);
-      Spectrum refraction = trace_specular(*this, scene,
-          geom, *bsdf, BSDF_TRANSMISSION, depth, sampler);
-      assert(is_finite(reflection) && is_nonnegative(reflection));
-      assert(is_finite(refraction) && is_nonnegative(refraction));
-      radiance += reflection + refraction;
+      Spectrum specular = trace_specular(*this, scene,
+          geom, *bsdf, BSDF_ALL_HEMISPHERES | BSDF_DELTA, depth, sampler);
+      assert(is_finite(specular) && is_nonnegative(specular));
+      radiance += specular;
     }
 
     return radiance;

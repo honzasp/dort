@@ -143,33 +143,27 @@ namespace dort {
       return sampled_f;
     }
 
-    BxdfFlags eval_flags;
-    if(Bsdf::same_hemisphere(w_fix_local, w_gen_local)) {
-      eval_flags = flags & ~BSDF_TRANSMISSION;
-    } else {
-      eval_flags = flags & ~BSDF_REFLECTION;
-    }
+    bool reflection = Bsdf::same_hemisphere(w_fix_local, w_gen_local);
 
     float sum_dir_pdfs = sampled_dir_pdf;
     Spectrum sum_f = sampled_f;
     for(const auto& bxdf: this->bxdfs) {
-      if(bxdf.get() == sampled_bxdf) {
+      if(bxdf.get() == sampled_bxdf || !bxdf->matches(flags)) {
         continue;
       }
-      if(bxdf->matches(eval_flags)) {
+      if(bxdf->flags & (reflection ? BSDF_REFLECTION : BSDF_TRANSMISSION)) {
         Spectrum f = bxdf->eval_f(
             FIX_IS_CAMERA ? w_gen_local : w_fix_local,
             FIX_IS_CAMERA ? w_fix_local : w_gen_local);
         assert(is_finite(f) && is_nonnegative(f));
         sum_f += f;
       }
-      if(bxdf->matches(flags)) {
-        float pdf = FIX_IS_CAMERA
-          ? bxdf->light_f_pdf(w_gen_local, w_fix_local)
-          : bxdf->camera_f_pdf(w_gen_local, w_fix_local);
-        assert(is_finite(pdf) && pdf >= 0.f);
-        sum_dir_pdfs += pdf;
-      }
+
+      float pdf = FIX_IS_CAMERA
+        ? bxdf->light_f_pdf(w_gen_local, w_fix_local)
+        : bxdf->camera_f_pdf(w_gen_local, w_fix_local);
+      assert(is_finite(pdf) && pdf >= 0.f);
+      sum_dir_pdfs += pdf;
     }
 
     out_dir_pdf = sum_dir_pdfs / float(num_bxdfs);

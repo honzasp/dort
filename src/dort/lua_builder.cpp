@@ -2,6 +2,7 @@
 #include "dort/bvh_primitive.hpp"
 #include "dort/camera.hpp"
 #include "dort/direct_renderer.hpp"
+#include "dort/dot_renderer.hpp"
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
 #include "dort/grid.hpp"
@@ -510,6 +511,8 @@ namespace dort {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<DirectRenderer>(
           scene, film, sampler, max_depth);
+    } else if(method == "dot") {
+      renderer = std::make_shared<DotRenderer>(scene, film, sampler);
     } else if(method == "pt" || method == "path") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<PathRenderer>(

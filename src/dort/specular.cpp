@@ -13,7 +13,7 @@ namespace dort {
   {
     out_w_gen = Vector(-w_fix.v.x, -w_fix.v.y, w_fix.v.z);
     out_dir_pdf = 1.f;
-    float cos_theta = Bsdf::cos_theta(w_fix);
+    float cos_theta = Bsdf::abs_cos_theta(w_fix);
     return this->reflectance * (this->fresnel.reflectance(cos_theta) / cos_theta);
   }
 
@@ -47,6 +47,12 @@ namespace dort {
       Vector& out_wt, float& out_dir_pdf, Vec2 uv) const
   {
     float cos_i = Bsdf::cos_theta(wi);
+    if(abs(cos_i) < 1e-3f) {
+      out_wt = Vector();
+      out_dir_pdf = 0.f;
+      return Spectrum(0.f);
+    }
+
     float eta_i, eta_t;
     if(cos_i > 0.f) {
       eta_i = this->eta_outside;
@@ -69,6 +75,12 @@ namespace dort {
 
     float reflect_weight = reflect.average();
     float transmit_weight = transmit.average();
+    if(reflect_weight + transmit_weight == 0.f) {
+      out_wt = Vector();
+      out_dir_pdf = 0.f;
+      return Spectrum(0.f);
+    }
+
     float threshold = reflect_weight / (reflect_weight + transmit_weight);
     if(uv.x < threshold) {
       out_wt = Vector(-wi.v.x, -wi.v.y, wi.v.z);
@@ -77,7 +89,7 @@ namespace dort {
     } else {
       out_wt = transmit_wt;
       out_dir_pdf = 1.f - threshold;
-      if(WI_IS_CAMERA) {
+      if(!WI_IS_CAMERA) {
         transmit *= square(eta_t / eta_i);
       }
       return transmit / Bsdf::abs_cos_theta(transmit_wt);

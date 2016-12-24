@@ -11,6 +11,7 @@ namespace dort {
     BSDF_TRANSMISSION = 2,
       ///< The BSDF component scatters light in the hemisphere opposite to the
       /// incident direction.
+
     BSDF_DIFFUSE = 4,
       ///< The BSDF scatters light in a large solid angle (the contribution of a
       /// random pair of directions is likely to be nonzero).
@@ -21,8 +22,9 @@ namespace dort {
       ///< The BSDF scatters light by a delta distribution (the contribution of
       /// a random pair of directions is always zero).
 
+    BSDF_ALL_HEMISPHERES = BSDF_REFLECTION | BSDF_TRANSMISSION,
     BSDF_ALL_TYPES = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_DELTA,
-    BSDF_ALL = BSDF_ALL_TYPES | BSDF_REFLECTION | BSDF_TRANSMISSION,
+    BSDF_ALL = BSDF_ALL_HEMISPHERES | BSDF_ALL_TYPES,
   };
 
   constexpr BxdfFlags operator|(BxdfFlags a, BxdfFlags b) {

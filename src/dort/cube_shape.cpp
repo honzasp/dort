@@ -39,7 +39,7 @@ namespace dort {
     out_t_hit = t0;
     out_ray_epsilon = 1e-3f;
     Point p = out_diff_geom.p = ray.point_t(t0);
-    out_diff_geom.nn = Normal(Vec3::axis(hit_axis, hit_negative ? -1.f : 1.f));
+    out_diff_geom.nn = Normal(Vec3::axis(hit_axis, hit_negative ? 1.f : -1.f));
 
     if(hit_axis == 0) {
       out_diff_geom.u = p.v.y;
