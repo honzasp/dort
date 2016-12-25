@@ -41,12 +41,15 @@ namespace dort {
       luaL_requiref(l, LUA_OSLIBNAME, luaopen_os, true);
       luaL_requiref(l, LUA_STRLIBNAME, luaopen_string, true);
       luaL_requiref(l, LUA_TABLIBNAME, luaopen_table, true);
+      luaL_requiref(l, LUA_COLIBNAME, luaopen_coroutine, true);
       luaL_requiref(l, "zlib", luaopen_zlib, true);
 
       lua_getglobal(l, "package");
       lua_createtable(l, 1, 0);
       lua_pushcfunction(l, lua_searcher);
       lua_rawseti(l, -2, 1);
+      lua_pushcfunction(l, lua_extern_searcher);
+      lua_rawseti(l, -2, 2);
       lua_setfield(l, -2, "searchers");
       lua_pop(l, 1);
 

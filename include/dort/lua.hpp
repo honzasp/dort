@@ -1,8 +1,10 @@
 #pragma once
+extern "C" {
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 #include <lua_zlib.h>
+}
 
 namespace dort {
   struct CtxG;
@@ -12,4 +14,6 @@ namespace dort {
   CtxG* lua_get_ctx(lua_State* l);
 
   int lua_searcher(lua_State* l);
+  int lua_extern_searcher(lua_State* l);
+  int lua_searcher_search(lua_State* l, const std::string& path);
 }

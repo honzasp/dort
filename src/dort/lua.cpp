@@ -20,8 +20,32 @@ namespace dort {
 
   int lua_searcher(lua_State* l) {
     std::string library_name(luaL_checkstring(l, 1));
-    std::string library_path = "lua/" + library_name + ".lua";
-    int status = luaL_loadfile(l, library_path.c_str());
+    return lua_searcher_search(l, "lua/" + library_name + ".lua");
+  }
+
+  #ifdef DORT_USE_GTK
+    extern "C" {
+      int luaopen_lgi_corelgilua51(lua_State* L);
+    }
+  #endif
+
+  int lua_extern_searcher(lua_State* l) {
+    std::string library_name(luaL_checkstring(l, 1));
+    #ifdef DORT_USE_GTK
+      if(library_name == "lgi.corelgilua51") {
+        lua_pushcfunction(l, luaopen_lgi_corelgilua51);
+        lua_pushvalue(l, 1);
+        return 2;
+      }
+    #endif
+    for(char& ch: library_name) {
+      if(ch == '.') { ch = '/'; }
+    }
+    return lua_searcher_search(l, "lua/extern/" + library_name + ".lua");
+  }
+
+  int lua_searcher_search(lua_State* l, const std::string& path) {
+    int status = luaL_loadfile(l, path.c_str());
     if(status == LUA_OK) {
       lua_pushvalue(l, 1);
       return 2;

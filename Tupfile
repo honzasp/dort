@@ -3,24 +3,27 @@ CXX_PROFILE = g++
 CXX_SLOW = clang++
 CXX_FAST = clang++
 CAT_CPPS = sh script/cat_cpps.sh
+PKG_CONFIG = pkg-config
 
-INCLUDES = -Iinclude -Iextern/rply -Iextern/stb -Iextern/lua
+INCLUDES = -Iinclude -Iextern/rply -Iextern/stb -Iextern/lua -Iextern/lgi
 WARNINGS = -Wall -Wextra -Wstrict-aliasing
 CXXFLAGS = -x c++ -std=c++1y $(INCLUDES) $(WARNINGS) -pthread
 CFLAGS   = -x c -std=c11 $(INCLUDES) $(WARNINGS) -pthread
 LDFLAGS  = -pthread -lz
 DEBUG    = -g -O2 -DLUA_USE_APICHECK
-PROFILE  = -g -O2
 SLOW     = -g3 -O0 -DLUA_USE_APICHECK
 FAST     = -g -O3 -DNDEBUG -DDORT_DISABLE_STAT
+
+ifdef CONFIG_USE_GTK
+  PKGS = gobject-introspection-1.0 gmodule-2.0 libffi
+  LDFLAGS += `$(PKG_CONFIG) --libs $(PKGS)`
+  CXXFLAGS += -DDORT_USE_GTK `$(PKG_CONFIG) --cflags $(PKGS)`
+  CFLAGS += -DDORT_USE_GTK `$(PKG_CONFIG) --cflags $(PKGS)`
+endif
 
 CXXFLAGS_DEBUG   = $(CXXFLAGS) $(DEBUG)
 CFLAGS_DEBUG     = $(CFLAGS) $(DEBUG)
 LDFLAGS_DEBUG    = $(LDFLAGS)
-
-CXXFLAGS_PROFILE = $(CXXFLAGS) $(PROFILE) -pg
-CFLAGS_PROFILE   = $(CFLAGS) $(PROFILE) -pg
-LDFLAGS_PROFILE  = $(LDFLAGS) -pg
 
 CXXFLAGS_SLOW   = $(CXXFLAGS) $(SLOW)
 CFLAGS_SLOW     = $(CFLAGS) $(SLOW)
@@ -34,10 +37,6 @@ LDFLAGS_FAST  = $(LDFLAGS)
 !cc_c_debug = |> ^ cc debug %f^ $(CXX_DEBUG) $(CFLAGS_DEBUG) -c %f -o %o |>
 !link_debug = |> ^ link %f^ $(CXX_DEBUG) $(LDFLAGS_DEBUG) %f -o %o |>
 
-!cxx_c_profile = |> ^ c++ profile %f^ $(CXX_PROFILE) $(CXXFLAGS_PROFILE) -c %f -o %o |>
-!cc_c_profile = |> ^ cc profile %f^ $(CXX_PROFILE) $(CFLAGS_PROFILE) -c %f -o %o |>
-!link_profile = |> ^ link %f^ $(CXX_PROFILE) $(LDFLAGS_PROFILE) %f -o %o |>
-
 !cxx_c_slow = |> ^ c++ slow %f^ $(CXX_SLOW) $(CXXFLAGS_SLOW) -c %f -o %o |>
 !cc_c_slow = |> ^ cc slow %f^ $(CXX_SLOW) $(CFLAGS_SLOW) -c %f -o %o |>
 !link_slow = |> ^ link %f^ $(CXX_SLOW) $(LDFLAGS_SLOW) %f -o %o |>
@@ -50,26 +49,28 @@ LDFLAGS_FAST  = $(LDFLAGS)
 
 : foreach src/dort/*.cpp |> !cxx_c_debug |> build/d/%B.o {debug_objs}
 : foreach extern/rply/*.c |> !cc_c_debug |> build/d/rply/%B.o {debug_objs}
-: foreach extern/lua/*.c |> !cxx_c_debug |> build/d/lua/%B.o {debug_objs}
-: {debug_objs} |> !link_debug |> build/d/dort
-
-ifdef CONFIG_PROFILE
-  : foreach src/dort/*.cpp |> !cxx_c_profile |> build/p/%B.o {profile_objs}
-  : foreach extern/rply/*.c |> !cc_c_profile |> build/p/rply/%B.o {profile_objs}
-  : foreach extern/lua/*.c |> !cxx_c_profile |> build/p/lua/%B.o {profile_objs}
-  : {profile_objs} |> !link_profile |> build/p/dort
+ifdef CONFIG_USE_GTK
+: foreach extern/lgi/lgi/*.c |> !cc_c_debug |> build/d/lgi/%B.o {debug_objs}
 endif
+: foreach extern/lua/*.c |> !cc_c_debug |> build/d/lua/%B.o {debug_objs}
+: {debug_objs} |> !link_debug |> build/d/dort
 
 ifdef CONFIG_SLOW
   : foreach src/dort/*.cpp |> !cxx_c_slow |> build/g/%B.o {slow_objs}
   : foreach extern/rply/*.c |> !cc_c_slow |> build/g/rply/%B.o {slow_objs}
-  : foreach extern/lua/*.c |> !cxx_c_slow |> build/g/lua/%B.o {slow_objs}
+  ifdef CONFIG_USE_GTK
+  : foreach extern/lgi/lgi/*.c |> !cc_c_slow |> build/g/lgi/%B.o {slow_objs}
+  endif
+  : foreach extern/lua/*.c |> !cc_c_slow |> build/g/lua/%B.o {slow_objs}
   : {slow_objs} |> !link_slow |> build/g/dort
 endif
 
 ifdef CONFIG_FAST
   : src/dort/*.cpp |> !cxx_cat_c_fast |> build/f/cat_dort.o {fast_objs}
   : foreach extern/rply/*.c |> !cc_c_fast |> build/f/rply/%B.o {fast_objs}
-  : foreach extern/lua/*.c |> !cxx_c_fast |> build/f/lua/%B.o {fast_objs}
+  ifdef CONFIG_USE_GTK
+  : foreach extern/lgi/lgi/*.c |> !cc_c_fast |> build/f/lgi/%B.o {fast_objs}
+  endif
+  : foreach extern/lua/*.c |> !cc_c_fast |> build/f/lua/%B.o {fast_objs}
   : {fast_objs} |> !link_fast |> build/f/dort
 endif
