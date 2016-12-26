@@ -45,7 +45,7 @@ namespace dort {
       luaL_requiref(l, "zlib", luaopen_zlib, true);
 
       lua_getglobal(l, "package");
-      lua_createtable(l, 1, 0);
+      lua_createtable(l, 2, 0);
       lua_pushcfunction(l, lua_searcher);
       lua_rawseti(l, -2, 1);
       lua_pushcfunction(l, lua_extern_searcher);

@@ -23,21 +23,21 @@ namespace dort {
     return lua_searcher_search(l, "lua/" + library_name + ".lua");
   }
 
-  #ifdef DORT_USE_GTK
-    extern "C" {
-      int luaopen_lgi_corelgilua51(lua_State* L);
-    }
-  #endif
+#ifdef DORT_USE_GTK
+  extern "C" {
+    int luaopen_lgi_corelgilua51(lua_State* L);
+  }
+#endif
 
   int lua_extern_searcher(lua_State* l) {
     std::string library_name(luaL_checkstring(l, 1));
-    #ifdef DORT_USE_GTK
-      if(library_name == "lgi.corelgilua51") {
-        lua_pushcfunction(l, luaopen_lgi_corelgilua51);
-        lua_pushvalue(l, 1);
-        return 2;
-      }
-    #endif
+#ifdef DORT_USE_GTK
+    if(library_name == "lgi.corelgilua51") {
+      lua_pushcfunction(l, luaopen_lgi_corelgilua51);
+      lua_pushvalue(l, 1);
+      return 2;
+    }
+#endif
     for(char& ch: library_name) {
       if(ch == '.') { ch = '/'; }
     }

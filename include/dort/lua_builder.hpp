@@ -58,6 +58,7 @@ namespace dort {
   int lua_builder_make_triangle(lua_State* l);
 
   int lua_scene_render(lua_State* l);
+  int lua_scene_render_in_background(lua_State* l);
   int lua_scene_eq(lua_State* l);
   int lua_primitive_eq(lua_State* l);
 

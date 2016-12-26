@@ -1,3 +1,6 @@
+#ifdef DORT_USE_GTK
+#include <gio/gio.h>
+#endif
 #include "dort/bdpt_renderer.hpp"
 #include "dort/bvh_primitive.hpp"
 #include "dort/camera.hpp"
@@ -73,6 +76,7 @@ namespace dort {
       {"add_voxel_grid", lua_builder_add_voxel_grid},
       {"make_triangle", lua_builder_make_triangle},
       {"render", lua_scene_render},
+      {"render_in_background", lua_scene_render_in_background},
       {0, 0},
     };
 
@@ -577,6 +581,66 @@ namespace dort {
     }
     return 1;
   }
+
+#ifdef DORT_USE_GTK
+  struct TaskData final {
+    std::shared_ptr<TaskData> self_ptr;
+    lua_State* l;
+    GTask* gtask;
+    std::thread thread;
+    uint32_t result;
+
+    ~TaskData() {
+      g_object_unref(this->gtask);
+    }
+
+    void schedule_callback() {
+      g_task_return_pointer(this->gtask, nullptr, nullptr);
+    }
+
+    static void gtask_callback(GObject*, GAsyncResult*, gpointer task_data_ptr) {
+      auto task_data = static_cast<TaskData*>(task_data_ptr)->self_ptr;
+      task_data->thread.join();
+      task_data->self_ptr.reset();
+
+      lua_State* l = task_data->l;
+      lua_pushlightuserdata(l, task_data.get());
+      lua_gettable(l, LUA_REGISTRYINDEX);
+
+      lua_pushinteger(l, task_data->result);
+      lua_call(l, 1, 0);
+    }
+  };
+
+  int lua_scene_render_in_background(lua_State* l) {
+    if(!lua_isfunction(l, 1)) {
+      return luaL_error(l, "A callback function is required as argument");
+    }
+
+    auto task_data = std::make_shared<TaskData>();
+    task_data->self_ptr = task_data;
+    task_data->l = l;
+    task_data->gtask = g_task_new(nullptr, nullptr,
+        TaskData::gtask_callback, task_data.get());
+    task_data->result = 0;
+
+    lua_pushlightuserdata(l, task_data.get());
+    lua_pushvalue(l, 1);
+    lua_settable(l, LUA_REGISTRYINDEX);
+
+    task_data->thread = std::thread([task_data]() {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+      task_data->result = 42;
+      task_data->schedule_callback();
+    });
+
+    return 0;
+  }
+#else
+  int lua_scene_render_in_background(lua_State* l) {
+    return luaL_error(l, "dort was compiled without Gtk support");
+  }
+#endif
 
   int lua_scene_eq(lua_State* l) {
     if(lua_test_scene(l, 1) ^ lua_test_scene(l, 2)) {

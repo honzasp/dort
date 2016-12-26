@@ -15,7 +15,7 @@ SLOW     = -g3 -O0 -DLUA_USE_APICHECK
 FAST     = -g -O3 -DNDEBUG -DDORT_DISABLE_STAT
 
 ifdef CONFIG_USE_GTK
-  PKGS = gobject-introspection-1.0 gmodule-2.0 libffi
+  PKGS = gobject-introspection-1.0 gmodule-2.0 gio-2.0 libffi
   LDFLAGS += `$(PKG_CONFIG) --libs $(PKGS)`
   CXXFLAGS += -DDORT_USE_GTK `$(PKG_CONFIG) --cflags $(PKGS)`
   CFLAGS += -DDORT_USE_GTK `$(PKG_CONFIG) --cflags $(PKGS)`
@@ -35,17 +35,17 @@ LDFLAGS_FAST  = $(LDFLAGS)
 
 !cxx_c_debug = |> ^ c++ debug %f^ $(CXX_DEBUG) $(CXXFLAGS_DEBUG) -c %f -o %o |>
 !cc_c_debug = |> ^ cc debug %f^ $(CXX_DEBUG) $(CFLAGS_DEBUG) -c %f -o %o |>
-!link_debug = |> ^ link %f^ $(CXX_DEBUG) $(LDFLAGS_DEBUG) %f -o %o |>
+!link_debug = |> ^ link %f^ $(CXX_DEBUG) %f $(LDFLAGS_DEBUG) -o %o |>
 
 !cxx_c_slow = |> ^ c++ slow %f^ $(CXX_SLOW) $(CXXFLAGS_SLOW) -c %f -o %o |>
 !cc_c_slow = |> ^ cc slow %f^ $(CXX_SLOW) $(CFLAGS_SLOW) -c %f -o %o |>
-!link_slow = |> ^ link %f^ $(CXX_SLOW) $(LDFLAGS_SLOW) %f -o %o |>
+!link_slow = |> ^ link %f^ $(CXX_SLOW) %f $(LDFLAGS_SLOW) -o %o |>
 
 !cxx_cat_c_fast = |> ^ c++ cat fast %f^ $(CAT_CPPS) %f |\
   $(CXX_FAST) $(CXXFLAGS_FAST) -c - -o %o |>
 !cxx_c_fast = |> ^ c++ fast %f^ $(CXX_FAST) $(CXXFLAGS_FAST) -c %f -o %o |>
 !cc_c_fast = |> ^ cc fast %f^ $(CXX_FAST) $(CFLAGS_FAST) -c %f -o %o |>
-!link_fast = |> ^ link %f^ $(CXX_FAST) $(LDFLAGS_FAST) %f -o %o |>
+!link_fast = |> ^ link %f^ $(CXX_FAST) %f $(LDFLAGS_FAST) -o %o |>
 
 : foreach src/dort/*.cpp |> !cxx_c_debug |> build/d/%B.o {debug_objs}
 : foreach extern/rply/*.c |> !cc_c_debug |> build/d/rply/%B.o {debug_objs}
