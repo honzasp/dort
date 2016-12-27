@@ -56,7 +56,14 @@ function dsl.add_diffuse_light(params)
   b.add_diffuse_light(B, params)
 end
 
-dsl.render = dort.builder.render
+function dsl.render(scene, params)
+  local hdr = params.hdr
+  params.hdr = nil
+
+  local render_job = dort.render.make(scene, params)
+  dort.render.render_sync(render_job)
+  return dort.render.get_image(render_job, { hdr = hdr })
+end
 
 dsl.ortho_camera = dort.camera.make_ortho
 dsl.pinhole_camera = dort.camera.make_pinhole

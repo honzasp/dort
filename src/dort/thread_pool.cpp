@@ -15,7 +15,6 @@ namespace dort {
   void ThreadPool::schedule(std::function<void()> job) {
     assert(!this->threads.empty());
     assert(!this->stop_flag.load());
-    assert(this->main_thread_id == std::this_thread::get_id());
 
     StatTimer t(TIMER_POOL_SCHEDULE);
     stat_count(COUNTER_POOL_JOBS);

@@ -1,33 +1,21 @@
-#ifdef DORT_USE_GTK
-#include <gio/gio.h>
-#endif
-#include "dort/bdpt_renderer.hpp"
 #include "dort/bvh_primitive.hpp"
 #include "dort/camera.hpp"
-#include "dort/direct_renderer.hpp"
-#include "dort/dot_renderer.hpp"
-#include "dort/film.hpp"
-#include "dort/filter.hpp"
+#include "dort/ctx.hpp"
 #include "dort/grid.hpp"
-#include "dort/igi_renderer.hpp"
+#include "dort/light.hpp"
 #include "dort/list_primitive.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
-#include "dort/lua_image.hpp"
 #include "dort/lua_light.hpp"
 #include "dort/lua_material.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/mesh_bvh_primitive.hpp"
 #include "dort/mesh_triangle_primitive.hpp"
-#include "dort/path_renderer.hpp"
 #include "dort/ply_mesh.hpp"
-#include "dort/random_sampler.hpp"
-#include "dort/rng.hpp"
 #include "dort/scene.hpp"
-#include "dort/sppm_renderer.hpp"
 #include "dort/thread_pool.hpp"
 #include "dort/triangle_shape.hpp"
 #include "dort/triangle_shape_primitive.hpp"
@@ -75,8 +63,6 @@ namespace dort {
       {"add_ply_mesh_as_bvh", lua_builder_add_ply_mesh_as_bvh},
       {"add_voxel_grid", lua_builder_add_voxel_grid},
       {"make_triangle", lua_builder_make_triangle},
-      {"render", lua_scene_render},
-      {"render_in_background", lua_scene_render_in_background},
       {0, 0},
     };
 
@@ -494,153 +480,6 @@ namespace dort {
     lua_push_shape(l, std::make_shared<TriangleShape>(mesh.get(), index));
     return 1;
   }
-
-  int lua_scene_render(lua_State* l) {
-    auto scene = lua_check_scene(l, 1);
-
-    int p = 2;
-    uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", 800);
-    uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", 600);
-    auto filter = lua_param_filter_opt(l, p, "filter", 
-        std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
-    auto sampler = lua_param_sampler_opt(l, p, "sampler",
-        std::make_shared<RandomSampler>(1, 42));
-    auto method = lua_param_string_opt(l, p, "renderer", "direct");
-    auto hdr = lua_param_bool_opt(l, p, "hdr", false);
-
-    auto film = std::make_shared<Film>(x_res, y_res, filter);
-
-    std::shared_ptr<Renderer> renderer;
-    if(method == "direct") {
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      renderer = std::make_shared<DirectRenderer>(
-          scene, film, sampler, max_depth);
-    } else if(method == "dot") {
-      renderer = std::make_shared<DotRenderer>(scene, film, sampler);
-    } else if(method == "pt" || method == "path") {
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      renderer = std::make_shared<PathRenderer>(
-          scene, film, sampler, max_depth);
-    } else if(method == "bdpt") {
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      renderer = std::make_shared<BdptRenderer>(
-          scene, film, sampler, max_depth);
-    } else if(method == "igi") {
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      uint32_t max_light_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
-      uint32_t light_set_count = lua_param_uint32_opt(l, p, "light_sets", 1);
-      uint32_t path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
-      float g_limit = lua_param_float_opt(l, p, "g_limit", 5.f);
-      float roulette_threshold = lua_param_float_opt(l, p, 
-          "roulette_threshold", 0.001f);
-      renderer = std::make_shared<IgiRenderer>(
-          scene, film, sampler,
-          max_depth, max_light_depth, light_set_count, path_count,
-          g_limit, roulette_threshold);
-    } else if(method == "sppm") {
-      float initial_radius = lua_param_float(l, p, "initial_radius");
-      uint32_t iteration_count = lua_param_uint32(l, p, "iterations");
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      uint32_t max_photon_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
-      uint32_t photon_path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
-      float alpha = lua_param_float_opt(l, p, "alpha", 0.7f);
-
-      std::string mode_str = lua_param_string_opt(l, p, "parallel_mode", "automatic");
-      SppmRenderer::ParallelMode parallel_mode;
-      if(mode_str == "automatic") {
-        parallel_mode = SppmRenderer::ParallelMode::Automatic;
-      } else if(mode_str == "serial_iterations") {
-        parallel_mode = SppmRenderer::ParallelMode::SerialIterations;
-      } else if(mode_str == "parallel_iterations") {
-        parallel_mode = SppmRenderer::ParallelMode::ParallelIterations;
-      } else {
-        return luaL_error(l, "Unrecognized SPPM parallel mode: %s", mode_str.c_str());
-      }
-
-      renderer = std::make_shared<SppmRenderer>(
-          scene, film, sampler, initial_radius, iteration_count,
-          max_depth, max_photon_depth, photon_path_count, 
-          alpha, parallel_mode);
-    } else {
-      return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
-    }
-
-    lua_params_check_unused(l, p);
-
-    CtxG& ctx = *lua_get_ctx(l);
-    renderer->render(ctx);
-
-    if(hdr) {
-      auto image = std::make_shared<Image<PixelRgbFloat>>(
-          film->to_image<PixelRgbFloat>());
-      lua_push_image_f(l, image);
-    } else {
-      auto image = std::make_shared<Image<PixelRgb8>>(
-          film->to_image<PixelRgb8>());
-      lua_push_image_8(l, image);
-    }
-    return 1;
-  }
-
-#ifdef DORT_USE_GTK
-  struct TaskData final {
-    std::shared_ptr<TaskData> self_ptr;
-    lua_State* l;
-    GTask* gtask;
-    std::thread thread;
-    uint32_t result;
-
-    ~TaskData() {
-      g_object_unref(this->gtask);
-    }
-
-    void schedule_callback() {
-      g_task_return_pointer(this->gtask, nullptr, nullptr);
-    }
-
-    static void gtask_callback(GObject*, GAsyncResult*, gpointer task_data_ptr) {
-      auto task_data = static_cast<TaskData*>(task_data_ptr)->self_ptr;
-      task_data->thread.join();
-      task_data->self_ptr.reset();
-
-      lua_State* l = task_data->l;
-      lua_pushlightuserdata(l, task_data.get());
-      lua_gettable(l, LUA_REGISTRYINDEX);
-
-      lua_pushinteger(l, task_data->result);
-      lua_call(l, 1, 0);
-    }
-  };
-
-  int lua_scene_render_in_background(lua_State* l) {
-    if(!lua_isfunction(l, 1)) {
-      return luaL_error(l, "A callback function is required as argument");
-    }
-
-    auto task_data = std::make_shared<TaskData>();
-    task_data->self_ptr = task_data;
-    task_data->l = l;
-    task_data->gtask = g_task_new(nullptr, nullptr,
-        TaskData::gtask_callback, task_data.get());
-    task_data->result = 0;
-
-    lua_pushlightuserdata(l, task_data.get());
-    lua_pushvalue(l, 1);
-    lua_settable(l, LUA_REGISTRYINDEX);
-
-    task_data->thread = std::thread([task_data]() {
-      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-      task_data->result = 42;
-      task_data->schedule_callback();
-    });
-
-    return 0;
-  }
-#else
-  int lua_scene_render_in_background(lua_State* l) {
-    return luaL_error(l, "dort was compiled without Gtk support");
-  }
-#endif
 
   int lua_scene_eq(lua_State* l) {
     if(lua_test_scene(l, 1) ^ lua_test_scene(l, 2)) {

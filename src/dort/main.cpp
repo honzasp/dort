@@ -12,6 +12,7 @@
 #include "dort/lua_material.hpp"
 #include "dort/lua_math.hpp"
 #include "dort/lua_nbt.hpp"
+#include "dort/lua_render.hpp"
 #include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
 #include "dort/lua_spectrum.hpp"
@@ -70,6 +71,7 @@ namespace dort {
       load_sublib("material", lua_open_material);
       load_sublib("math", lua_open_math);
       load_sublib("nbt", lua_open_nbt);
+      load_sublib("render", lua_open_render);
       load_sublib("sampler", lua_open_sampler);
       load_sublib("shape", lua_open_shape);
       load_sublib("spectrum", lua_open_spectrum);
