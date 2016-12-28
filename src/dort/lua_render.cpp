@@ -1,4 +1,5 @@
 #ifdef DORT_USE_GTK
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <gio/gio.h>
 #endif
 #include "dort/bdpt_renderer.hpp"
@@ -29,6 +30,7 @@ namespace dort {
       {"make", lua_render_make},
       {"render_sync", lua_render_render_sync},
       {"render_async", lua_render_render_async},
+      {"image_to_pixbuf", lua_render_image_to_pixbuf},
       {"get_preview", lua_render_get_preview},
       {"get_image", lua_render_get_image},
       {"get_progress", lua_render_get_progress},
@@ -208,19 +210,54 @@ namespace dort {
     lua_call(l, 0, 0);
   }
 
+  int lua_render_image_to_pixbuf(lua_State* l) {
+    auto image = lua_check_image_8(l, 1);
+    uint32_t x_res = image->x_res;
+    uint32_t y_res = image->y_res;
+    GdkPixbuf* pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, x_res, y_res);
+    guchar* pixels = gdk_pixbuf_get_pixels(pixbuf);
+    uint32_t rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+
+    for(uint32_t y = 0; y < image->y_res; ++y) {
+      for(uint32_t x = 0; x < image->x_res; ++x) {
+        PixelRgb8 pixel = image->get_pixel(x, y);
+        guchar* pixel_ptr = pixels + rowstride*y + 3*x;
+        pixel_ptr[0] = pixel.r;
+        pixel_ptr[1] = pixel.g;
+        pixel_ptr[2] = pixel.b;
+      }
+    }
+
+    lua_pushlightuserdata(l, pixbuf);
+    return 1;
+  }
 #else
   int lua_render_render_async(lua_State* l) {
     return luaL_error(l, "Asynchronous renders are supported only "
         "with Gtk event loop, but this dort binary was compiled without Gtk");
   }
+  int lua_render_image_to_pixbuf(lua_State* l) {
+    return luaL_error(l, "This dort binary was compiled without Gtk");
+  }
 #endif
 
   int lua_render_get_preview(lua_State* l) {
-    return luaL_error(l, "Previews are not yet implemented");
+    auto render_job = lua_check_render_job(l, 1);
+
+    // TODO: the film is concurrently accessed by the renderer, so this is one
+    // big data race. However, this is a quick'n'dirty solution that should not
+    // cause any memory unsafety.
+    auto film = render_job->film;
+    auto image = render_job->film->to_image<PixelRgb8>();
+    lua_push_image_8(l, std::make_shared<Image<PixelRgb8>>(std::move(image)));
+    return 1;
   }
 
   int lua_render_get_progress(lua_State* l) {
-    return luaL_error(l, "Progress tracking is not yet implemented");
+    // TODO: return something reasonable
+    auto render_job = lua_check_render_job(l, 1);
+    lua_pushnumber(l, 0.4f);
+    return 1;
   }
 
   int lua_render_get_image(lua_State* l) {

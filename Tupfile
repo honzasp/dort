@@ -15,7 +15,7 @@ SLOW     = -g3 -O0 -DLUA_USE_APICHECK
 FAST     = -g -O3 -DNDEBUG -DDORT_DISABLE_STAT
 
 ifdef CONFIG_USE_GTK
-  PKGS = gobject-introspection-1.0 gmodule-2.0 gio-2.0 libffi
+  PKGS = gobject-introspection-1.0 gmodule-2.0 gio-2.0 gdk-pixbuf-2.0 libffi
   LDFLAGS += `$(PKG_CONFIG) --libs $(PKGS)`
   CXXFLAGS += -DDORT_USE_GTK `$(PKG_CONFIG) --cflags $(PKGS)`
   CFLAGS += -DDORT_USE_GTK `$(PKG_CONFIG) --cflags $(PKGS)`

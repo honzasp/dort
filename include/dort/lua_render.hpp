@@ -35,6 +35,7 @@ namespace dort {
   int lua_render_make(lua_State* l);
   int lua_render_render_sync(lua_State* l);
   int lua_render_render_async(lua_State* l);
+  int lua_render_image_to_pixbuf(lua_State* l);
   int lua_render_get_preview(lua_State* l);
   int lua_render_get_progress(lua_State* l);
   int lua_render_get_image(lua_State* l);

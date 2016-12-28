@@ -1,6 +1,8 @@
 local _ENV = require 'dort/dsl'
 local lgi = require 'lgi'
 local Gtk = lgi.Gtk
+local GdkPixbuf = lgi.GdkPixbuf
+local GLib = lgi.GLib
 
 local scene = define_scene(function()
   local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
@@ -105,35 +107,123 @@ local window = Gtk.Window {
   on_destroy = Gtk.main_quit,
 }
 
-if tonumber(Gtk._version) >= 3 then
-  window.has_resize_grip = true
+window:add(Gtk.Box {
+  orientation = "HORIZONTAL",
+  Gtk.Image {
+    id = "preview_image",
+    margin_bottom = 0,
+    margin_top = 0,
+    margin_left = 0,
+    margin_right = 0,
+    hexpand = true,
+    vexpand = true,
+    width = 300,
+  },
+  Gtk.Box {
+    orientation = "VERTICAL",
+    width = 200,
+    Gtk.Button {
+      id = "render_button",
+      label = "Render",
+    },
+    Gtk.ProgressBar {
+      id = "progress_bar",
+      visible = false,
+      show_text = true,
+    },
+    Gtk.SpinButton {
+      id = "width_entry",
+      value = 400,
+      adjustment = Gtk.Adjustment { lower = 1, upper = 10000, step_increment = 10 },
+    },
+    Gtk.SpinButton {
+      id = "height_entry",
+      value = 400,
+      adjustment = Gtk.Adjustment { lower = 1, upper = 10000, step_increment = 10 },
+    },
+    Gtk.SpinButton {
+      id = "iterations_entry",
+      value = 1000,
+      adjustment = Gtk.Adjustment { lower = 1, upper = 10000, step_increment = 1 },
+    },
+    Gtk.SpinButton {
+      id = "light_paths_entry",
+      value = 10*1000,
+      adjustment = Gtk.Adjustment {
+        lower = 1000,
+        upper = 100*1000*1000,
+        step_increment = 1000,
+      },
+    },
+  },
+})
+window:show_all()
+
+local render_job = nil
+
+function start_render()
+  local int = math.tointeger
+  local width = int(max(1, window.child.width_entry.value))
+  local height = int(max(1, window.child.height_entry.value))
+  local iterations = int(window.child.iterations_entry.value)
+  local light_paths = int(window.child.light_paths_entry.value)
+
+  render_job = dort.render.make(scene, {
+    x_res = width, y_res = height,
+    max_depth = 10,
+    sampler = stratified_sampler {
+      samples_per_x = 1,
+      samples_per_y = 1,
+    },
+    filter = mitchell_filter {
+      radius = 1.5,
+    },
+    renderer = "sppm",
+    initial_radius = 20,
+    iterations = iterations,
+    light_paths = light_paths,
+  })
+
+  dort.render.render_async(render_job, finish_render)
+  update_progress()
 end
 
-local vbox = Gtk.VBox()
-vbox:add(Gtk.Button {
-  label = "Start the computation",
-  on_clicked = function()
-    print("starting rendering")
-    local render_job = dort.render.make(scene, {
-      x_res = 256, y_res = 256,
-      max_depth = 10,
-      sampler = stratified_sampler {
-        samples_per_x = 2,
-        samples_per_y = 2,
-      },
-      filter = mitchell_filter {
-        radius = 1.5,
-      },
-      renderer = "direct",
-    })
-    dort.render.render_async(render_job, function()
-      print("finished rendering")
-      local image = dort.render.get_image(render_job, { hdr = false })
-      dort.image.write_png("gtk_output.png", image)
-    end)
-  end,
-})
-window:add(vbox)
+function finish_render()
+  local image = dort.render.get_image(render_job, { hdr = false })
+  dort.image.write_png("gtk_output.png", image)
+  preview_image(image)
+  render_job = nil
+  update_progress()
+end
 
-window:show_all()
+function preview_image(image)
+  local pixbuf = GdkPixbuf.Pixbuf(dort.render.image_to_pixbuf(image))
+  window.child.preview_image:set_from_pixbuf(pixbuf)
+end
+
+function refresh()
+  if render_job then
+    preview_image(dort.render.get_preview(render_job))
+  end
+  update_progress()
+  return true
+end
+
+function update_progress()
+  local bar = window.child.progress_bar
+  if render_job then
+    bar:show()
+    bar.fraction = dort.render.get_progress(render_job)
+    bar.text = "Rendering"
+  else
+    bar:hide()
+  end
+end
+
+function window.child.render_button:on_clicked()
+  start_render()
+end
+
+update_progress()
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 2, refresh)
 Gtk.main()
