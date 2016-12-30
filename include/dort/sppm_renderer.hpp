@@ -46,7 +46,7 @@ namespace dort {
       parallel_mode(parallel_mode)
     { }
 
-    virtual void render(CtxG& ctx) override final;
+    virtual void render(CtxG& ctx, Progress& progress) override final;
   private:
     void iteration_serial(Film& film, Sampler& sampler, float radius) const;
     void iteration_parallel(CtxG& ctx, Film& film, Sampler& sampler, float radius) const;

@@ -104,7 +104,6 @@ local window = Gtk.Window {
   title = "Window",
   default_width = 400,
   default_height = 300,
-  on_destroy = Gtk.main_quit,
 }
 
 window:add(Gtk.Box {
@@ -124,7 +123,7 @@ window:add(Gtk.Box {
     width = 200,
     Gtk.Button {
       id = "render_button",
-      label = "Render",
+      label = "",
     },
     Gtk.ProgressBar {
       id = "progress_bar",
@@ -133,22 +132,18 @@ window:add(Gtk.Box {
     },
     Gtk.SpinButton {
       id = "width_entry",
-      value = 400,
       adjustment = Gtk.Adjustment { lower = 1, upper = 10000, step_increment = 10 },
     },
     Gtk.SpinButton {
       id = "height_entry",
-      value = 400,
       adjustment = Gtk.Adjustment { lower = 1, upper = 10000, step_increment = 10 },
     },
     Gtk.SpinButton {
       id = "iterations_entry",
-      value = 1000,
       adjustment = Gtk.Adjustment { lower = 1, upper = 10000, step_increment = 1 },
     },
     Gtk.SpinButton {
       id = "light_paths_entry",
-      value = 10*1000,
       adjustment = Gtk.Adjustment {
         lower = 1000,
         upper = 100*1000*1000,
@@ -160,14 +155,24 @@ window:add(Gtk.Box {
 window:show_all()
 
 local render_job = nil
+local is_cancelling = false
+window.child.width_entry.value = 200
+window.child.height_entry.value = 200
+window.child.iterations_entry.value = 100
+window.child.light_paths_entry.value = 10*1000
 
 function start_render()
+  if is_cancelling then
+    return
+  end
+
   local int = math.tointeger
   local width = int(max(1, window.child.width_entry.value))
   local height = int(max(1, window.child.height_entry.value))
   local iterations = int(window.child.iterations_entry.value)
   local light_paths = int(window.child.light_paths_entry.value)
 
+  is_cancelling = false
   render_job = dort.render.make(scene, {
     x_res = width, y_res = height,
     max_depth = 10,
@@ -185,15 +190,29 @@ function start_render()
   })
 
   dort.render.render_async(render_job, finish_render)
-  update_progress()
+  update()
+end
+
+function cancel_render()
+  if is_cancelling or render_job == nil then
+    return
+  end
+
+  is_cancelling = true
+  dort.render.cancel(render_job)
+  update()
 end
 
 function finish_render()
-  local image = dort.render.get_image(render_job, { hdr = false })
-  dort.image.write_png("gtk_output.png", image)
-  preview_image(image)
+  if not is_cancelling then
+    local image = dort.render.get_image(render_job, { hdr = false })
+    dort.image.write_png("gtk_output.png", image)
+    preview_image(image)
+  end
+
   render_job = nil
-  update_progress()
+  is_cancelling = false
+  update()
 end
 
 function preview_image(image)
@@ -205,25 +224,41 @@ function refresh()
   if render_job then
     preview_image(dort.render.get_preview(render_job))
   end
-  update_progress()
+  update()
   return true
 end
 
-function update_progress()
+function update()
   local bar = window.child.progress_bar
+  local button = window.child.render_button
   if render_job then
     bar:show()
     bar.fraction = dort.render.get_progress(render_job)
-    bar.text = "Rendering"
+    if is_cancelling then
+      bar.text = "Cancelling..."
+    else
+      bar.text = "Rendering..."
+    end
+    button.label = "Cancel"
   else
     bar:hide()
+    button.label = "Render"
   end
 end
 
 function window.child.render_button:on_clicked()
-  start_render()
+  if render_job == nil then
+    start_render()
+  else
+    cancel_render()
+  end
 end
 
-update_progress()
+function window:on_destroy()
+  cancel_render()
+  Gtk.main_quit()
+end
+
+update()
 GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 2, refresh)
 Gtk.main()

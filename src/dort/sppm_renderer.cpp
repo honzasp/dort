@@ -10,7 +10,7 @@
 #include "dort/thread_pool.hpp"
 
 namespace dort {
-  void SppmRenderer::render(CtxG& ctx) {
+  void SppmRenderer::render(CtxG& ctx, Progress& progress) {
     this->light_distrib = compute_light_distrib(*this->scene);
     this->pixel_pos_idx = this->sampler->request_sample_2d();
 
@@ -39,15 +39,23 @@ namespace dort {
       }
 
       std::mutex film_mutex;
+      std::atomic<uint32_t> iterations_done(0);
       fork_join(*ctx.pool, this->iteration_count, [&](uint32_t i) {
+        if(progress.is_cancelled()) { return; }
+
         Film local_film(this->film->x_res, this->film->y_res, this->film->filter);
         this->iteration_serial(local_film, *samplers.at(i), radii.at(i));
         std::unique_lock<std::mutex> film_lock(film_mutex);
         this->film->add_tile(Vec2i(0, 0), local_film);
+
+        uint32_t done = iterations_done.fetch_add(1) + 1;
+        progress.set_percent_done(float(done) / float(this->iteration_count));
       });
     } else {
       for(uint32_t i = 0; i < this->iteration_count; ++i) {
         this->iteration_parallel(ctx, *this->film, *this->sampler, radii.at(i));
+        progress.set_percent_done(float(i) / float(this->iteration_count));
+        if(progress.is_cancelled()) { return; }
       }
     }
   }

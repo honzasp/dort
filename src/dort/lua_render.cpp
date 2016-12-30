@@ -31,6 +31,7 @@ namespace dort {
       {"render_sync", lua_render_render_sync},
       {"render_async", lua_render_render_async},
       {"image_to_pixbuf", lua_render_image_to_pixbuf},
+      {"cancel", lua_render_cancel},
       {"get_preview", lua_render_get_preview},
       {"get_image", lua_render_get_image},
       {"get_progress", lua_render_get_progress},
@@ -117,6 +118,7 @@ namespace dort {
     render_job->lua_id = std::this_thread::get_id();
     render_job->renderer = renderer;
     render_job->film = film;
+    render_job->progress = std::make_shared<RenderJob::JobProgress>();
     render_job->render_started = false;
     render_job->render_finished = false;
     lua_push_render_job(l, render_job);
@@ -130,7 +132,7 @@ namespace dort {
     }
 
     render_job->render_started = true;
-    render_job->renderer->render(*lua_get_ctx(l));
+    render_job->renderer->render(*lua_get_ctx(l), *render_job->progress);
     render_job->render_finished = true;
     return 0;
   }
@@ -164,7 +166,7 @@ namespace dort {
         RenderJob::result_callback, render_job.get());
     render_job->async_thread = std::thread([ctx, render_job]() {
       stat_init_thread();
-      render_job->renderer->render(*ctx);
+      render_job->renderer->render(*ctx, *render_job->progress);
       render_job->schedule_result_callback();
       stat_finish_thread();
     });
@@ -241,6 +243,12 @@ namespace dort {
   }
 #endif
 
+  int lua_render_cancel(lua_State* l) {
+    auto render_job = lua_check_render_job(l, 1);
+    render_job->progress->cancelled.store(true);
+    return 0;
+  }
+
   int lua_render_get_preview(lua_State* l) {
     auto render_job = lua_check_render_job(l, 1);
 
@@ -254,9 +262,8 @@ namespace dort {
   }
 
   int lua_render_get_progress(lua_State* l) {
-    // TODO: return something reasonable
     auto render_job = lua_check_render_job(l, 1);
-    lua_pushnumber(l, 0.4f);
+    lua_pushnumber(l, render_job->progress->percent_done.load());
     return 1;
   }
 

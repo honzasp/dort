@@ -10,7 +10,7 @@
 #include "dort/thread_pool.hpp"
 
 namespace dort {
-  void SampleRenderer::render(CtxG& ctx) {
+  void SampleRenderer::render(CtxG& ctx, Progress& progress) {
     this->pixel_pos_idx = this->sampler->request_sample_2d();
     this->preprocess(ctx, *this->scene, *this->sampler);
 
@@ -27,6 +27,7 @@ namespace dort {
     }
 
     std::mutex film_mutex;
+    std::atomic<uint32_t> jobs_done(0);
     fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
       uint32_t tile_x = job_i % layout_tiles.x;
       uint32_t tile_y = job_i / layout_tiles.x;
@@ -38,15 +39,19 @@ namespace dort {
       Recti film_rect(floor_vec2i(corner_0f - margin), ceil_vec2i(corner_1f + margin));
       Vec2i film_size = film_rect.p_max - film_rect.p_min;
       Film tile_film(film_size.x, film_size.y, this->film->filter);
-      this->render_tile(ctx, tile_rect, film_rect, tile_film, *samplers.at(job_i));
+      this->render_tile(ctx, tile_rect, film_rect, tile_film,
+        *samplers.at(job_i), progress);
 
       std::unique_lock<std::mutex> film_lock(film_mutex);
       this->film->add_tile(film_rect.p_min, tile_film);
+
+      uint32_t done = jobs_done.fetch_add(1) + 1;
+      progress.set_percent_done(float(done) / float(job_count));
     });
   }
 
-  void SampleRenderer::render_tile(CtxG&, Recti tile_rect, 
-      Recti tile_film_rect, Film& tile_film, Sampler& sampler) const
+  void SampleRenderer::render_tile(CtxG&, Recti tile_rect, Recti tile_film_rect,
+      Film& tile_film, Sampler& sampler, Progress& progress) const
   {
     StatTimer t(TIMER_RENDER_TILE);
     Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
@@ -76,6 +81,7 @@ namespace dort {
           }
         }
       }
+      if(progress.is_cancelled()) { return; }
     }
   }
 }

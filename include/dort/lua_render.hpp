@@ -2,14 +2,17 @@
 #ifdef DORT_USE_GTK
 #include <gio/gio.h>
 #endif
+#include <atomic>
 #include <thread>
-#include "dort/dort.hpp"
+#include "dort/atomic_float.hpp"
 #include "dort/lua.hpp"
+#include "dort/renderer.hpp"
 
 namespace dort {
   constexpr const char RENDER_JOB_TNAME[] = "dort.RenderJob";
 
   struct RenderJob {
+    struct JobProgress;
     RenderJob(RenderJob&&) = delete;
     RenderJob() = default;
 
@@ -17,6 +20,7 @@ namespace dort {
     std::thread::id lua_id;
     std::shared_ptr<Renderer> renderer;
     std::shared_ptr<Film> film;
+    std::shared_ptr<JobProgress> progress;
     bool render_started;
     bool render_finished;
 #ifdef DORT_USE_GTK
@@ -28,6 +32,18 @@ namespace dort {
     void schedule_result_callback();
     static void result_callback(GObject*, GAsyncResult*, gpointer render_job_ptr);
 #endif
+    
+    struct JobProgress final: public Progress {
+      std::atomic<bool> cancelled =  { false };
+      atomic_float percent_done = { 0.f };
+
+      virtual bool is_cancelled() const override final { 
+        return this->cancelled.load(std::memory_order_relaxed);
+      }
+      virtual void set_percent_done(float percent) override final {
+        this->percent_done.store(percent, std::memory_order_relaxed);
+      }
+    };
   };
 
   int lua_open_render(lua_State* l);
@@ -36,6 +52,7 @@ namespace dort {
   int lua_render_render_sync(lua_State* l);
   int lua_render_render_async(lua_State* l);
   int lua_render_image_to_pixbuf(lua_State* l);
+  int lua_render_cancel(lua_State* l);
   int lua_render_get_preview(lua_State* l);
   int lua_render_get_progress(lua_State* l);
   int lua_render_get_image(lua_State* l);

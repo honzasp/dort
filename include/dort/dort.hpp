@@ -17,6 +17,7 @@ namespace dort {
   class Light;
   class Material;
   class Primitive;
+  class Progress;
   class Renderer;
   class Rng;
   class SampledFilter;
