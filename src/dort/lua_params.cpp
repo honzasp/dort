@@ -1,5 +1,6 @@
 #include "dort/geometry.hpp"
 #include "dort/lua_builder.hpp"
+#include "dort/lua_camera.hpp"
 #include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_grid.hpp"
@@ -184,6 +185,14 @@ namespace dort {
     auto sampler = lua_isnil(l, -1) ? def : lua_check_sampler(l, -1);
     lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
     return sampler;
+  }
+  std::shared_ptr<Camera> lua_param_camera_opt(lua_State* l,
+      int params_idx, const char* param_name, std::shared_ptr<Camera> def)
+  {
+    lua_getfield(l, params_idx, param_name);
+    auto camera = lua_isnil(l, -1) ? def : lua_check_camera(l, -1);
+    lua_pushnil(l); lua_setfield(l, params_idx, param_name); lua_pop(l, 1);
+    return camera;
   }
 
   bool lua_param_is_set(lua_State* l, int params_idx, const char* param_name) {

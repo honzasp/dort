@@ -106,7 +106,7 @@ namespace dort {
       const PhotonMap& photon_map, float radius) const
   {
     Vec2 film_res = Vec2(float(film.x_res), float(film.y_res));
-    const Camera& camera = *this->scene->camera;
+    const Camera& camera = *this->camera;
 
     for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
       for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {

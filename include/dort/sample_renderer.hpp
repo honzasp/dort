@@ -11,8 +11,9 @@ namespace dort {
   public:
     SampleRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
-        std::shared_ptr<Sampler> sampler):
-      Renderer(scene, film, sampler) { }
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<Camera> camera):
+      Renderer(scene, film, sampler, camera) { }
     virtual void render(CtxG& ctx, Progress& progress) override final;
 
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,

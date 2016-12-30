@@ -13,11 +13,13 @@ namespace dort {
     std::shared_ptr<Scene> scene;
     std::shared_ptr<Film> film;
     std::shared_ptr<Sampler> sampler;
+    std::shared_ptr<Camera> camera;
   public:
     Renderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
-        std::shared_ptr<Sampler> sampler):
-      scene(scene), film(film), sampler(sampler) { }
+        std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<Camera> camera):
+      scene(scene), film(film), sampler(sampler), camera(camera) { }
     virtual ~Renderer() {}
     virtual void render(CtxG& ctx, Progress& progress) = 0;
 

@@ -56,22 +56,23 @@ namespace dort {
     auto method = lua_param_string_opt(l, p, "renderer", "direct");
 
     auto film = std::make_shared<Film>(x_res, y_res, filter);
+    auto camera = lua_param_camera_opt(l, p, "camera", scene->default_camera);
 
     std::shared_ptr<Renderer> renderer;
     if(method == "direct") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<DirectRenderer>(
-          scene, film, sampler, max_depth);
+          scene, film, sampler, camera, max_depth);
     } else if(method == "dot") {
-      renderer = std::make_shared<DotRenderer>(scene, film, sampler);
+      renderer = std::make_shared<DotRenderer>(scene, film, sampler, camera);
     } else if(method == "pt" || method == "path") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<PathRenderer>(
-          scene, film, sampler, max_depth);
+          scene, film, sampler, camera, max_depth);
     } else if(method == "bdpt") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<BdptRenderer>(
-          scene, film, sampler, max_depth);
+          scene, film, sampler, camera, max_depth);
     } else if(method == "igi") {
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       uint32_t max_light_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
@@ -81,7 +82,7 @@ namespace dort {
       float roulette_threshold = lua_param_float_opt(l, p, 
           "roulette_threshold", 0.001f);
       renderer = std::make_shared<IgiRenderer>(
-          scene, film, sampler,
+          scene, film, sampler, camera,
           max_depth, max_light_depth, light_set_count, path_count,
           g_limit, roulette_threshold);
     } else if(method == "sppm") {
@@ -105,7 +106,7 @@ namespace dort {
       }
 
       renderer = std::make_shared<SppmRenderer>(
-          scene, film, sampler, initial_radius, iteration_count,
+          scene, film, sampler, camera, initial_radius, iteration_count,
           max_depth, max_photon_depth, photon_path_count, 
           alpha, parallel_mode);
     } else {
@@ -253,8 +254,8 @@ namespace dort {
     auto render_job = lua_check_render_job(l, 1);
 
     // TODO: the film is concurrently accessed by the renderer, so this is one
-    // big data race. However, this is a quick'n'dirty solution that should not
-    // cause any memory unsafety.
+    // big data race. However, this is a quick solution that should not cause
+    // any memory unsafety.
     auto film = render_job->film;
     auto image = render_job->film->to_image<PixelRgb8>();
     lua_push_image_8(l, std::make_shared<Image<PixelRgb8>>(std::move(image)));

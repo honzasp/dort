@@ -55,7 +55,7 @@ namespace dort {
   {
     StatTimer t(TIMER_RENDER_TILE);
     Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
-    const Camera& camera = *this->scene->camera;
+    const Camera& camera = *this->camera;
 
     for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
       for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {

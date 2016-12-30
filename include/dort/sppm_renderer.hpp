@@ -29,6 +29,7 @@ namespace dort {
     SppmRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<Camera> camera,
         float initial_radius,
         uint32_t iteration_count,
         uint32_t max_depth,
@@ -36,7 +37,7 @@ namespace dort {
         uint32_t photon_path_count,
         float alpha,
         ParallelMode parallel_mode):
-      Renderer(scene, film, sampler),
+      Renderer(scene, film, sampler, camera),
       initial_radius(initial_radius),
       iteration_count(iteration_count),
       max_depth(max_depth),

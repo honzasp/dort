@@ -98,7 +98,7 @@ namespace dort {
     scene->centroid = scene->bounds.centroid();
     scene->radius = scene->bounds.radius();
     scene->lights = std::move(builder->lights);
-    scene->camera = std::move(builder->camera);
+    scene->default_camera = std::move(builder->camera);
 
     std::move(builder->meshes.begin(), builder->meshes.end(),
         std::back_inserter(scene->meshes));
@@ -478,6 +478,12 @@ namespace dort {
 
     builder->meshes.insert(mesh);
     lua_push_shape(l, std::make_shared<TriangleShape>(mesh.get(), index));
+    return 1;
+  }
+
+  int lua_builder_get_scene_default_camera(lua_State* l) {
+    auto scene = lua_check_scene(l, 1);
+    lua_push_camera(l, scene->default_camera);
     return 1;
   }
 

@@ -15,7 +15,7 @@ namespace dort {
       uint32_t, Sampler& sampler) const
   {
     Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
-    const Camera& camera = *scene.camera;
+    const Camera& camera = *this->camera;
     const Light* light;
     std::vector<Vertex> light_walk = this->random_light_walk(scene, light, sampler.rng);
     std::vector<Vertex> camera_walk = this->random_camera_walk(scene, ray, sampler.rng);

@@ -12,8 +12,9 @@ namespace dort {
     DirectRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
+        std::shared_ptr<Camera> camera,
         uint32_t max_depth):
-      SampleRenderer(scene, film, sampler), max_depth(max_depth)
+      SampleRenderer(scene, film, sampler, camera), max_depth(max_depth)
     { }
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
         uint32_t depth, Sampler& sampler) const override final;

@@ -150,16 +150,49 @@ window:add(Gtk.Box {
         step_increment = 1000,
       },
     },
+    Gtk.Grid {
+      { Gtk.Button { id = "roll_left_button", label = "Roll left" },
+        left_attach = 0, top_attach = 0 },
+      { Gtk.Button { id = "roll_right_button", label = "Roll right" },
+        left_attach = 2, top_attach = 0 },
+      { Gtk.Button { id = "pitch_up_button", label = "Pitch up" },
+        left_attach = 1, top_attach = 0 },
+      { Gtk.Button { id = "pitch_down_button", label = "Pitch down" },
+        left_attach = 1, top_attach = 1 },
+      { Gtk.Button { id = "yaw_left_button", label = "Yaw left" },
+        left_attach = 0, top_attach = 1 },
+      { Gtk.Button { id = "yaw_right_button", label = "Yaw right" },
+        left_attach = 2, top_attach = 1 },
+    },
+    Gtk.Grid {
+      { Gtk.Button { id = "move_fwd_button", label = "Forward" },
+        left_attach = 0, top_attach = 0 },
+      { Gtk.Button { id = "move_bwd_button", label = "Backward" },
+        left_attach = 2, top_attach = 0 },
+      { Gtk.Button { id = "move_up_button", label = "Up" },
+        left_attach = 1, top_attach = 0 },
+      { Gtk.Button { id = "move_down_button", label = "Down" },
+        left_attach = 1, top_attach = 1 },
+      { Gtk.Button { id = "move_left_button", label = "Left" },
+        left_attach = 0, top_attach = 1 },
+      { Gtk.Button { id = "move_right_button", label = "Right" },
+        left_attach = 2, top_attach = 1 },
+    },
   },
 })
 window:show_all()
 
 local render_job = nil
 local is_cancelling = false
-window.child.width_entry.value = 200
-window.child.height_entry.value = 200
+window.child.width_entry.value = 400
+window.child.height_entry.value = 400
 window.child.iterations_entry.value = 100
 window.child.light_paths_entry.value = 10*1000
+
+local camera_transform = look_at(
+  point(278, 273, -800),
+  point(278, 273, 0),
+  vector(0, 1, 0)) * scale(1, -1, 1)
 
 function start_render()
   if is_cancelling then
@@ -182,6 +215,10 @@ function start_render()
     },
     filter = mitchell_filter {
       radius = 1.5,
+    },
+    camera = pinhole_camera {
+      transform = camera_transform,
+      fov = 0.686,
     },
     renderer = "sppm",
     initial_radius = 20,
@@ -254,11 +291,58 @@ function window.child.render_button:on_clicked()
   end
 end
 
+function update_camera(transform)
+  camera_transform = camera_transform * transform
+end
+
+function window.child.roll_left_button:on_clicked()
+  update_camera(dort.geometry.rotate_z(-pi/30))
+end
+function window.child.roll_right_button:on_clicked()
+  update_camera(dort.geometry.rotate_z(pi/30))
+end
+function window.child.pitch_up_button:on_clicked()
+  update_camera(dort.geometry.rotate_x(pi/30))
+end
+function window.child.pitch_down_button:on_clicked()
+  update_camera(dort.geometry.rotate_x(-pi/30))
+end
+function window.child.yaw_left_button:on_clicked()
+  update_camera(dort.geometry.rotate_y(-pi/30))
+end
+function window.child.yaw_right_button:on_clicked()
+  update_camera(dort.geometry.rotate_y(pi/30))
+end
+
+function translate_camera(vec)
+  update_camera(dort.geometry.translate(vec))
+end
+
+function window.child.move_up_button:on_clicked()
+  translate_camera(dort.geometry.vector(0, -50, 0))
+end
+function window.child.move_down_button:on_clicked()
+  translate_camera(dort.geometry.vector(0, 50, 0))
+end
+function window.child.move_left_button:on_clicked()
+  translate_camera(dort.geometry.vector(-50, 0, 0))
+end
+function window.child.move_right_button:on_clicked()
+  translate_camera(dort.geometry.vector(50, 0, 0))
+end
+function window.child.move_fwd_button:on_clicked()
+  translate_camera(dort.geometry.vector(0, 0, 50))
+end
+function window.child.move_bwd_button:on_clicked()
+  translate_camera(dort.geometry.vector(0, 0, -50))
+end
+
+
 function window:on_destroy()
   cancel_render()
   Gtk.main_quit()
 end
 
 update()
-GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 2, refresh)
+GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, refresh)
 Gtk.main()
