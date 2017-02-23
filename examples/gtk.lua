@@ -3,101 +3,16 @@ local lgi = require 'lgi'
 local Gtk = lgi.Gtk
 local GdkPixbuf = lgi.GdkPixbuf
 local GLib = lgi.GLib
+local minecraft = require "minecraft"
 
 local scene = define_scene(function()
-  local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
-  local green = matte_material { color = rgb(0, 0.5, 0) }
-  local red = matte_material { color = rgb(0.5, 0, 0) }
-
-  local right_box = mirror_material { color = rgb(1, 1, 1) }
-  local left_box = glass_material { color = rgb(1, 1, 1) }
-
-  block(function()
-    local m = mesh {
-      points = {
-        point(552.8, 0, 0),
-        point(0, 0, 0),
-        point(0, 0, 559.2),
-        point(549.6, 0, 559.2),
-
-        point(556, 548.8, 0),
-        point(556, 548.8, 559.2),
-        point(0, 548.8, 559.2),
-        point(0, 548.8, 0),
-      },
-      vertices = {
-        0, 1, 2,  0, 2, 3,
-        4, 5, 6,  4, 6, 7,
-        6, 5, 3,  6, 3, 2,
-        7, 6, 2,  7, 2, 1,
-        0, 3, 5,  0, 5, 4,
-      },
-    }
-
-    material(white)
-    add_triangle(m, 0)
-    add_triangle(m, 3)
-    add_triangle(m, 6)
-    add_triangle(m, 9)
-    add_triangle(m, 12)
-    add_triangle(m, 15)
-
-    material(green)
-    add_triangle(m, 18)
-    add_triangle(m, 21)
-
-    material(red)
-    add_triangle(m, 24)
-    add_triangle(m, 27)
-  end)
-
-  block(function()
-    material(left_box)
-    transform(
-        translate(185, 82.5, 169)
-      * rotate_y(-0.29) 
-      * scale(165 / 2))
-    add_shape(cube())
-  end)
-
-  block(function()
-    material(right_box)
-    transform(
-        translate(368, 165, 351) 
-      * rotate_y(-1.27) 
-      * scale(165 / 2, 330 / 2, 165 / 2))
-    add_shape(cube())
-  end)
-
-  camera(pinhole_camera {
-    transform = look_at(
-      point(278, 273, -800),
-      point(278, 273, 0),
-      vector(0, 1, 0)) * scale(1, -1, 1),
-    fov = 0.686,
+  minecraft.add_world(get_builder(), {
+    map = os.getenv("HOME") .. "/.minecraft/saves/Testbed",
+    box = boxi(vec3i(-30, 0, -16), vec3i(0, 20, 12)),
   })
-
-  block(function() 
-    transform(translate(0, -1, 0))
-    local m = mesh {
-      points = {
-        point(343, 548.8, 227),
-        point(343, 548.8, 332),
-        point(213, 548.8, 332),
-        point(213, 548.8, 227),
-      },
-      vertices = {
-        2, 1, 0,  3, 2, 0,
-      },
-    }
-    for _, index in ipairs({0, 3}) do
-      add_light(diffuse_light {
-        radiance = rgb(1, 1, 1) * 70,
-        shape = triangle(m, index),
-        num_samples = 8,
-      })
-    end
-  end)
+  add_light(infinite_light {
+    radiance = rgb(0.5),
+  })
 end)
 
 local window = Gtk.Window {
@@ -184,15 +99,16 @@ window:show_all()
 
 local render_job = nil
 local is_cancelling = false
-window.child.width_entry.value = 400
+window.child.width_entry.value = 600
 window.child.height_entry.value = 400
 window.child.iterations_entry.value = 100
-window.child.light_paths_entry.value = 10*1000
+window.child.light_paths_entry.value = 100*1000
 
 local camera_transform = look_at(
-  point(278, 273, -800),
-  point(278, 273, 0),
-  vector(0, 1, 0)) * scale(1, -1, 1)
+      point(10, 15, -30),
+      point(-11, 5, 2),
+      vector(0, 1, 0)
+  ) * scale(-1, -1, 1)
 
 function start_render()
   if is_cancelling then
@@ -210,8 +126,8 @@ function start_render()
     x_res = width, y_res = height,
     max_depth = 10,
     sampler = stratified_sampler {
-      samples_per_x = 1,
-      samples_per_y = 1,
+      samples_per_x = 3,
+      samples_per_y = 3,
     },
     filter = mitchell_filter {
       radius = 1.5,
@@ -220,10 +136,10 @@ function start_render()
       transform = camera_transform,
       fov = 0.686,
     },
-    renderer = "sppm",
-    initial_radius = 20,
+    renderer = "bdpt",
     iterations = iterations,
-    light_paths = light_paths,
+    --initial_radius = 10,
+    --light_paths = light_paths,
   })
 
   dort.render.render_async(render_job, finish_render)
@@ -318,23 +234,24 @@ function translate_camera(vec)
   update_camera(dort.geometry.translate(vec))
 end
 
+local delta = 1
 function window.child.move_up_button:on_clicked()
-  translate_camera(dort.geometry.vector(0, -50, 0))
+  translate_camera(dort.geometry.vector(0, -delta, 0))
 end
 function window.child.move_down_button:on_clicked()
-  translate_camera(dort.geometry.vector(0, 50, 0))
+  translate_camera(dort.geometry.vector(0, delta, 0))
 end
 function window.child.move_left_button:on_clicked()
-  translate_camera(dort.geometry.vector(-50, 0, 0))
+  translate_camera(dort.geometry.vector(-delta, 0, 0))
 end
 function window.child.move_right_button:on_clicked()
-  translate_camera(dort.geometry.vector(50, 0, 0))
+  translate_camera(dort.geometry.vector(delta, 0, 0))
 end
 function window.child.move_fwd_button:on_clicked()
-  translate_camera(dort.geometry.vector(0, 0, 50))
+  translate_camera(dort.geometry.vector(0, 0, delta))
 end
 function window.child.move_bwd_button:on_clicked()
-  translate_camera(dort.geometry.vector(0, 0, -50))
+  translate_camera(dort.geometry.vector(0, 0, -delta))
 end
 
 

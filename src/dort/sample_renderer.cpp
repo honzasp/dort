@@ -18,9 +18,10 @@ namespace dort {
     Vec2i layout_tiles = Renderer::layout_tiles(ctx, *this->film, *this->sampler);
     Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
       Vec2(float(layout_tiles.x), float(layout_tiles.y));
-    uint32_t job_count = layout_tiles.x * layout_tiles.y;
+    uint32_t job_count = layout_tiles.x * layout_tiles.y * this->iteration_count;
     stat_sample_int(DISTRIB_INT_RENDER_JOBS, job_count);
 
+    // TODO: it is wasteful to produce so many samplers
     std::vector<std::shared_ptr<Sampler>> samplers;
     for(uint32_t i = 0; i < job_count; ++i) {
       samplers.push_back(this->sampler->split());
@@ -29,8 +30,11 @@ namespace dort {
     std::mutex film_mutex;
     std::atomic<uint32_t> jobs_done(0);
     fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
-      uint32_t tile_x = job_i % layout_tiles.x;
-      uint32_t tile_y = job_i / layout_tiles.x;
+      if(progress.is_cancelled()) { return; }
+      //uint32_t iter_i = job_i / (layout_tiles.x * layout_tiles.y);
+      uint32_t iter_job_i = job_i % (layout_tiles.x * layout_tiles.y);
+      uint32_t tile_x = iter_job_i % layout_tiles.x;
+      uint32_t tile_y = iter_job_i / layout_tiles.x;
       Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));
       Vec2 corner_1f = corner_0f + tile_size;
       Recti tile_rect(floor_vec2i(corner_0f), floor_vec2i(corner_1f));

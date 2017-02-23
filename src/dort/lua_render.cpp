@@ -57,23 +57,30 @@ namespace dort {
 
     auto film = std::make_shared<Film>(x_res, y_res, filter);
     auto camera = lua_param_camera_opt(l, p, "camera", scene->default_camera);
+    if(!camera) {
+      return luaL_error(l, "No camera is set in the scene and no camera was given.");
+    }
 
     std::shared_ptr<Renderer> renderer;
     if(method == "direct") {
+      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<DirectRenderer>(
-          scene, film, sampler, camera, max_depth);
+          scene, film, sampler, camera, iteration_count, max_depth);
     } else if(method == "dot") {
       renderer = std::make_shared<DotRenderer>(scene, film, sampler, camera);
     } else if(method == "pt" || method == "path") {
+      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<PathRenderer>(
-          scene, film, sampler, camera, max_depth);
+          scene, film, sampler, camera, iteration_count, max_depth);
     } else if(method == "bdpt") {
+      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<BdptRenderer>(
-          scene, film, sampler, camera, max_depth);
+          scene, film, sampler, camera, iteration_count, max_depth);
     } else if(method == "igi") {
+      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       uint32_t max_light_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
       uint32_t light_set_count = lua_param_uint32_opt(l, p, "light_sets", 1);
@@ -82,7 +89,7 @@ namespace dort {
       float roulette_threshold = lua_param_float_opt(l, p, 
           "roulette_threshold", 0.001f);
       renderer = std::make_shared<IgiRenderer>(
-          scene, film, sampler, camera,
+          scene, film, sampler, camera, iteration_count,
           max_depth, max_light_depth, light_set_count, path_count,
           g_limit, roulette_threshold);
     } else if(method == "sppm") {

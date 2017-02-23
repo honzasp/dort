@@ -151,3 +151,5 @@ function World:define_block(block_name, block_id, voxel_or_fun)
   self.block_funs[block_id] = fun
   self.block_names[block_id] = block_name
 end
+
+return minecraft

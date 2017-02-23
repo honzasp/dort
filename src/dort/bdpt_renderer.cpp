@@ -94,6 +94,7 @@ namespace dort {
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = bsdf->sample_camera_f(wi, BSDF_ALL,
           wo, wo_pdf, bsdf_flags, BsdfSample(rng));
+      if(wo_pdf == 0.f) { break; }
 
       float bwd_dir_pdf = bsdf->light_f_pdf(wi, wo, BSDF_ALL);
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_y.p);
@@ -164,6 +165,7 @@ namespace dort {
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = bsdf->sample_light_f(wo, BSDF_ALL,
           wi, wi_pdf, bsdf_flags, BsdfSample(rng));
+      if(wi_pdf == 0.f) { break; }
 
       float bwd_dir_pdf = bsdf->camera_f_pdf(wo, wi, BSDF_ALL);
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_z.p);

@@ -82,13 +82,10 @@ namespace dort {
     auto builder = lua_check_builder(l, 1);
 
     if(!builder->frame_stack.empty()) {
-      luaL_error(l, "Frame stack is not empty");
+      return luaL_error(l, "Frame stack is not empty");
     }
     if(!builder->state_stack.empty()) {
-      luaL_error(l, "State stack is not empty");
-    }
-    if(!builder->camera) {
-      luaL_error(l, "No camera is set in the scene");
+      return luaL_error(l, "State stack is not empty");
     }
 
     auto scene = std::make_shared<Scene>();
