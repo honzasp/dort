@@ -29,6 +29,7 @@ namespace dort {
   private:
     virtual void preprocess(CtxG& ctx,
         const Scene& scene, Sampler& sampler) override final;
+    virtual void iteration(Film& film, uint32_t iteration) override final;
 
     // The unweighted contribution of a path x[0], ..., x[n] is
     //
@@ -86,7 +87,7 @@ namespace dort {
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t, Vec2& out_film_pos) const;
-    float path_weight(const Scene& scene, Vec2 film_res, Vec2 film_pos,
+    float path_weight(const Scene& scene, Vec2 film_res,
         const Light& light, const Camera& camera,
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,

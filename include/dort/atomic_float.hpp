@@ -19,8 +19,16 @@ namespace dort {
     void store(float val, std::memory_order order = std::memory_order_seq_cst) {
       this->bits.store(float_to_bits(val), order);
     }
-    float load(std::memory_order order = std::memory_order_seq_cst) {
+    float load(std::memory_order order = std::memory_order_seq_cst) const {
       return bits_to_float(this->bits.load(order));
+    }
+    void add_relaxed(float val) {
+      uint32_t observed = this->bits.load(std::memory_order_relaxed);
+      float sum;
+      do {
+        sum = bits_to_float(observed) + val;
+      } while(!this->bits.compare_exchange_weak(observed,
+          float_to_bits(sum), std::memory_order_relaxed));
     }
   };
 }

@@ -35,7 +35,7 @@ namespace dort {
     } else {
       center_pos = Vec2(normal_pos.x * film_res.y / film_res.x, normal_pos.y);
     }
-    return (center_pos - Vec2(0.5f, 0.5f)) * film_res;
+    return (center_pos + Vec2(0.5f, 0.5f)) * film_res;
   }
 
 
@@ -82,7 +82,7 @@ namespace dort {
     return Spectrum(1.f);
   }
 
-  float OrthographicCamera::ray_dir_importance_pdf(Vec2, Vec2,
+  float OrthographicCamera::ray_dir_importance_pdf(Vec2,
       const Vector&, const Point&) const
   {
     return 0.f;
@@ -127,7 +127,7 @@ namespace dort {
     Vec2 normal_pos = project_pos / this->project_dimension;
     Vec2 film_pos = Camera::normal_to_film(film_res, normal_pos);
 
-    out_wo = normalize(this->camera_to_world.apply(camera_pivot - Point(0.f, 0.f, 0.f)));
+    out_wo = normalize(this->camera_to_world.apply(Point(0.f, 0.f, 0.f) - camera_pivot));
     out_dir_pdf = 1.f;
     out_shadow.init_point_point(pivot, pivot_epsilon,
         this->camera_to_world.apply(Point(0.f, 0.f, 0.f)), 0.f);
@@ -135,10 +135,19 @@ namespace dort {
     return Spectrum(1.f);
   }
 
-  float PinholeCamera::ray_dir_importance_pdf(Vec2, Vec2,
-      const Vector&, const Point&) const
+  float PinholeCamera::ray_dir_importance_pdf(Vec2,
+      const Vector& wi_gen, const Point&) const
   {
-    return 0.f;
+    Vector wi_camera = this->camera_to_world.apply_inv(wi_gen);
+    if(wi_camera.v.z <= 0.f) { return 0.f; }
+    float inv_z = 1.f / (wi_camera.v.z * this->project_dimension);
+    Vec2 normal_pos(wi_camera.v.x * inv_z, wi_camera.v.y * inv_z);
+
+    if(abs(normal_pos.x) < 0.5 && abs(normal_pos.y) < 0.5) {
+      return 1.f;
+    } else {
+      return 0.f;
+    }
   }
 
 

@@ -34,7 +34,7 @@ namespace dort {
 #endif
     
     struct JobProgress final: public Progress {
-      std::atomic<bool> cancelled =  { false };
+      std::atomic<bool> cancelled = { false };
       atomic_float percent_done = { 0.f };
 
       virtual bool is_cancelled() const override final { 

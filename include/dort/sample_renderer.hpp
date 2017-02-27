@@ -24,6 +24,9 @@ namespace dort {
         uint32_t depth, Sampler& sampler) const = 0;
   protected:
     virtual void preprocess(CtxG& ctx, const Scene& scene, Sampler& sampler) = 0;
+    virtual void iteration(Film& film, uint32_t iteration) {
+      (void)film; (void)iteration;
+    }
   private:
     void render_tile(CtxG& ctx, Recti tile_rect, Recti tile_film_rect,
         Film& tile_film, Sampler& sampler, Progress& progress) const;

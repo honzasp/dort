@@ -9,10 +9,11 @@ namespace dort {
 
   Film::Film(uint32_t x_res, uint32_t y_res, SampledFilter filter):
     x_res(x_res), y_res(y_res), pixels(x_res * y_res),
-    filter(std::move(filter))
+    filter(std::move(filter)),
+    splat_scale(0.f)
   { }
 
-  void Film::add_sample(Vec2 pos, const Spectrum& radiance) {
+  void Film::add_sample(Vec2 pos, const Spectrum& radiance, bool is_splat) {
     StatTimer t(TIMER_FILM_ADD_SAMPLE);
 
     int32_t x0 = ceil_int32(pos.x - 0.5f - this->filter.radius.x);
@@ -30,8 +31,12 @@ namespace dort {
         Vec2 filter_p(float(pix_x) + 0.5f - pos.x, float(pix_y) + 0.5f - pos.y);
         float filter_w = this->filter.evaluate(filter_p);
         Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pix_x, pix_y));
-        pixel.color += radiance * filter_w;
-        pixel.weight += filter_w;
+        if(is_splat) {
+          pixel.splat.add_relaxed(radiance * filter_w);
+        } else {
+          pixel.color += radiance * filter_w;
+          pixel.weight += filter_w;
+        }
       }
     }
   }
@@ -52,6 +57,7 @@ namespace dort {
         const Film::Pixel& tile_pixel = tile.pixels.at(tile_idx);
         this_pixel.color += tile_pixel.color;
         this_pixel.weight += tile_pixel.weight;
+        assert(tile_pixel.splat.load_relaxed() == Spectrum(0.f));
       }
     }
   }
@@ -62,7 +68,13 @@ namespace dort {
     for(uint32_t y = 0; y < this->y_res; ++y) {
       for(uint32_t x = 0; x < this->x_res; ++x) {
         const Film::Pixel& pixel = this->pixels.at(this->pixel_idx(x, y));
-        Spectrum color = pixel.weight != 0.f ? pixel.color / pixel.weight : Spectrum();
+        Spectrum color(0.f);
+        if(pixel.weight != 0.f) {
+          color += pixel.color / pixel.weight;
+        }
+        if(this->splat_scale != 0.f) {
+          color += pixel.splat.load_relaxed() * this->splat_scale;
+        }
         img.set_rgb(x, y, color);
       }
     }

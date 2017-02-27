@@ -10,9 +10,19 @@ local scene = define_scene(function()
     map = os.getenv("HOME") .. "/.minecraft/saves/Testbed",
     box = boxi(vec3i(-30, 0, -16), vec3i(0, 20, 12)),
   })
+  --[[
   add_light(infinite_light {
-    radiance = rgb(0.5),
+    radiance = rgb(0.2),
   })
+  --]]
+  for z = -8, 8, 4 do
+    for x = 0, 16, 4 do
+      add_light(point_light {
+        point = point(x, 20, z),
+        intensity = rgb(100),
+      })
+    end
+  end
 end)
 
 local window = Gtk.Window {
@@ -126,8 +136,8 @@ function start_render()
     x_res = width, y_res = height,
     max_depth = 10,
     sampler = stratified_sampler {
-      samples_per_x = 3,
-      samples_per_y = 3,
+      samples_per_x = 2,
+      samples_per_y = 2,
     },
     filter = mitchell_filter {
       radius = 1.5,
@@ -138,7 +148,7 @@ function start_render()
     },
     renderer = "bdpt",
     iterations = iterations,
-    --initial_radius = 10,
+    --initial_radius = 1,
     --light_paths = light_paths,
   })
 

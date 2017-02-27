@@ -29,10 +29,17 @@ namespace dort {
 
     std::mutex film_mutex;
     std::atomic<uint32_t> jobs_done(0);
+    std::atomic<uint32_t> iters_done(0);
     fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
       if(progress.is_cancelled()) { return; }
-      //uint32_t iter_i = job_i / (layout_tiles.x * layout_tiles.y);
+
       uint32_t iter_job_i = job_i % (layout_tiles.x * layout_tiles.y);
+      if(iter_job_i == 0) {
+        uint32_t iteration = iters_done.fetch_add(1);
+        std::unique_lock<std::mutex> film_lock(film_mutex);
+        this->iteration(*this->film, iteration);
+      }
+
       uint32_t tile_x = iter_job_i % layout_tiles.x;
       uint32_t tile_y = iter_job_i / layout_tiles.x;
       Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));

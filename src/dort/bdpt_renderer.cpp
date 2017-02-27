@@ -7,10 +7,9 @@
 namespace dort {
   // TODO: use sampling patterns
   // TODO: use optimized direct lighting when appropriate
-  // TODO: connect light vertices directly to camera vertex (requires direct
-  // Renderer subclass)
   // TODO: correctly handle delta distributions in BSDFs
   // TODO: correctly handle background (infinite area) lights
+  // TODO: implement the s==1 && t==1 case
   Spectrum BdptRenderer::get_radiance(const Scene& scene, Ray& ray,
       uint32_t, Sampler& sampler) const
   {
@@ -28,11 +27,11 @@ namespace dort {
             sampler.rng, light_walk, camera_walk, s, t, film_pos);
         if(path_contrib.is_black()) { continue; }
 
-        float path_weight = this->path_weight(scene, film_res, film_pos, *light, camera,
+        float path_weight = this->path_weight(scene, film_res, *light, camera,
             light_walk, camera_walk, s, t);
         Spectrum weighted_contrib = path_contrib * path_weight;
         if(t == 1) {
-          // TODO: splat the path_value to the film
+          this->film->add_sample(film_pos, weighted_contrib, true);
         } else {
           contrib += weighted_contrib;
         }
@@ -48,6 +47,12 @@ namespace dort {
       this->light_distrib_pdfs.insert(std::make_pair(
           scene.lights.at(i).get(), this->light_distrib.pdf(i)));
     }
+  }
+
+  void BdptRenderer::iteration(Film& film, uint32_t iteration) {
+    float splat_weight = float(iteration + 1) * float(this->sampler->samples_per_pixel)
+      * float(this->film->x_res) * float(this->film->y_res);
+    film.splat_scale = 1.f / splat_weight;
   }
 
   std::vector<BdptRenderer::Vertex> BdptRenderer::random_light_walk(
@@ -204,7 +209,7 @@ namespace dort {
   }
 
   Spectrum BdptRenderer::path_contrib(const Scene& scene, Vec2 film_res,
-      const Light&, const Camera& camera, Rng& rng,
+      const Light& light, const Camera& camera, Rng& rng,
       const std::vector<Vertex>& light_walk,
       const std::vector<Vertex>& camera_walk,
       uint32_t s, uint32_t t, Vec2& out_film_pos) const
@@ -240,9 +245,12 @@ namespace dort {
       return emitted_radiance * last_camera.alpha;
     } else if(s == 1) {
       // Connect the camera subpath to a new light vertex.
+      /*
       uint32_t light_i = this->light_distrib.sample(rng.uniform_float());
       float light_pick_pdf = this->light_distrib.pdf(light_i);
       const Light& light = *scene.lights.at(light_i);
+      */
+      float light_pick_pdf = this->light_distrib_pdfs.at(&light);
       if(light_pick_pdf == 0.f) { return Spectrum(0.f); }
 
       Vector wi;
@@ -306,7 +314,7 @@ namespace dort {
     return Spectrum();
   }
 
-  float BdptRenderer::path_weight(const Scene& scene, Vec2 film_res, Vec2 film_pos,
+  float BdptRenderer::path_weight(const Scene& scene, Vec2 film_res,
       const Light& light, const Camera& camera,
       const std::vector<Vertex>& light_walk,
       const std::vector<Vertex>& camera_walk,
@@ -326,7 +334,7 @@ namespace dort {
       last_light_bwd_dir_pdf = last_camera.bsdf->light_f_pdf(
           connect_wi, camera_wo, BSDF_ALL);
     } else if(t == 1) {
-      last_light_bwd_dir_pdf = camera.ray_dir_importance_pdf(film_res, film_pos,
+      last_light_bwd_dir_pdf = camera.ray_dir_importance_pdf(film_res,
           connect_wi, last_camera.p);
     } else {
       last_light_bwd_dir_pdf = 0.f;
@@ -376,8 +384,7 @@ namespace dort {
       float zi_bwd_pdf = i < t - 1 ? zi.bwd_area_pdf : last_camera_bwd_pdf;;
       assert(zi.fwd_area_pdf > 0.f); assert(is_finite(zi_bwd_pdf));
       ri_camera = ri_camera * zi_bwd_pdf / zi.fwd_area_pdf;
-      // TODO: paths with t == 1 are ignored now
-      if(i != 1 && !zi.is_delta) {
+      if(!zi.is_delta) {
         inv_weight_sum += ri_camera;
       }
     }

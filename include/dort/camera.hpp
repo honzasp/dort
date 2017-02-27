@@ -78,9 +78,9 @@ namespace dort {
     /// Computes the pdf of sampling ray in the direction, given its origin,
     /// from sample_ray_importance().
     /// Returns the pdf of sampling ray with direction dir_gen, given the ray
-    /// origin and the film position, from sample_ray_importance(). The pdf is
-    /// w.r.t. the solid angle at origin.
-    virtual float ray_dir_importance_pdf(Vec2 film_res, Vec2 film_pos,
+    /// origin, from sample_ray_importance() (assuming the film pos is sampled
+    /// uniformly on the film plane). The pdf is w.r.t. the solid angle at origin.
+    virtual float ray_dir_importance_pdf(Vec2 film_res,
         const Vector& wi_gen, const Point& origin_fix) const = 0;
   protected:
     static Vec2 film_to_normal(Vec2 film_res, Vec2 film_pos);
@@ -103,7 +103,7 @@ namespace dort {
         const Point& pivot, float pivot_epsilon,
         Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
         Vec2& out_film_pos, CameraSample sample) const override final;
-    virtual float ray_dir_importance_pdf(Vec2 film_res, Vec2 film_pos,
+    virtual float ray_dir_importance_pdf(Vec2 film_res,
         const Vector& wi_gen, const Point& origin_fix) const override final;
   };
 
@@ -122,7 +122,7 @@ namespace dort {
         const Point& pivot, float pivot_epsilon,
         Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
         Vec2& out_film_pos, CameraSample sample) const override final;
-    virtual float ray_dir_importance_pdf(Vec2 film_res, Vec2 film_pos,
+    virtual float ray_dir_importance_pdf(Vec2 film_res,
         const Vector& wi_gen, const Point& origin_fix) const override final;
   };
 

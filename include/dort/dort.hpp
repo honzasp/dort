@@ -28,6 +28,7 @@ namespace dort {
   class ThreadPool;
   class Transform;
 
+  struct AtomicRgbSpectrum;
   struct Box;
   struct Boxi;
   struct Bxdf;
@@ -61,6 +62,7 @@ namespace dort {
   template<class Pixel> struct Image;
 
   using Spectrum = RgbSpectrum;
+  using AtomicSpectrum = AtomicRgbSpectrum;
 
   template<class T>
   using TextureGeom = Texture<T, const DiffGeom&>;
