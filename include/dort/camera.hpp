@@ -111,6 +111,7 @@ namespace dort {
   /// projects to the plane z = -1. The angle visible in the longer film
   /// dimension is given as the fov parameter;
   class PinholeCamera final: public Camera {
+    Point world_origin;
     float project_dimension;
   public:
     PinholeCamera(const Transform& camera_to_world, float fov);

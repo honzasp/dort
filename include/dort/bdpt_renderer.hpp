@@ -12,6 +12,7 @@ namespace dort {
   /// the various sub-paths using multiple importance sampling.
   class BdptRenderer final: public SampleRenderer {
     uint32_t max_depth;
+    bool use_t1_paths;
     DiscreteDistrib1d light_distrib;
     std::unordered_map<const Light*, float> light_distrib_pdfs;
   public:
@@ -20,9 +21,10 @@ namespace dort {
         std::shared_ptr<Sampler> sampler,
         std::shared_ptr<Camera> camera,
         uint32_t iteration_count,
-        uint32_t max_depth):
+        uint32_t max_depth,
+        bool use_t1_paths):
       SampleRenderer(scene, film, sampler, camera, iteration_count),
-      max_depth(max_depth) 
+      max_depth(max_depth), use_t1_paths(use_t1_paths)
     { }
     virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
         uint32_t depth, Sampler& sampler) const override final;

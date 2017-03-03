@@ -7,22 +7,24 @@ local minecraft = require "minecraft"
 
 local scene = define_scene(function()
   minecraft.add_world(get_builder(), {
-    map = os.getenv("HOME") .. "/.minecraft/saves/Testbed",
-    box = boxi(vec3i(-30, 0, -16), vec3i(0, 20, 12)),
+    map = os.getenv("HOME") .. "/.minecraft/saves/Specular",
+    box = boxi(vec3i(-20, 0, -20), vec3i(20, 20, 20)),
   })
   --[[
   add_light(infinite_light {
     radiance = rgb(0.2),
   })
   --]]
-  for z = -8, 8, 4 do
-    for x = 0, 16, 4 do
+  ----[[
+  for z = -20, 20, 10 do
+    for x = -20, 20, 10 do
       add_light(point_light {
         point = point(x, 20, z),
-        intensity = rgb(100),
+        intensity = rgb(60),
       })
     end
   end
+  --]]
 end)
 
 local window = Gtk.Window {
@@ -115,8 +117,8 @@ window.child.iterations_entry.value = 100
 window.child.light_paths_entry.value = 100*1000
 
 local camera_transform = look_at(
-      point(10, 15, -30),
-      point(-11, 5, 2),
+      point(-10, 12, -11),
+      point(3, 3, 4),
       vector(0, 1, 0)
   ) * scale(-1, -1, 1)
 
@@ -136,8 +138,8 @@ function start_render()
     x_res = width, y_res = height,
     max_depth = 10,
     sampler = stratified_sampler {
-      samples_per_x = 2,
-      samples_per_y = 2,
+      samples_per_x = 1,
+      samples_per_y = 1,
     },
     filter = mitchell_filter {
       radius = 1.5,
@@ -148,6 +150,7 @@ function start_render()
     },
     renderer = "bdpt",
     iterations = iterations,
+    use_t1_paths = true,
     --initial_radius = 1,
     --light_paths = light_paths,
   })

@@ -53,8 +53,10 @@ namespace dort {
       this->render_tile(ctx, tile_rect, film_rect, tile_film,
         *samplers.at(job_i), progress);
 
-      std::unique_lock<std::mutex> film_lock(film_mutex);
-      this->film->add_tile(film_rect.p_min, tile_film);
+      {
+        std::unique_lock<std::mutex> film_lock(film_mutex);
+        this->film->add_tile(film_rect.p_min, tile_film);
+      }
 
       uint32_t done = jobs_done.fetch_add(1) + 1;
       progress.set_percent_done(float(done) / float(job_count));

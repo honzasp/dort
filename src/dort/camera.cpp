@@ -93,6 +93,7 @@ namespace dort {
     Camera(CameraFlags(CAMERA_LENS_POS_DELTA | CAMERA_LENS_DIR_DELTA
         | CAMERA_FILM_PIVOT_POS_DELTA), camera_to_world)
   {
+    this->world_origin = this->camera_to_world.apply(Point(0.f, 0.f, 0.f));
     this->project_dimension = 2.f * tan(0.5f * fov);
   }
 
@@ -102,11 +103,9 @@ namespace dort {
   {
     Vec2 normal_pos = Camera::film_to_normal(film_res, film_pos);
     Vec2 project_pos = normal_pos * this->project_dimension;
-    Point world_pos = this->camera_to_world.apply(
-        Point(0.f, 0.f, 0.f));
     Vector world_dir = normalize(this->camera_to_world.apply(
         Vector(project_pos.x, project_pos.y, 1.f)));
-    out_ray = Ray(world_pos, world_dir);
+    out_ray = Ray(this->world_origin, world_dir);
     out_pos_pdf = 1.f;
     out_dir_pdf = 1.f;
     return Spectrum(1.f);
@@ -127,28 +126,32 @@ namespace dort {
     Vec2 normal_pos = project_pos / this->project_dimension;
     Vec2 film_pos = Camera::normal_to_film(film_res, normal_pos);
 
-    out_wo = normalize(this->camera_to_world.apply(Point(0.f, 0.f, 0.f) - camera_pivot));
-    out_dir_pdf = 1.f;
-    out_shadow.init_point_point(pivot, pivot_epsilon,
-        this->camera_to_world.apply(Point(0.f, 0.f, 0.f)), 0.f);
+    Vector camera_dir = Vector(camera_pivot.v);
+    float distance = length(camera_dir);
+    float cos_theta = camera_dir.v.z / distance;
+    out_wo = -normalize(this->camera_to_world.apply(camera_dir));
+    //out_dir_pdf = 1.f / (this->image_plane_area(film_res) * cube(cos_theta));
+    out_shadow.init_point_point(pivot, pivot_epsilon, this->world_origin, 0.f);
     out_film_pos = film_pos;
+    //return out_dir_pdf;
+    out_dir_pdf = 1.f;
     return Spectrum(1.f);
   }
 
-  float PinholeCamera::ray_dir_importance_pdf(Vec2,
+  float PinholeCamera::ray_dir_importance_pdf(Vec2 film_res,
       const Vector& wi_gen, const Point&) const
   {
     Vector wi_camera = this->camera_to_world.apply_inv(wi_gen);
     if(wi_camera.v.z <= 0.f) { return 0.f; }
-    float inv_z = 1.f / (wi_camera.v.z * this->project_dimension);
-    Vec2 normal_pos(wi_camera.v.x * inv_z, wi_camera.v.y * inv_z);
+    float inv_z = 1.f / wi_camera.v.z;
+    Vec2 project_pos(wi_camera.v.x * inv_z, wi_camera.v.y * inv_z);
+    Vec2 normal_pos = project_pos / this->project_dimension;
 
-    if(abs(normal_pos.x) < 0.5 && abs(normal_pos.y) < 0.5) {
-      return 1.f;
+    if(abs(normal_pos.x) <= 0.5 && abs(normal_pos.y) <= 0.5) {
+      float cos_theta = wi_camera.v.z / length(wi_camera);
+      return 1.f / cube(cos_theta);
     } else {
       return 0.f;
     }
   }
-
-
 }

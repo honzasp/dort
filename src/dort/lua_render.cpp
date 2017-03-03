@@ -77,8 +77,10 @@ namespace dort {
     } else if(method == "bdpt") {
       uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      bool use_t1_paths = lua_param_bool_opt(l, p, "use_t1_paths", false);
       renderer = std::make_shared<BdptRenderer>(
-          scene, film, sampler, camera, iteration_count, max_depth);
+          scene, film, sampler, camera,
+          iteration_count, max_depth, use_t1_paths);
     } else if(method == "igi") {
       uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);

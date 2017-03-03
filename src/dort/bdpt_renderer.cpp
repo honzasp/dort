@@ -22,6 +22,7 @@ namespace dort {
     Spectrum contrib(0.f);
     for(uint32_t s = 1; s <= light_walk.size(); ++s) {
       for(uint32_t t = 1; t <= camera_walk.size(); ++t) {
+        if(t == 1 && !this->use_t1_paths) { continue; }
         Vec2 film_pos;
         Spectrum path_contrib = this->path_contrib(scene, film_res, *light, camera,
             sampler.rng, light_walk, camera_walk, s, t, film_pos);
@@ -50,9 +51,9 @@ namespace dort {
   }
 
   void BdptRenderer::iteration(Film& film, uint32_t iteration) {
-    float splat_weight = float(iteration + 1) * float(this->sampler->samples_per_pixel)
-      * float(this->film->x_res) * float(this->film->y_res);
-    film.splat_scale = 1.f / splat_weight;
+    uint64_t splat_weight = uint64_t(iteration + 1) 
+      * this->sampler->samples_per_pixel * film.x_res * film.y_res;
+    film.splat_scale = 1.f / float(splat_weight);
   }
 
   std::vector<BdptRenderer::Vertex> BdptRenderer::random_light_walk(
@@ -244,8 +245,8 @@ namespace dort {
 
       return emitted_radiance * last_camera.alpha;
     } else if(s == 1) {
-      // Connect the camera subpath to a new light vertex.
       /*
+      // Connect the camera subpath to a new light vertex.
       uint32_t light_i = this->light_distrib.sample(rng.uniform_float());
       float light_pick_pdf = this->light_distrib.pdf(light_i);
       const Light& light = *scene.lights.at(light_i);
@@ -287,6 +288,11 @@ namespace dort {
       Spectrum bsdf_f = last_light.bsdf->eval_f(bsdf_wi, wo, BSDF_ALL);
       if(bsdf_f.is_black()) { return Spectrum(0.f); }
 
+      /*
+      std::printf("%g * %g * %g * %g / %g\n",
+          last_light.alpha.average(), bsdf_f.average(),
+          camera_importance.average(), abs_dot(last_light.nn, wo), wo_dir_pdf);
+          */
       return last_light.alpha * bsdf_f * camera_importance
         * (abs_dot(last_light.nn, wo) / wo_dir_pdf);
     } else if(s >= 2 && t >= 2) {
@@ -384,6 +390,7 @@ namespace dort {
       float zi_bwd_pdf = i < t - 1 ? zi.bwd_area_pdf : last_camera_bwd_pdf;;
       assert(zi.fwd_area_pdf > 0.f); assert(is_finite(zi_bwd_pdf));
       ri_camera = ri_camera * zi_bwd_pdf / zi.fwd_area_pdf;
+      if(i == 1 && !this->use_t1_paths) { continue; }
       if(!zi.is_delta) {
         inv_weight_sum += ri_camera;
       }

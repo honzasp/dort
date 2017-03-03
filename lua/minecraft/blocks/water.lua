@@ -10,7 +10,7 @@ return function(world)
       eta = 1.6,
     }
   else
-    water_material = m.make_mirror {
+    water_material = m.make_glass {
       color = rgbh("e0e7ff"),
     }
   end
