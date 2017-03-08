@@ -89,9 +89,11 @@ namespace dort {
     } else {
       out_wt = transmit_wt;
       out_dir_pdf = 1.f - threshold;
+      /*
       if(WI_IS_CAMERA) {
         transmit *= square(eta_i / eta_t);
       }
+      */
       return transmit / Bsdf::abs_cos_theta(transmit_wt);
     }
   }

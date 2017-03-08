@@ -7,8 +7,8 @@ local minecraft = require "minecraft"
 
 local scene = define_scene(function()
   minecraft.add_world(get_builder(), {
-    map = os.getenv("HOME") .. "/.minecraft/saves/Specular",
-    box = boxi(vec3i(-20, 0, -20), vec3i(20, 20, 20)),
+    map = os.getenv("HOME") .. "/.minecraft/saves/Testbed",
+    box = boxi(vec3i(-80, 0, -80), vec3i(80, 20, 80)),
   })
   --[[
   add_light(infinite_light {
@@ -117,9 +117,9 @@ window.child.iterations_entry.value = 100
 window.child.light_paths_entry.value = 100*1000
 
 local camera_transform = look_at(
-      point(-10, 12, -11),
-      point(3, 3, 4),
-      vector(0, 1, 0)
+    point(10, 20, -50),
+    point(-12, 3, -1),
+    vector(0, 1, 0)
   ) * scale(-1, -1, 1)
 
 function start_render()
@@ -150,7 +150,6 @@ function start_render()
     },
     renderer = "bdpt",
     iterations = iterations,
-    use_t1_paths = true,
     --initial_radius = 1,
     --light_paths = light_paths,
   })

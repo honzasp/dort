@@ -102,13 +102,13 @@ end
 local iters = 20
 --local i = 14; do
 for i = 0, iters - 1 do
-  local left_angle = 0.5 * pi * i / iters
-  local right_angle = 0.2 * pi * i / iters
+  local left_angle = 1.0 * pi * i / iters
+  local right_angle = 0.5 * pi * i / iters
   local scene = define_scene(function()
     make_boxes(left_angle, right_angle)
   end)
 
-  write_png_image("anim_box_bdpt_" .. i .. ".png", render(scene, {
+  write_png_image(string.format("spek_%02d.png", i), render(scene, {
     x_res = 256, y_res = 256,
     sampler = stratified_sampler {
       samples_per_x = 2,
@@ -117,7 +117,8 @@ for i = 0, iters - 1 do
     filter = mitchell_filter {
       radius = 1.5,
     },
-    renderer = "bdpt",
+    renderer = "pt",
+    iterations = 2,
   }))
   print(i)
 end
