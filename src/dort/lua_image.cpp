@@ -2,6 +2,7 @@
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
+#include "dort/tonemap.hpp"
 
 namespace dort {
   int lua_open_image(lua_State* l) {
@@ -19,6 +20,8 @@ namespace dort {
       {"read", lua_image_read},
       {"write_png", lua_image_write_png},
       {"write_rgbe", lua_image_write_rgbe},
+      {"tonemap_srgb", lua_image_tonemap_srgb},
+      {"tonemap_gamma", lua_image_tonemap_gamma},
       {0, 0},
     };
 
@@ -67,6 +70,24 @@ namespace dort {
     std::fclose(file);
     return 0;
   }
+
+  int lua_image_tonemap_srgb(lua_State* l) {
+    auto image = lua_check_image_f(l, 1);
+    float scale = lua_gettop(l) >= 2 ? luaL_checknumber(l, 2) : 1.0;
+    auto out_image = tonemap_srgb(*image, scale);
+    lua_push_image_8(l, std::make_shared<Image<PixelRgb8>>(std::move(out_image)));
+    return 1;
+  }
+
+  int lua_image_tonemap_gamma(lua_State* l) {
+    auto image = lua_check_image_f(l, 1);
+    float gamma = lua_gettop(l) >= 2 ? luaL_checknumber(l, 2) : 1.0;
+    float scale = lua_gettop(l) >= 3 ? luaL_checknumber(l, 3) : 1.0;
+    auto out_image = tonemap_gamma(*image, gamma, scale);
+    lua_push_image_8(l, std::make_shared<Image<PixelRgb8>>(std::move(out_image)));
+    return 1;
+  }
+
 
   std::shared_ptr<Image<PixelRgb8>> lua_check_image_8(lua_State* l, int idx) {
     return lua_check_shared_obj<Image<PixelRgb8>, IMAGE_RGB8_TNAME>(l, idx);

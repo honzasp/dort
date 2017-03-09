@@ -108,6 +108,7 @@ end)
 res = 512
 common_opts = {
   x_res = res, y_res = res,
+  hdr = true,
   max_depth = 5,
   sampler = stratified_sampler {
     samples_per_x = 2,
@@ -154,6 +155,10 @@ for algo_name, algo_opts in pairs(opts) do
 
     image_name = scene_name.."_"..algo_name
     print(image_name)
-    write_png_image(out_dir.."/"..image_name..".png", render(scene, opts))
+
+    hdr_image = render(scene, opts)
+    write_rgbe_image(out_dir.."/"..image_name..".hdr", hdr_image)
+    srgb_image = tonemap_srgb(hdr_image)
+    write_png_image(out_dir.."/"..image_name..".png", srgb_image)
   end
 end

@@ -128,7 +128,7 @@ namespace dort {
 
     Vector camera_dir = Vector(camera_pivot.v);
     float distance = length(camera_dir);
-    float cos_theta = camera_dir.v.z / distance;
+    //float cos_theta = camera_dir.v.z / distance;
     out_wo = -normalize(this->camera_to_world.apply(camera_dir));
     //out_dir_pdf = 1.f / (this->image_plane_area(film_res) * cube(cos_theta));
     out_shadow.init_point_point(pivot, pivot_epsilon, this->world_origin, 0.f);
@@ -138,7 +138,7 @@ namespace dort {
     return Spectrum(1.f);
   }
 
-  float PinholeCamera::ray_dir_importance_pdf(Vec2 film_res,
+  float PinholeCamera::ray_dir_importance_pdf(Vec2,
       const Vector& wi_gen, const Point&) const
   {
     Vector wi_camera = this->camera_to_world.apply_inv(wi_gen);
