@@ -1,6 +1,8 @@
+#include "dort/camera.hpp"
 #include "dort/ctx.hpp"
 #include "dort/film.hpp"
 #include "dort/light_renderer.hpp"
+#include "dort/lighting.hpp"
 #include "dort/primitive.hpp"
 #include "dort/sampler.hpp"
 #include "dort/scene.hpp"
@@ -19,6 +21,7 @@ namespace dort {
     for(uint32_t i = 0; i < job_count; ++i) {
       samplers.push_back(this->sampler->split());
     }
+    this->light_distrib = compute_light_distrib(*this->scene);
 
     std::mutex film_mutex;
     std::atomic<uint32_t> jobs_done(0);
@@ -29,17 +32,15 @@ namespace dort {
       auto& sampler = *samplers.at(job_i);
 
       for(uint64_t i = begin; i < end; ++i) {
-        Vec2 film_pos;
-        Spectrum contrib = this->sample_path(sampler, film_pos);
-        this->film->add_splat(film_pos, contrib);
+        this->sample_path(sampler);
       }
 
       uint32_t done = jobs_done.fetch_add(1) + 1;
       progress.set_percent_done(float(done) / float(job_count));
       {
         std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->film->splat_scale = float(job_count) /
-          (float(done) * float(this->iteration_count));
+        this->film->splat_scale = float(job_count) / (float(done) 
+          * float(this->iteration_count));
       }
     });
 
@@ -47,12 +48,87 @@ namespace dort {
     (void)this->max_depth;
   }
 
-  Spectrum LightRenderer::sample_path(Sampler& sampler, Vec2& out_film_pos) const {
-    out_film_pos = sampler.random_2d() * Vec2(this->film->x_res, this->film->y_res);
-    return Spectrum(0.3f);
+  void LightRenderer::sample_path(Sampler& sampler) {
+    uint32_t light_i = this->light_distrib.sample(sampler.random_1d());
+    float light_pdf = this->light_distrib.pdf(light_i);
+    const Light& light = *this->scene->lights.at(light_i);
+    LightRaySample light_sample(sampler.rng);
+    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+
+    Ray ray;
+    Normal prev_nn;
+    float light_pos_pdf, light_dir_pdf;
+    Spectrum light_radiance = light.sample_ray_radiance(
+        *this->scene, ray, prev_nn, light_pos_pdf, light_dir_pdf, light_sample);
+    if(light_radiance.is_black() || light_pdf == 0.f) {
+      return;
+    }
+
+    Spectrum alpha = light_radiance / (light_pdf * light_pos_pdf);
+    float prev_dir_pdf = light_dir_pdf;
+    for(uint32_t bounces = 0; bounces < this->max_depth; ++bounces) {
+      Intersection isect;
+      if(prev_dir_pdf == 0.f || !this->scene->intersect(ray, isect)) {
+        break;
+      }
+      auto bsdf = isect.get_bsdf();
+
+      bool has_non_delta = bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs();
+      if(has_non_delta) {
+        Vector camera_wo;
+        float camera_wo_pdf;
+        ShadowTest shadow;
+        Vec2 film_pos;
+        Spectrum importance = this->camera->sample_pivot_importance(film_res,
+            isect.world_diff_geom.p, isect.ray_epsilon,
+            camera_wo, camera_wo_pdf, shadow, film_pos, CameraSample(sampler.rng));
+        Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
+
+        Spectrum contrib = alpha * importance * bsdf_f
+          * (abs_dot(prev_nn, ray.dir)
+          * abs_dot(isect.world_diff_geom.nn, camera_wo)
+          / (prev_dir_pdf * camera_wo_pdf));
+        if(!contrib.is_black() && shadow.visible(*this->scene)) {
+          /*
+          std::printf("%g,%g: %g =\n  %g * %g * %g * %g * %g / %g / %g\n",
+              film_pos.x, film_pos.y,
+              contrib.average(), alpha.average(), importance.average(), bsdf_f.average(),
+              abs_dot(prev_nn, ray.dir), abs_dot(isect.world_diff_geom.nn, camera_wo),
+              prev_dir_pdf, camera_wo_pdf);
+          */
+          this->add_contrib(film_pos, contrib);
+        }
+      }
+
+      Vector bounce_wo;
+      float bounce_dir_pdf;
+      BxdfFlags bounce_flags;
+      Spectrum bounce_f = bsdf->sample_camera_f(-ray.dir, BSDF_ALL,
+        bounce_wo, bounce_dir_pdf, bounce_flags, BsdfSample(sampler.rng));
+
+      Spectrum bounce_contrib = bounce_f * (abs_dot(prev_nn, ray.dir) / prev_dir_pdf);
+      alpha *= bounce_contrib;
+      if(alpha.is_black()) { break; }
+
+      if(bounces >= 2) {
+        float rr_prob = min(1.f, bounce_contrib.average()) * 0.9f;
+        if(sampler.random_1d() > rr_prob) {
+          break;
+        }
+        alpha /= rr_prob;
+      }
+
+      prev_nn = isect.world_diff_geom.nn;
+      prev_dir_pdf = bounce_dir_pdf;
+      ray = Ray(isect.world_diff_geom.p, bounce_wo, isect.ray_epsilon);
+    }
   }
 
   uint32_t LightRenderer::get_job_count(const CtxG& ctx) const {
     return max(ctx.pool->num_threads() * 16, this->iteration_count);
+  }
+
+  void LightRenderer::add_contrib(Vec2 film_pos, Spectrum contrib) {
+    this->film->add_splat(film_pos, contrib);
   }
 }

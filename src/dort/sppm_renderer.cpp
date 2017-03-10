@@ -261,8 +261,8 @@ namespace dort {
     std::vector<Vec2> light_dir_samples(low_discrepancy_2d(1, count, rng));
 
     for(uint32_t i = 0; i < count; ++i) {
-      uint32_t light_i = light_distrib.sample(light_idx_samples.at(i));
-      float light_pdf = light_distrib.pdf(light_i);
+      uint32_t light_i = this->light_distrib.sample(light_idx_samples.at(i));
+      float light_pdf = this->light_distrib.pdf(light_i);
       const Light& light = *this->scene->lights.at(light_i);
       LightRaySample light_sample(light_pos_samples.at(i), light_dir_samples.at(i));
 
@@ -298,12 +298,12 @@ namespace dort {
           photons.push_back(photon);
         }
 
-        Vector bounce_wi;
+        Vector bounce_wo;
         float bounce_pdf;
         BxdfFlags bounce_flags;
         Spectrum bounce_f = bsdf->sample_camera_f(-ray.dir, BSDF_ALL,
-            bounce_wi, bounce_pdf, bounce_flags, BsdfSample(rng));
-        Spectrum bounce_contrib = bounce_f * (abs_dot(bounce_wi,
+            bounce_wo, bounce_pdf, bounce_flags, BsdfSample(rng));
+        Spectrum bounce_contrib = bounce_f * (abs_dot(bounce_wo,
               isect.world_diff_geom.nn) / bounce_pdf);
         if(bounce_pdf == 0.f || bounce_contrib.is_black()) {
           break;
@@ -319,7 +319,7 @@ namespace dort {
           path_power /= survive_prob;
         }
 
-        ray = Ray(isect.world_diff_geom.p, bounce_wi, isect.ray_epsilon);
+        ray = Ray(isect.world_diff_geom.p, bounce_wo, isect.ray_epsilon);
       }
     }
   }

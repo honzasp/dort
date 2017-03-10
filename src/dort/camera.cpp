@@ -124,18 +124,21 @@ namespace dort {
     }
     Vec2 project_pos = Vec2(camera_pivot.v.x, camera_pivot.v.y) / camera_pivot.v.z;
     Vec2 normal_pos = project_pos / this->project_dimension;
+    if(abs(normal_pos.x) > 0.5f || abs(normal_pos.y) > 0.5f) {
+      out_wo = Vector();
+      out_dir_pdf = 0.f;
+      return Spectrum(0.f);
+    }
     Vec2 film_pos = Camera::normal_to_film(film_res, normal_pos);
 
     Vector camera_dir = Vector(camera_pivot.v);
-    float distance = length(camera_dir);
-    //float cos_theta = camera_dir.v.z / distance;
+    float cos_theta = camera_dir.v.z / length(camera_dir);
+    float distance = length(pivot - this->world_origin);
     out_wo = -normalize(this->camera_to_world.apply(camera_dir));
-    //out_dir_pdf = 1.f / (this->image_plane_area(film_res) * cube(cos_theta));
+    out_dir_pdf = square(distance) / cube(cos_theta);
     out_shadow.init_point_point(pivot, pivot_epsilon, this->world_origin, 0.f);
     out_film_pos = film_pos;
-    //return out_dir_pdf;
-    out_dir_pdf = 1.f;
-    return Spectrum(1.f);
+    return Spectrum(1.f / square(square(cos_theta)));
   }
 
   float PinholeCamera::ray_dir_importance_pdf(Vec2,

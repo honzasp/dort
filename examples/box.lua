@@ -1,16 +1,18 @@
 local _ENV = require "dort/dsl"
 
-local s = 1e-1
+local s = 1e0
 
 local scene = define_scene(function()
   local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
   local green = matte_material { color = rgb(0, 0.5, 0) }
   local red = matte_material { color = rgb(0.5, 0, 0) }
 
-  local right_box = mirror_material { color = rgb(1, 1, 1) }
-  local left_box = glass_material { color = rgb(1, 1, 1) }
-  right_box = white
-  left_box = white
+  local mirror = mirror_material { color = rgb(1, 1, 1) }
+  local glass = glass_material { color = rgb(1, 1, 1) }
+  local glossy = phong_material { color = rgb(0.5), exponent = 50 }
+
+  local right_box = mirror
+  local left_box = glass
 
   block(function()
     local m = mesh {
@@ -77,9 +79,9 @@ local scene = define_scene(function()
     fov = 0.686,
   })
 
-  ---[[
+  --[[
   block(function() 
-    transform(translate(0, -1, 0))
+    transform(translate(0, -1*s, 0))
     local m = mesh {
       points = {
         point(343*s, 548.8*s, 227*s),
@@ -101,7 +103,7 @@ local scene = define_scene(function()
   end)
   --]]
 
-  --[[
+  ---[[
   add_light(point_light {
     point = point(250*s, 300*s, 250*s),
     intensity = rgb(1) * 3e5 *s*s,
@@ -109,20 +111,21 @@ local scene = define_scene(function()
   --]]
 end)
 
-write_png_image("box_lt.png", render(scene, {
+write_png_image("box_lt.png", tonemap_srgb(render(scene, {
+  hdr = true,
   x_res = 256, y_res = 256,
   max_depth = 10,
   sampler = stratified_sampler {
     samples_per_x = 1,
     samples_per_y = 1,
   },
-  filter = mitchell_filter { radius = 2 },
+  filter = mitchell_filter { radius = 1.5 },
   renderer = "lt",
-  iterations = 20,
+  iterations = 40,
   --[[
   renderer = "sppm",
   iterations = 20,
   initial_radius = 10*s,
   light_paths = 256*256,
   --]]
-}))
+})))
