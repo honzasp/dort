@@ -52,7 +52,7 @@ namespace dort {
 
   void BdptRenderer::iteration(Film& film, uint32_t iteration) {
     uint64_t splat_weight = uint64_t(iteration + 1) 
-      * this->sampler->samples_per_pixel * film.x_res * film.y_res;
+      * this->sampler->samples_per_pixel;
     film.splat_scale = 1.f / float(splat_weight);
   }
 

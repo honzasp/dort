@@ -11,8 +11,8 @@ local scene = define_scene(function()
   local glass = glass_material { color = rgb(1, 1, 1) }
   local glossy = phong_material { color = rgb(0.5), exponent = 50 }
 
-  local right_box = mirror
-  local left_box = glass
+  local right_box = glossy
+  local left_box = glossy
 
   block(function()
     local m = mesh {
@@ -79,7 +79,7 @@ local scene = define_scene(function()
     fov = 0.686,
   })
 
-  --[[
+  ---[[
   block(function() 
     transform(translate(0, -1*s, 0))
     local m = mesh {
@@ -103,7 +103,7 @@ local scene = define_scene(function()
   end)
   --]]
 
-  ---[[
+  --[[
   add_light(point_light {
     point = point(250*s, 300*s, 250*s),
     intensity = rgb(1) * 3e5 *s*s,
@@ -111,7 +111,7 @@ local scene = define_scene(function()
   --]]
 end)
 
-write_png_image("box_lt.png", tonemap_srgb(render(scene, {
+write_png_image("box_bdpt.png", tonemap_srgb(render(scene, {
   hdr = true,
   x_res = 256, y_res = 256,
   max_depth = 10,
@@ -120,7 +120,7 @@ write_png_image("box_lt.png", tonemap_srgb(render(scene, {
     samples_per_y = 1,
   },
   filter = mitchell_filter { radius = 1.5 },
-  renderer = "lt",
+  renderer = "bdpt",
   iterations = 40,
   --[[
   renderer = "sppm",

@@ -150,11 +150,8 @@ namespace dort {
     Vec2 project_pos(wi_camera.v.x * inv_z, wi_camera.v.y * inv_z);
     Vec2 normal_pos = project_pos / this->project_dimension;
 
-    if(abs(normal_pos.x) <= 0.5 && abs(normal_pos.y) <= 0.5) {
-      float cos_theta = wi_camera.v.z / length(wi_camera);
-      return 1.f / cube(cos_theta);
-    } else {
-      return 0.f;
-    }
+    if(abs(normal_pos.x) > 0.5 && abs(normal_pos.y) > 0.5) { return 0.f; }
+    float cos_theta = wi_camera.v.z / length(wi_camera);
+    return 1.f / cube(cos_theta);
   }
 }
