@@ -77,7 +77,7 @@ local scene = define_scene(function()
     fov = 0.686,
   })
 
-  --[[
+  ---[[
   block(function() 
     transform(translate(0, -1, 0))
     local m = mesh {
@@ -100,26 +100,25 @@ local scene = define_scene(function()
     end
   end)
   --]]
+
+  --[[
   add_light(point_light {
     point = point(250*s, 300*s, 250*s),
     intensity = rgb(1) * 3e5 *s*s,
   })
+  --]]
 end)
 
-write_png_image("box.png", render(scene, {
+write_png_image("box_lt.png", render(scene, {
   x_res = 256, y_res = 256,
   max_depth = 10,
   sampler = stratified_sampler {
     samples_per_x = 1,
     samples_per_y = 1,
   },
-  filter = mitchell_filter {
-    radius = 1.5,
-  },
-  ---[[
-  renderer = "bdpt",
-  iterations = 2,
-  ---]]
+  filter = mitchell_filter { radius = 2 },
+  renderer = "lt",
+  iterations = 20,
   --[[
   renderer = "sppm",
   iterations = 20,

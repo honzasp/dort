@@ -32,7 +32,7 @@ namespace dort {
             light_walk, camera_walk, s, t);
         Spectrum weighted_contrib = path_contrib * path_weight;
         if(t == 1) {
-          this->film->add_sample(film_pos, weighted_contrib, true);
+          this->film->add_splat(film_pos, weighted_contrib);
         } else {
           contrib += weighted_contrib;
         }

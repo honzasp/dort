@@ -13,8 +13,8 @@ namespace dort {
     for(int32_t y = 0; y < this->sample_radius.y; ++y) {
       for(int32_t x = 0; x < this->sample_radius.x; ++x) {
         uint32_t idx = y * this->sample_radius.x + x;
-        float filter_x = float(x) * inv_sample_radius.x;
-        float filter_y = float(y) * inv_sample_radius.y;
+        float filter_x = float(x) * inv_sample_radius.x * filter->radius.x;
+        float filter_y = float(y) * inv_sample_radius.y * filter->radius.y;
         this->samples.at(idx) = filter->evaluate(Vec2(filter_x, filter_y));
       }
     }

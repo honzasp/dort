@@ -50,6 +50,7 @@ namespace dort {
     { "scene isect", UINT32_MAX / 256 },
     { "scene isect_p", UINT32_MAX / 256 },
     { "film add_sample", UINT32_MAX / 256 },
+    { "film add_splat", UINT32_MAX / 256 },
     { "film add_tile", UINT32_MAX / 16 },
     { "rng float", UINT32_MAX / 1024 },
     { "rng uint32", UINT32_MAX / 1024 },

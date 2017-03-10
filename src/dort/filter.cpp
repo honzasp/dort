@@ -12,11 +12,12 @@ namespace dort {
   }
 
   float GaussianFilter::evaluate(Vec2 p) const {
-    float exp_w_x = exp(-this->alpha * square(this->radius.x));
-    float exp_w_y = exp(-this->alpha * square(this->radius.y));
-    float exp_a_x = exp(-this->alpha * square(p.x));
-    float exp_a_y = exp(-this->alpha * square(p.y));
-    return max(0.f, exp_a_x - exp_w_x) * max(0.f, exp_a_y - exp_w_y);
+    float a = this->alpha;
+    float rx = this->radius.x;
+    float ry = this->radius.y;
+    float val_x = exp(-a * square(p.x)) - exp(-a * square(rx));
+    float val_y = exp(-a * square(p.y)) - exp(-a * square(ry));
+    return max(0.f, val_x) * max(0.f, val_y);
   }
 
   float MitchellFilter::evaluate(Vec2 p) const {

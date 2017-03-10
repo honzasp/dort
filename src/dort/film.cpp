@@ -13,30 +13,44 @@ namespace dort {
     splat_scale(0.f)
   { }
 
-  void Film::add_sample(Vec2 pos, const Spectrum& radiance, bool is_splat) {
+  void Film::add_sample(Vec2 pos, const Spectrum& radiance) {
     StatTimer t(TIMER_FILM_ADD_SAMPLE);
+    Recti rect = this->get_pixel_rect(pos);
 
-    int32_t x0 = ceil_int32(pos.x - 0.5f - this->filter.radius.x);
-    int32_t x1 = floor_int32(pos.x - 0.5f + this->filter.radius.x);
-    int32_t y0 = ceil_int32(pos.y - 0.5f - this->filter.radius.y);
-    int32_t y1 = floor_int32(pos.y - 0.5f + this->filter.radius.y);
-
-    int32_t pix_x0 = max(0, x0);
-    int32_t pix_y0 = max(0, y0);
-    int32_t pix_x1 = min(int32_t(this->x_res) - 1, x1);
-    int32_t pix_y1 = min(int32_t(this->y_res) - 1, y1);
-
-    for(int32_t pix_y = pix_y0; pix_y <= pix_y1; ++pix_y) {
-      for(int32_t pix_x = pix_x0; pix_x <= pix_x1; ++pix_x) {
+    for(int32_t pix_y = rect.p_min.y; pix_y <= rect.p_max.y; ++pix_y) {
+      for(int32_t pix_x = rect.p_min.x; pix_x <= rect.p_max.x; ++pix_x) {
         Vec2 filter_p(float(pix_x) + 0.5f - pos.x, float(pix_y) + 0.5f - pos.y);
         float filter_w = this->filter.evaluate(filter_p);
         Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pix_x, pix_y));
-        if(is_splat) {
-          pixel.splat.add_relaxed(radiance * filter_w);
-        } else {
-          pixel.color += radiance * filter_w;
-          pixel.weight += filter_w;
-        }
+        pixel.color += radiance * filter_w;
+        pixel.weight += filter_w;
+      }
+    }
+  }
+
+  void Film::add_splat(Vec2 pos, const Spectrum& radiance) {
+    StatTimer t(TIMER_FILM_ADD_SPLAT);
+    Recti rect = this->get_pixel_rect(pos);
+    uint32_t rect_x = rect.p_max.x - rect.p_min.x + 1;
+    uint32_t rect_y = rect.p_max.y - rect.p_min.y + 1;
+
+    float filter_grid[rect_y][rect_x];
+    float filter_sum = 0.f;
+    for(int32_t pix_y = rect.p_min.y; pix_y <= rect.p_max.y; ++pix_y) {
+      for(int32_t pix_x = rect.p_min.x; pix_x <= rect.p_max.x; ++pix_x) {
+        Vec2 filter_p(float(pix_x) + 0.5f - pos.x, float(pix_y) + 0.5f - pos.y);
+        float filter_w = this->filter.evaluate(filter_p);
+        filter_grid[pix_y - rect.p_min.y][pix_x - rect.p_min.x] = filter_w;
+        filter_sum += filter_w;
+      }
+    }
+
+    float inv_filter_sum = 1.f / filter_sum;
+    for(int32_t pix_y = rect.p_min.y; pix_y <= rect.p_max.y; ++pix_y) {
+      for(int32_t pix_x = rect.p_min.x; pix_x <= rect.p_max.x; ++pix_x) {
+        float filter_w = filter_grid[pix_y - rect.p_min.y][pix_x - rect.p_min.x];
+        Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pix_x, pix_y));
+        pixel.splat.add_relaxed(radiance * (filter_w * inv_filter_sum));
       }
     }
   }
@@ -79,6 +93,19 @@ namespace dort {
       }
     }
     return img;
+  }
+
+  Recti Film::get_pixel_rect(Vec2 pos) const {
+    int32_t x0 = ceil_int32(pos.x - 0.5f - this->filter.radius.x);
+    int32_t x1 = floor_int32(pos.x - 0.5f + this->filter.radius.x);
+    int32_t y0 = ceil_int32(pos.y - 0.5f - this->filter.radius.y);
+    int32_t y1 = floor_int32(pos.y - 0.5f + this->filter.radius.y);
+
+    int32_t pix_x0 = max(0, x0);
+    int32_t pix_y0 = max(0, y0);
+    int32_t pix_x1 = min(int32_t(this->x_res) - 1, x1);
+    int32_t pix_y1 = min(int32_t(this->y_res) - 1, y1);
+    return Recti(pix_x0, pix_y0, pix_x1, pix_y1);
   }
 
   template Image<PixelRgb8> Film::to_image() const;

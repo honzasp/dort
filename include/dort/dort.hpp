@@ -45,6 +45,8 @@ namespace dort {
   struct Point;
   struct PrimitiveMesh;
   struct Ray;
+  struct Rect;
+  struct Recti;
   struct RgbSpectrum;
   struct SampleIdx;
   struct Scene;
