@@ -26,12 +26,14 @@ namespace dort {
 
   struct ShadowTest {
     Ray ray;
+    bool invisible;
 
-    ShadowTest(): ray(Point(), Vector(), 0.f) { }
+    ShadowTest(): ray(Point(), Vector(), 0.f), invisible(true) { }
     void init_point_point(const Point& p1, float epsilon_1,
         const Point& p2, float epsilon_2);
     void init_point_dir(const Point& pt, float epsilon,
         const Vector& dir);
+    void init_invisible();
     bool visible(const Scene& scene) const;
   };
 

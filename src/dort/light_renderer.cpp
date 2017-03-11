@@ -82,21 +82,16 @@ namespace dort {
         Spectrum importance = this->camera->sample_pivot_importance(film_res,
             isect.world_diff_geom.p, isect.ray_epsilon,
             camera_wo, camera_wo_pdf, shadow, film_pos, CameraSample(sampler.rng));
-        Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
+        if(camera_wo_pdf != 0.f && !importance.is_black()) {
+          Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
 
-        Spectrum contrib = alpha * importance * bsdf_f
-          * (abs_dot(prev_nn, ray.dir)
-          * abs_dot(isect.world_diff_geom.nn, camera_wo)
-          / (prev_dir_pdf * camera_wo_pdf));
-        if(!contrib.is_black() && shadow.visible(*this->scene)) {
-          /*
-          std::printf("%g,%g: %g =\n  %g * %g * %g * %g * %g / %g / %g\n",
-              film_pos.x, film_pos.y,
-              contrib.average(), alpha.average(), importance.average(), bsdf_f.average(),
-              abs_dot(prev_nn, ray.dir), abs_dot(isect.world_diff_geom.nn, camera_wo),
-              prev_dir_pdf, camera_wo_pdf);
-          */
-          this->add_contrib(film_pos, contrib);
+          Spectrum contrib = alpha * importance * bsdf_f
+            * (abs_dot(prev_nn, ray.dir)
+            * abs_dot(isect.world_diff_geom.nn, camera_wo)
+            / (prev_dir_pdf * camera_wo_pdf));
+          if(!contrib.is_black() && shadow.visible(*this->scene)) {
+            this->add_contrib(film_pos, contrib);
+          }
         }
       }
 

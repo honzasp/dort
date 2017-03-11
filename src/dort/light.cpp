@@ -45,6 +45,7 @@ namespace dort {
     this->ray.dir = (p2 - p1) / distance;
     this->ray.t_min = epsilon_1;
     this->ray.t_max = distance - epsilon_2;
+    this->invisible = false;
   }
 
   void ShadowTest::init_point_dir(const Point& pt, float epsilon,
@@ -54,10 +55,15 @@ namespace dort {
     this->ray.dir = normalize(dir);
     this->ray.t_min = epsilon;
     this->ray.t_max = INFINITY;
+    this->invisible = false;
+  }
+
+  void ShadowTest::init_invisible() {
+    this->invisible = true;
   }
 
   bool ShadowTest::visible(const Scene& scene) const {
-    return !scene.intersect_p(this->ray);
+    return !this->invisible && !scene.intersect_p(this->ray);
   }
   
   Spectrum Light::background_radiance(const Ray&) const {
