@@ -55,7 +55,7 @@ namespace dort {
         Point(lens_pos.x, lens_pos.y, 0.f));
     Vector world_dir = normalize(this->camera_to_world.apply(
         Vector(0.f, 0.f, 1.f)));
-    out_ray = Ray(world_pos, world_dir);
+    out_ray = Ray(world_pos, world_dir, 0.f);
     out_pos_pdf = 1.f;
     out_dir_pdf = 1.f;
     return Spectrum(1.f);
@@ -105,7 +105,7 @@ namespace dort {
     Vec2 project_pos = normal_pos * this->project_dimension;
     Vector world_dir = normalize(this->camera_to_world.apply(
         Vector(project_pos.x, project_pos.y, 1.f)));
-    out_ray = Ray(this->world_origin, world_dir);
+    out_ray = Ray(this->world_origin, world_dir, 0.f);
     out_pos_pdf = 1.f;
     out_dir_pdf = 1.f;
     return Spectrum(1.f);

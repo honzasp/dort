@@ -27,7 +27,7 @@ namespace dort {
   struct ShadowTest {
     Ray ray;
 
-    ShadowTest(): ray(Point(), Vector()) { }
+    ShadowTest(): ray(Point(), Vector(), 0.f) { }
     void init_point_point(const Point& p1, float epsilon_1,
         const Point& p2, float epsilon_2);
     void init_point_dir(const Point& pt, float epsilon,

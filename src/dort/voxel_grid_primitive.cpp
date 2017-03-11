@@ -289,7 +289,8 @@ namespace dort {
       bool leaf_left = node.leaf_branch_is_leaf_left();
       bool walk_branch = (leaf_left && !left_half) || (!leaf_left && left_half);
       if(walk_branch) {
-        return traverse_walk(ray, node_idx + 1, half_box, half_entry, half_exit, callback);
+        return this->traverse_walk(ray, node_idx + 1,
+          half_box, half_entry, half_exit, callback);
       } else {
         Voxel voxel = node.voxel_1();
         if(voxel == VOXEL_EMPTY) {

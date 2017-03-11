@@ -96,7 +96,7 @@ namespace dort {
     coordinate_system(cone_z, cone_x, cone_y);
 
     Vector ray_dir = cone_x * cone_vec.x + cone_y * cone_vec.y + cone_z * cone_vec.z;
-    Ray ray(pivot, ray_dir);
+    Ray ray(pivot, ray_dir, 0.f);
     float t_hit;
     if(!this->solve_hit_t(ray, t_hit)) {
       t_hit = dist;
