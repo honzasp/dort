@@ -34,7 +34,7 @@ namespace dort {
     std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
     radiance += uniform_sample_all_lights(scene, geom, *bsdf, sampler,
         make_slice(this->light_samples_idxs),
-        make_slice(this->bsdf_samples_idxs));
+        make_slice(this->bsdf_samples_idxs), this->strategy);
     stat_sample_int(DISTRIB_INT_BSDF_NUM_BXDFS, bsdf->num_bxdfs());
 
     if(depth < this->max_depth) {

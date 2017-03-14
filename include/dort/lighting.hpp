@@ -12,24 +12,35 @@ namespace dort {
     float ray_epsilon;
   };
 
+  enum class DirectStrategy {
+    SAMPLE_BSDF,
+    SAMPLE_LIGHT,
+    MIS,
+  };
+
   Spectrum uniform_sample_all_lights(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
       slice<const LightSamplesIdxs> light_samples_idxs,
-      slice<const BsdfSamplesIdxs> bsdf_samples_idxs);
+      slice<const BsdfSamplesIdxs> bsdf_samples_idxs,
+      DirectStrategy strategy = DirectStrategy::MIS);
   Spectrum uniform_sample_all_lights(const Scene& scene,
-      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler);
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
+      DirectStrategy strategy = DirectStrategy::MIS);
 
   Spectrum uniform_sample_one_light(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
       float u_select, const LightSample& light_sample,
-      const BsdfSample& bsdf_sample);
+      const BsdfSample& bsdf_sample,
+      DirectStrategy strategy = DirectStrategy::MIS);
   Spectrum uniform_sample_one_light(const Scene& scene,
-      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler);
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
+      DirectStrategy strategy = DirectStrategy::MIS);
 
   Spectrum estimate_direct(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf,
       const Light& light, BxdfFlags bxdf_flags,
-      LightSample light_sample, BsdfSample bsdf_sample);
+      LightSample light_sample, BsdfSample bsdf_sample,
+      DirectStrategy strategy);
   Spectrum trace_specular(const SampleRenderer& renderer,
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler);

@@ -8,7 +8,8 @@ namespace dort {
   Spectrum uniform_sample_all_lights(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
       slice<const LightSamplesIdxs> light_samples_idxs,
-      slice<const BsdfSamplesIdxs> bsdf_samples_idxs)
+      slice<const BsdfSamplesIdxs> bsdf_samples_idxs,
+      DirectStrategy strategy)
   {
     StatTimer t(TIMER_UNIFORM_SAMPLE_ALL_LIGHTS);
     assert(light_samples_idxs.size() == scene.lights.size());
@@ -25,7 +26,7 @@ namespace dort {
         light_radiance += estimate_direct(scene, geom,
             bsdf, *scene.lights.at(l), BSDF_ALL & ~BSDF_DELTA,
             LightSample(sampler, light_idxs, i),
-            BsdfSample(sampler, bsdf_idxs, i));
+            BsdfSample(sampler, bsdf_idxs, i), strategy);
       }
       assert(is_finite(light_radiance));
       radiance += light_radiance / float(light_idxs.count);
@@ -35,7 +36,8 @@ namespace dort {
   }
 
   Spectrum uniform_sample_all_lights(const Scene& scene,
-      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler)
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
+      DirectStrategy strategy)
   {
     StatTimer t(TIMER_UNIFORM_SAMPLE_ALL_LIGHTS);
     Spectrum radiance(0.f);
@@ -45,7 +47,7 @@ namespace dort {
       for(uint32_t i = 0; i < num_samples; ++i) {
         light_radiance += estimate_direct(scene, geom,
             bsdf, *light, BSDF_ALL & ~BSDF_DELTA,
-            LightSample(sampler.rng), BsdfSample(sampler.rng));
+            LightSample(sampler.rng), BsdfSample(sampler.rng), strategy);
       }
       assert(is_finite(light_radiance));
       radiance += light_radiance / float(num_samples);
@@ -56,33 +58,40 @@ namespace dort {
   Spectrum uniform_sample_one_light(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf, Sampler&,
       float u_select, const LightSample& light_sample,
-      const BsdfSample& bsdf_sample)
+      const BsdfSample& bsdf_sample, DirectStrategy strategy)
   {
     float num_lights = float(scene.lights.size());
     uint32_t light_idx = clamp(floor_int32(num_lights * u_select),
         0, int32_t(scene.lights.size()) - 1);
     return num_lights * estimate_direct(scene, geom, bsdf,
         *scene.lights.at(light_idx), BSDF_ALL & ~BSDF_DELTA,
-        light_sample, bsdf_sample);
+        light_sample, bsdf_sample, strategy);
   }
 
   Spectrum uniform_sample_one_light(const Scene& scene,
-      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler)
+      const LightingGeom& geom, const Bsdf& bsdf, Sampler& sampler,
+      DirectStrategy strategy)
   {
     return uniform_sample_one_light(scene, geom, bsdf, sampler,
-        sampler.random_1d(), LightSample(sampler.rng), BsdfSample(sampler.rng));
+        sampler.random_1d(), LightSample(sampler.rng),
+        BsdfSample(sampler.rng), strategy);
   }
 
   Spectrum estimate_direct(const Scene& scene,
       const LightingGeom& geom, const Bsdf& bsdf,
       const Light& light, BxdfFlags bxdf_flags,
-      LightSample light_sample, BsdfSample bsdf_sample)
+      LightSample light_sample, BsdfSample bsdf_sample,
+      DirectStrategy strategy)
   {
     StatTimer t(TIMER_ESTIMATE_DIRECT);
     Spectrum light_contrib(0.f);
     Spectrum bsdf_contrib(0.f);
 
-    {
+    bool use_light = strategy != DirectStrategy::SAMPLE_BSDF;
+    bool use_bsdf = strategy != DirectStrategy::SAMPLE_LIGHT;
+    bool use_mis = strategy == DirectStrategy::MIS;
+
+    if(use_light) {
       Vector wi;
       float wi_light_pdf;
       ShadowTest shadow;
@@ -92,7 +101,7 @@ namespace dort {
         Spectrum bsdf_f = bsdf.eval_f(geom.wo_camera, wi, bxdf_flags);
         if(!bsdf_f.is_black() && (shadow.visible(scene))) {
           float weight = 1.f;
-          if(!(light.flags & LIGHT_DELTA)) {
+          if(use_mis && !(light.flags & LIGHT_DELTA)) {
             float wi_bsdf_pdf = bsdf.light_f_pdf(wi, geom.wo_camera, bxdf_flags);
             weight = mis_power_heuristic(1, wi_light_pdf, 1, wi_bsdf_pdf);
           }
@@ -103,7 +112,7 @@ namespace dort {
       }
     }
 
-    if(!(light.flags & LIGHT_DELTA)) {
+    if(use_bsdf && !(light.flags & LIGHT_DELTA)) {
       Vector wi;
       float wi_bsdf_pdf;
       BxdfFlags sampled_flags;
@@ -111,7 +120,7 @@ namespace dort {
           wi, wi_bsdf_pdf, sampled_flags, bsdf_sample);
       if(!bsdf_f.is_black() && wi_bsdf_pdf > 0.f) {
         float weight = 1.f;
-        if(!(sampled_flags & BSDF_DELTA)) {
+        if(use_mis && !(sampled_flags & BSDF_DELTA)) {
           float wi_light_pdf = light.pivot_radiance_pdf(geom.p, wi);
           weight = mis_power_heuristic(1, wi_bsdf_pdf, 1, wi_light_pdf);
         }

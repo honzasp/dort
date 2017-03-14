@@ -2,6 +2,7 @@
 *~
 build/
 data/
+comp/
 .doxy/
 .tup/
 output.ppm

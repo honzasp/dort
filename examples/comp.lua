@@ -1,4 +1,3 @@
-require "minecraft"
 local _ENV = require "dort/dsl"
 
 function cornell_box_scene(surface_kind, light_kind)
@@ -18,7 +17,7 @@ function cornell_box_scene(surface_kind, light_kind)
     local left_wall = green
     local floor = white
 
-    if surface_kind == "cornell" then
+    if surface_kind == "diffuse" then
     elseif surface_kind == "glossy" then
       right_box = glossy_white
       left_box = glossy_white
@@ -96,6 +95,7 @@ function cornell_box_scene(surface_kind, light_kind)
 
     if light_kind == "area" then
       block(function() 
+        material(matte_material { color = rgb(0) })
         transform(translate(0, -1*s, 0))
         local m = mesh {
           points = {
@@ -109,10 +109,13 @@ function cornell_box_scene(surface_kind, light_kind)
           },
         }
         for _, index in ipairs({0, 3}) do
-          add_light(diffuse_light {
+          local shape = triangle(m, index)
+          local light = diffuse_light {
             radiance = rgb(1, 1, 1) * 100,
-            shape = triangle(m, index),
-          })
+            shape = shape,
+          }
+          add_light(light)
+          add_shape(shape, light)
         end
       end)
     elseif light_kind == "point" then
@@ -125,6 +128,7 @@ function cornell_box_scene(surface_kind, light_kind)
 end
 
 function cavern_scene()
+  local minecraft = require "minecraft"
   return define_scene(function()
     block(function()
       minecraft.add_world(get_builder(), {
@@ -169,15 +173,35 @@ res = 512
 common_opts = {
   x_res = res, y_res = res,
   hdr = true,
-  sampler = stratified_sampler {
-    samples_per_x = 2,
-    samples_per_y = 2,
+  sampler = random_sampler {
+    samples_per_pixel = 4
   },
-  filter = mitchell_filter {
-    radius = 1.5,
-  }
+  filter = box_filter { radius = 0.5 },
 }
 algos = {
+  --[[
+  --]]
+  {"mis", {
+    max_depth = 5,
+    renderer = "direct",
+    iterations = 1,
+    strategy = "mis",
+  }},
+  {"bsdf", {
+    max_depth = 5,
+    renderer = "direct",
+    iterations = 1,
+    strategy = "bsdf",
+    sampler = random_sampler {
+      samples_per_pixel = 50,
+    },
+  }},
+  {"light", {
+    max_depth = 5,
+    renderer = "direct",
+    iterations = 1,
+    strategy = "light",
+  }},
   --[[
   {"dot", {
     renderer = "dot",
@@ -197,7 +221,6 @@ algos = {
     renderer = "bdpt",
     iterations = 5,
   }},
-  --]]
   {"ref", {
     max_depth = 5,
     renderer = "sppm",
@@ -208,15 +231,17 @@ algos = {
   --]]
 }
 scenes = {
-  --{"cornell_box", cornell_box_scene("cornell", "area")},
+  {"diffuse_box", cornell_box_scene("diffuse", "area")},
+  --[[
   {"glossy_box", cornell_box_scene("glossy", "area")},
-  --{"delta_box", cornell_box_scene("delta", "area")},
-  --{"cornellp_box", cornell_box_scene("cornell", "point")},
+  {"delta_box", cornell_box_scene("delta", "area")},
+  {"diffusep_box", cornell_box_scene("diffuse", "point")},
   {"glossyp_box", cornell_box_scene("glossy", "point")},
-  --{"deltap_box", cornell_box_scene("delta", "point")},
-  {"cavern", cavern_scene()},
+  {"deltap_box", cornell_box_scene("delta", "point")},
+  --]]
+  --{"cavern", cavern_scene()},
 }
-out_dir = "."
+out_dir = "comp/direct_1.0"
 
 for algo_i = 1, #algos do
   local algo_name = algos[algo_i][1]
@@ -231,7 +256,7 @@ for algo_i = 1, #algos do
       opts[key] = value
     end
 
-    image_name = scene_name.."_"..algo_name
+    image_name = scene_name.."/"..algo_name
     print(image_name)
 
     hdr_image = render(scenes[scene_i][2], opts)

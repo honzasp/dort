@@ -53,7 +53,7 @@ namespace dort {
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
-        std::make_shared<RandomSampler>(1, 42));
+        std::make_shared<RandomSampler>(1, 42))->split();
     auto method = lua_param_string_opt(l, p, "renderer", "direct");
 
     auto film = std::make_shared<Film>(x_res, y_res, filter);
@@ -66,8 +66,19 @@ namespace dort {
     if(method == "direct") {
       uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      auto strategy_str = lua_param_string_opt(l, p, "strategy", "mis");
+      DirectStrategy strategy;
+      if(strategy_str == "mis") {
+        strategy = DirectStrategy::MIS;
+      } else if(strategy_str == "bsdf") {
+        strategy = DirectStrategy::SAMPLE_BSDF;
+      } else if(strategy_str == "light") {
+        strategy = DirectStrategy::SAMPLE_LIGHT;
+      } else {
+        return luaL_error(l, "Unknown strategy '%s'", strategy_str.c_str());
+      }
       renderer = std::make_shared<DirectRenderer>(
-          scene, film, sampler, camera, iteration_count, max_depth);
+          scene, film, sampler, camera, iteration_count, max_depth, strategy);
     } else if(method == "dot") {
       renderer = std::make_shared<DotRenderer>(scene, film, sampler, camera);
     } else if(method == "pt" || method == "path") {

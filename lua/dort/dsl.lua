@@ -40,7 +40,7 @@ function dsl.material(material) b.set_material(B, material) end
 function dsl.camera(camera) b.set_camera(B, camera) end
 function dsl.option(opt, ...) b.set_option(B, opt, table.unpack(arg)) end
 
-function dsl.add_shape(shape) b.add_shape(B, shape) end
+function dsl.add_shape(shape, ...) b.add_shape(B, shape, ...) end
 function dsl.add_primitive(prim) b.add_primitive(B, prim) end
 function dsl.add_triangle(mesh, index) b.add_triangle(B, mesh, index) end
 function dsl.add_light(light) b.add_light(B, light) end
