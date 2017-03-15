@@ -45,7 +45,6 @@ namespace dort {
     });
 
     this->film->splat_scale = 1.f / float(this->iteration_count);
-    (void)this->max_depth;
   }
 
   void LightRenderer::sample_path(Sampler& sampler) {
@@ -64,6 +63,43 @@ namespace dort {
       return;
     }
 
+    {
+      Point light_p;
+      float light_epsilon;
+      Normal light_nn;
+      float light_pos_pdf;
+      if(light.sample_point(light_p, light_epsilon,
+          light_nn, light_pos_pdf, LightSample(sampler.rng))) 
+      {
+        Point camera_p;
+        float camera_epsilon;
+        float camera_pos_pdf;
+        this->camera->sample_point(camera_p, camera_epsilon,
+            camera_pos_pdf, CameraSample(sampler.rng));
+
+        Vec2 film_pos;
+        float film_pdf;
+        Spectrum importance = this->camera->sample_film_pos(film_res,
+            camera_p, light_p, film_pos, film_pdf);
+        Spectrum radiance = light.eval_radiance(light_p, light_nn, camera_p);
+
+        float contrib_pdf = light_pdf * light_pos_pdf * camera_pos_pdf * film_pdf;
+        Spectrum contrib = radiance * importance /
+          (length_squared(light_p - camera_p) * contrib_pdf);
+        if(!(light_nn == Normal())) {
+          contrib *= abs_dot(light_nn, normalize(light_p - camera_p));
+        }
+
+        if(!contrib.is_black() && contrib_pdf != 0.f) {
+          ShadowTest shadow;
+          shadow.init_point_point(light_p, light_epsilon, camera_p, camera_epsilon);
+          if(shadow.visible(*this->scene)) {
+            this->add_contrib(film_pos, contrib);
+          }
+        }
+      }
+    }
+
     Spectrum alpha = light_radiance / (light_pdf * light_pos_pdf);
     float prev_dir_pdf = light_dir_pdf;
     for(uint32_t bounces = 0; bounces < this->max_depth; ++bounces) {
@@ -79,16 +115,18 @@ namespace dort {
         float camera_wo_pdf;
         ShadowTest shadow;
         Vec2 film_pos;
+        float film_pdf;
         Spectrum importance = this->camera->sample_pivot_importance(film_res,
             isect.world_diff_geom.p, isect.ray_epsilon,
-            camera_wo, camera_wo_pdf, shadow, film_pos, CameraSample(sampler.rng));
+            camera_wo, film_pos, camera_wo_pdf, film_pdf,
+            shadow, CameraSample(sampler.rng));
         if(camera_wo_pdf != 0.f && !importance.is_black()) {
           Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
 
           Spectrum contrib = alpha * importance * bsdf_f
             * (abs_dot(prev_nn, ray.dir)
             * abs_dot(isect.world_diff_geom.nn, camera_wo)
-            / (prev_dir_pdf * camera_wo_pdf));
+            / (prev_dir_pdf * camera_wo_pdf * film_pdf));
           if(!contrib.is_black() && shadow.visible(*this->scene)) {
             this->add_contrib(film_pos, contrib);
           }

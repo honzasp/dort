@@ -28,7 +28,7 @@ namespace dort {
     return this->material->get_bsdf(isect.world_diff_geom);
   }
 
-  const AreaLight* TriangleShapePrimitive::get_area_light(const DiffGeom&) const {
+  const Light* TriangleShapePrimitive::get_area_light(const DiffGeom&) const {
     return nullptr;
   }
 }

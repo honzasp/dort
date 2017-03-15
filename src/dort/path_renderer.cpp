@@ -17,7 +17,7 @@ namespace dort {
 
       if(bounces == 0 || last_bxdf_was_specular) {
         if(isected) {
-          radiance += throughput * isect.emitted_radiance(-next_ray.dir);
+          radiance += throughput * isect.eval_radiance(next_ray.orig);
         } else {
           for(const auto& light: scene.lights) {
             if(light->flags & LIGHT_BACKGROUND) {

@@ -16,7 +16,7 @@ namespace dort {
     virtual Box bounds() const override final;
     virtual std::unique_ptr<Bsdf> get_bsdf(
         const Intersection& isect) const override final;
-    virtual const AreaLight* get_area_light(
+    virtual const Light* get_area_light(
         const DiffGeom& frame_diff_geom) const override final;
   };
 }

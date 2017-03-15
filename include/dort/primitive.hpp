@@ -18,8 +18,8 @@ namespace dort {
     };
 
     std::unique_ptr<Bsdf> get_bsdf() const;
-    const AreaLight* get_area_light() const;
-    Spectrum emitted_radiance(const Vector& wo) const;
+    const Light* get_area_light() const;
+    Spectrum eval_radiance(const Point& pivot) const;
   };
 
   class Primitive {
@@ -35,19 +35,19 @@ namespace dort {
   public:
     virtual std::unique_ptr<Bsdf> get_bsdf(
         const Intersection& isect) const = 0;
-    virtual const AreaLight* get_area_light(
+    virtual const Light* get_area_light(
         const DiffGeom& frame_diff_geom) const = 0;
   };
 
   class ShapePrimitive final: public GeometricPrimitive {
     std::shared_ptr<Shape> shape;
     std::shared_ptr<Material> material;
-    std::shared_ptr<AreaLight> area_light;
+    std::shared_ptr<Light> area_light;
     Transform shape_to_frame;
   public:
     ShapePrimitive(std::shared_ptr<Shape> shape,
         std::shared_ptr<Material> material,
-        std::shared_ptr<AreaLight> area_light,
+        std::shared_ptr<Light> area_light,
         const Transform& shape_to_frame):
       shape(shape), material(material),
       area_light(area_light), shape_to_frame(shape_to_frame)
@@ -58,7 +58,7 @@ namespace dort {
     virtual Box bounds() const override final;
     virtual std::unique_ptr<Bsdf> get_bsdf(
         const Intersection& isect) const override final;
-    virtual const AreaLight* get_area_light(
+    virtual const Light* get_area_light(
         const DiffGeom& frame_diff_geom) const override final;
   };
 

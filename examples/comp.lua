@@ -1,7 +1,7 @@
 local _ENV = require "dort/dsl"
 
 function cornell_box_scene(surface_kind, light_kind)
-  local s = 0.01
+  local s = 0.1
   return define_scene(function()
     local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
     local green = matte_material { color = rgb(0, 0.5, 0) }
@@ -169,48 +169,63 @@ function cavern_scene()
   end)
 end
 
-res = 512
+function light_disk_scene()
+  return define_scene(function()
+    block(function()
+      material(matte_material { color = rgb(0) })
+      local shape = disk { radius = 0.1, z = 0 }
+      local light = diffuse_light {
+        shape = shape,
+        radiance = rgb(1),
+        transform = identity(),
+      }
+      add_shape(shape, light)
+      add_light(light)
+    end)
+
+    camera(pinhole_camera {
+      transform = look_at(
+        point(0, 0, 2),
+        point(0, 0, 0),
+        vector(0, 1, 0)),
+      fov = pi / 3,
+    })
+  end)
+end
+
+local res = 512
+local x_res = res/2
+local y_res = res
 common_opts = {
-  x_res = res, y_res = res,
+  x_res = x_res, y_res = y_res,
   hdr = true,
   sampler = random_sampler {
-    samples_per_pixel = 4
+    samples_per_pixel = 1
   },
   filter = box_filter { radius = 0.5 },
 }
 algos = {
-  --[[
-  --]]
-  {"mis", {
-    max_depth = 5,
-    renderer = "direct",
-    iterations = 1,
-    strategy = "mis",
-  }},
-  {"bsdf", {
-    max_depth = 5,
-    renderer = "direct",
-    iterations = 1,
-    strategy = "bsdf",
-    sampler = random_sampler {
-      samples_per_pixel = 50,
-    },
-  }},
-  {"light", {
-    max_depth = 5,
-    renderer = "direct",
-    iterations = 1,
-    strategy = "light",
-  }},
-  --[[
   {"dot", {
     renderer = "dot",
   }},
+  --[[
   {"direct", {
-    max_depth = 5,
+    max_depth = 2,
     renderer = "direct",
-    iterations = 8,
+    iterations = 4,
   }},
+  --]]
+  {"pt_2", {
+    max_depth = 0,
+    renderer = "pt",
+    iterations = 4,
+  }},
+  {"lt_2", {
+    max_depth = 0,
+    renderer = "lt",
+    iterations = 1,
+  }},
+  --[[
   {"pt", {
     max_depth = 5,
     renderer = "pt",
@@ -231,6 +246,7 @@ algos = {
   --]]
 }
 scenes = {
+  --{"light_disk", light_disk_scene()},
   {"diffuse_box", cornell_box_scene("diffuse", "area")},
   --[[
   {"glossy_box", cornell_box_scene("glossy", "area")},
@@ -241,7 +257,7 @@ scenes = {
   --]]
   --{"cavern", cavern_scene()},
 }
-out_dir = "comp/direct_1.0"
+out_dir = "comp"
 
 for algo_i = 1, #algos do
   local algo_name = algos[algo_i][1]
@@ -256,6 +272,7 @@ for algo_i = 1, #algos do
       opts[key] = value
     end
 
+    os.execute("mkdir -p " .. out_dir .. "/" .. scene_name)
     image_name = scene_name.."/"..algo_name
     print(image_name)
 

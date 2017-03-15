@@ -124,7 +124,7 @@ namespace dort {
     return cube_material.faces.at(face)->get_bsdf(isect.frame_diff_geom);
   }
 
-  const AreaLight* VoxelGridPrimitive::get_area_light(const DiffGeom&) const {
+  const Light* VoxelGridPrimitive::get_area_light(const DiffGeom&) const {
     return nullptr;
   }
 

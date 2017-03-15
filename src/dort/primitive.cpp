@@ -8,14 +8,14 @@ namespace dort {
     return this->primitive->get_bsdf(*this);
   }
 
-  const AreaLight* Intersection::get_area_light() const {
+  const Light* Intersection::get_area_light() const {
     return this->primitive->get_area_light(this->frame_diff_geom);
   }
 
-  Spectrum Intersection::emitted_radiance(const Vector& wo) const {
-    if(const AreaLight* area_light = this->get_area_light()) {
-      return area_light->emitted_radiance(this->world_diff_geom.p,
-          this->world_diff_geom.nn, wo);
+  Spectrum Intersection::eval_radiance(const Point& pivot) const {
+    if(const Light* area_light = this->get_area_light()) {
+      return area_light->eval_radiance(this->world_diff_geom.p,
+          this->world_diff_geom.nn, pivot);
     } else {
       return Spectrum(0.f);
     }
@@ -48,7 +48,7 @@ namespace dort {
     return this->material->get_bsdf(isect.world_diff_geom);
   }
 
-  const AreaLight* ShapePrimitive::get_area_light(const DiffGeom&) const {
+  const Light* ShapePrimitive::get_area_light(const DiffGeom&) const {
     return this->area_light.get();
   }
 

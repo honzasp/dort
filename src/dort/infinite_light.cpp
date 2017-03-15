@@ -32,6 +32,16 @@ namespace dort {
     return this->radiance;
   }
 
+  bool InfiniteLight::sample_point(Point&, float&, Normal&, float&, LightSample) const {
+    return false;
+  }
+
+  Spectrum InfiniteLight::eval_radiance(const Point&,
+      const Normal&, const Point&) const
+  {
+    return Spectrum(0.f);
+  }
+
   float InfiniteLight::ray_origin_radiance_pdf(const Scene&,
       const Point&, const Vector&) const 
   {

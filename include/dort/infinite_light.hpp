@@ -15,6 +15,10 @@ namespace dort {
     virtual Spectrum sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
         Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow, 
         LightSample sample) const override final;
+    virtual bool sample_point(Point& out_p, float& out_p_epsilon,
+        Normal& out_nn, float& out_pos_pdf, LightSample sample) const override final;
+    virtual Spectrum eval_radiance(const Point& pt,
+        const Normal& nn, const Point& pivot) const override final;
     
     virtual float ray_origin_radiance_pdf(const Scene& scene, const Point& origin_gen,
         const Vector& wo_fix) const override final;

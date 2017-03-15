@@ -63,17 +63,33 @@ namespace dort {
     /// CAMERA_LENS_DELTA_POS is set, and the pdf of the ray direction (given
     /// the origin) is a delta distribution if the flag CAMERA_LENS_DELTA_DIR is
     /// set.
+    ///
+    /// The origin of the ray must correspond to some geometric area in the
+    /// scene.
     virtual Spectrum sample_ray_importance(Vec2 film_res, Vec2 film_pos,
         Ray& out_ray, float& out_pos_pdf, float& out_dir_pdf,
         CameraSample sample) const = 0;
 
     /// Samples a direction of a ray from the camera through pivot.
     /// The direction out_wo points to the camera and out_shadow is initialized
-    /// with an occlusion test. The pdf is w.r.t. the solid angle at pivot.
+    /// with an occlusion test. The pdf is w.r.t. the solid angle at pivot. The
+    /// out_film_pos is initialized with a point on film sampled with pdf
+    /// out_film_pdf w.r.t. the film area.
     virtual Spectrum sample_pivot_importance(Vec2 film_res,
         const Point& pivot, float pivot_epsilon,
-        Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
-        Vec2& out_film_pos, CameraSample sample) const = 0;
+        Vector& out_wo, Vec2& out_film_pos,
+        float& out_dir_pdf, float& out_film_pdf,
+        ShadowTest& out_shadow, CameraSample sample) const = 0;
+
+    /// Samples a point on the camera.
+    virtual void sample_point(Point& out_p, float& out_p_epsilon,
+        float& out_pos_pdf, CameraSample sample) const = 0;
+
+    /// Samples a point on film given a point on camera and a point to look at.
+    /// Returns the importance and sets out_film_pos and out_film_pdf.
+    virtual Spectrum sample_film_pos(Vec2 film_res,
+        const Point& p, const Point& pivot,
+        Vec2& out_film_pos, float& out_film_pdf) const = 0;
 
     /// Computes the pdf of sampling ray in the direction, given its origin,
     /// from sample_ray_importance().
@@ -91,6 +107,7 @@ namespace dort {
   /// the direction given by the vector perpendicular to the lens plane.
   /// The lens plane is the plane z = 0 in the camera space, the longer
   /// dimension is given by the dimension parameter;
+  /*
   class OrthographicCamera final: public Camera {
     float dimension;
   public:
@@ -106,6 +123,7 @@ namespace dort {
     virtual float ray_dir_importance_pdf(Vec2 film_res,
         const Vector& wi_gen, const Point& origin_fix) const override final;
   };
+  */
 
   /// Pinhole camera has a pinhole lens at the origin of the camera space and
   /// projects to the plane z = -1. The angle visible in the longer film
@@ -121,10 +139,20 @@ namespace dort {
         CameraSample sample) const override final;
     virtual Spectrum sample_pivot_importance(Vec2 film_res,
         const Point& pivot, float pivot_epsilon,
-        Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
-        Vec2& out_film_pos, CameraSample sample) const override final;
+        Vector& out_wo, Vec2& out_film_pos,
+        float& out_dir_pdf, float& out_film_pdf,
+        ShadowTest& out_shadow, CameraSample sample) const override final;
+    virtual void sample_point(Point& out_p, float& out_p_epsilon,
+        float& out_pos_pdf, CameraSample sample) const override final;
+    virtual Spectrum sample_film_pos(Vec2 film_res,
+        const Point& p, const Point& pivot,
+        Vec2& out_film_pos, float& out_film_pdf) const override final;
+
     virtual float ray_dir_importance_pdf(Vec2 film_res,
         const Vector& wi_gen, const Point& origin_fix) const override final;
+  private:
+    bool get_film_pos(Vec2 film_res, const Vec3& camera_pivot,
+        Vec2& out_film_pos) const;
   };
 
   /*

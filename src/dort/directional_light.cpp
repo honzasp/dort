@@ -34,6 +34,18 @@ namespace dort {
     return this->radiance;
   }
 
+  bool DirectionalLight::sample_point(Point&, float&,
+      Normal&, float&, LightSample) const 
+  {
+    return false;
+  }
+
+  Spectrum DirectionalLight::eval_radiance(const Point&,
+      const Normal&, const Point&) const
+  {
+    return Spectrum(0.f);
+  }
+
   float DirectionalLight::ray_origin_radiance_pdf(const Scene&,
       const Point&, const Vector&) const 
   {

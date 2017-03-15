@@ -3,7 +3,7 @@
 #include "dort/transform.hpp"
 
 namespace dort {
-  class DiffuseLight final: public AreaLight {
+  class DiffuseLight final: public Light {
     std::shared_ptr<Shape> shape;
     Transform shape_to_world;
     Spectrum radiance;
@@ -20,6 +20,10 @@ namespace dort {
     virtual Spectrum sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
         Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow, 
         LightSample sample) const override final;
+    virtual bool sample_point(Point& out_p, float& p_epsilon,
+        Normal& out_nn, float& out_pos_pdf, LightSample sample) const override final;
+    virtual Spectrum eval_radiance(const Point& pt,
+        const Normal& nn, const Point& pivot) const override final;
 
     virtual float ray_origin_radiance_pdf(const Scene& scene, const Point& origin_gen,
         const Vector& wo_fix) const override final;
@@ -30,8 +34,5 @@ namespace dort {
 
     virtual Spectrum background_radiance(const Ray& ray) const override final;
     virtual Spectrum approximate_power(const Scene& scene) const override final;
-
-    virtual Spectrum emitted_radiance(const Point& pt,
-        const Normal& n, const Vector& wo) const override final;
   };
 }

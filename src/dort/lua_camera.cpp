@@ -23,6 +23,8 @@ namespace dort {
   }
 
   int lua_camera_make_ortho(lua_State* l) {
+    return luaL_error(l, "Orthographic camera is not implemented yet");
+    /*
     int p = 1;
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
     float dimension = lua_param_float(l, p, "dimension");
@@ -30,6 +32,7 @@ namespace dort {
 
     lua_push_camera(l, std::make_shared<OrthographicCamera>(transform, dimension));
     return 1;
+    */
   }
 
   int lua_camera_make_pinhole(lua_State* l) {

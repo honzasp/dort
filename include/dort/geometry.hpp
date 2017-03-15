@@ -117,6 +117,9 @@ namespace dort {
   inline float dot(const Vector& vec, const Normal& norm) {
     return dot(vec.v, norm.v);
   }
+  inline float dot(const Normal& norm, const Vector& vec) {
+    return dot(norm.v, vec.v);
+  }
 
   inline float abs_dot(const Vector& vec1, const Vector& vec2) {
     return abs(dot(vec1.v, vec2.v));

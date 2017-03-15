@@ -6,7 +6,7 @@ namespace dort {
       const Transform& shape_to_world,
       Spectrum radiance,
       uint32_t num_samples):
-    AreaLight(LIGHT_AREA, num_samples),
+    Light(LIGHT_AREA, num_samples),
     shape(std::move(shape)),
     shape_to_world(shape_to_world),
     radiance(radiance)
@@ -63,6 +63,34 @@ namespace dort {
     }
   }
 
+  bool DiffuseLight::sample_point(Point& out_p, float& p_epsilon,
+      Normal& out_nn, float& out_pos_pdf, LightSample sample) const
+  {
+    float pos_pdf;
+    float ray_epsilon;
+    Normal shape_n;
+    Point shape_p = this->shape->sample_point(sample.uv_pos,
+        pos_pdf, shape_n, ray_epsilon);
+
+    out_p = this->shape_to_world.apply(shape_p);
+    p_epsilon = ray_epsilon;
+    out_nn = normalize(this->shape_to_world.apply(shape_n));
+    out_pos_pdf = pos_pdf;
+    return true;
+  }
+
+  Spectrum DiffuseLight::eval_radiance(const Point& pt,
+      const Normal& nn, const Point& pivot) const
+  {
+    Normal shape_n = this->shape_to_world.apply_inv(nn);
+    Vector shape_wo = this->shape_to_world.apply_inv(pivot - pt);
+    if(dot(shape_n, shape_wo) >= 0.f) {
+      return this->radiance;
+    } else {
+      return Spectrum(0.f);
+    }
+  }
+
   float DiffuseLight::ray_origin_radiance_pdf(const Scene&,
       const Point& origin_gen, const Vector&) const 
   {
@@ -87,19 +115,6 @@ namespace dort {
 
   Spectrum DiffuseLight::approximate_power(const Scene&) const {
     return this->shape->area() * this->radiance;
-  }
-
-  Spectrum DiffuseLight::emitted_radiance(const Point&,
-      const Normal& n, const Vector& wo) const 
-  {
-    Normal shape_n = this->shape_to_world.apply_inv(n);
-    Vector shape_wo = this->shape_to_world.apply_inv(wo);
-
-    if(dot(shape_wo, shape_n) > 0.f) {
-      return this->radiance;
-    } else {
-      return Spectrum(0.f);
-    }
   }
 }
 

@@ -72,7 +72,7 @@ namespace dort {
       Point p;
       Normal nn;
       std::unique_ptr<Bsdf> bsdf;
-      const AreaLight* area_light;
+      const Light* area_light;
       float p_epsilon;
       float fwd_area_pdf; 
       float bwd_area_pdf;

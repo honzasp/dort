@@ -14,6 +14,7 @@ namespace dort {
   { }
 
   void Film::add_sample(Vec2 pos, const Spectrum& radiance) {
+    assert(is_finite(radiance));
     StatTimer t(TIMER_FILM_ADD_SAMPLE);
     Recti rect = this->get_pixel_rect(pos);
 
@@ -29,6 +30,7 @@ namespace dort {
   }
 
   void Film::add_splat(Vec2 pos, const Spectrum& radiance) {
+    assert(is_finite(radiance));
     StatTimer t(TIMER_FILM_ADD_SPLAT);
     Recti rect = this->get_pixel_rect(pos);
     uint32_t rect_x = rect.p_max.x - rect.p_min.x + 1;
@@ -45,6 +47,9 @@ namespace dort {
       }
     }
 
+    if(filter_sum == 0.f) {
+      return;
+    }
     float inv_filter_sum = 1.f / filter_sum;
     for(int32_t pix_y = rect.p_min.y; pix_y <= rect.p_max.y; ++pix_y) {
       for(int32_t pix_x = rect.p_min.x; pix_x <= rect.p_max.x; ++pix_x) {
@@ -89,6 +94,7 @@ namespace dort {
         if(this->splat_scale != 0.f) {
           color += pixel.splat.load_relaxed() * this->splat_scale;
         }
+        assert(is_finite(color));
         img.set_rgb(x, y, color);
       }
     }

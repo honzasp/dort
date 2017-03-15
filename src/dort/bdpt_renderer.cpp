@@ -238,9 +238,8 @@ namespace dort {
     } else if(s == 0 && t >= 2) {
       // Use only the camera path, provided that the last vertex is emissive.
       if(last_camera.area_light == nullptr) { return Spectrum(0.f); }
-      Vector wo = normalize(camera_walk.at(t - 2).p - last_camera.p);
-      Spectrum emitted_radiance = last_camera.area_light->emitted_radiance(
-          last_camera.p, last_camera.nn, wo);
+      Spectrum emitted_radiance = last_camera.area_light->eval_radiance(
+          last_camera.p, last_camera.nn, camera_walk.at(t - 2).p);
       if(emitted_radiance.is_black()) { return Spectrum(0.f); }
 
       return emitted_radiance * last_camera.alpha;
@@ -275,10 +274,12 @@ namespace dort {
       // Connect the light subpath to a new camera vertex.
       Vector wo;
       float wo_dir_pdf;
+      float film_pdf;
       ShadowTest shadow;
       Spectrum camera_importance = camera.sample_pivot_importance(film_res,
-          last_light.p, last_light.p_epsilon, wo, wo_dir_pdf,
-          shadow, out_film_pos, CameraSample(rng));
+          last_light.p, last_light.p_epsilon,
+          wo, out_film_pos, wo_dir_pdf, film_pdf,
+          shadow, CameraSample(rng));
       if(camera_importance.is_black() || wo_dir_pdf == 0.f) {
         return Spectrum(0.f);
       }
@@ -294,7 +295,7 @@ namespace dort {
           camera_importance.average(), abs_dot(last_light.nn, wo), wo_dir_pdf);
           */
       return last_light.alpha * bsdf_f * camera_importance
-        * (abs_dot(last_light.nn, wo) / wo_dir_pdf);
+        * (abs_dot(last_light.nn, wo) / (wo_dir_pdf * film_pdf));
     } else if(s >= 2 && t >= 2) {
       // Connect the light and camera subpaths.
       ShadowTest shadow;

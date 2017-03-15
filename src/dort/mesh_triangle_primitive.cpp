@@ -29,7 +29,7 @@ namespace dort {
     return this->prim_mesh->material->get_bsdf(isect.world_diff_geom);
   }
 
-  const AreaLight* MeshTrianglePrimitive::get_area_light(const DiffGeom&) const {
+  const Light* MeshTrianglePrimitive::get_area_light(const DiffGeom&) const {
     return nullptr;
   }
 }

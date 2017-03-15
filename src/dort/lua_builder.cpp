@@ -222,10 +222,10 @@ namespace dort {
       return luaL_error(l, "no material is set");
     }
 
-    std::shared_ptr<AreaLight> area_light;
+    std::shared_ptr<Light> area_light;
     if(lua_gettop(l) >= 3) {
-      auto light = lua_check_light(l, 3);
-      if(!(area_light = std::dynamic_pointer_cast<AreaLight>(light))) {
+      area_light = lua_check_light(l, 3);
+      if(!(area_light->flags & LIGHT_AREA)) {
         return luaL_error(l, "the light must be an area light");
       }
     }

@@ -25,6 +25,22 @@ namespace dort {
     return this->intensity / length_squared(this->pt - pivot);
   }
 
+  bool PointLight::sample_point(Point& out_p, float& out_p_epsilon,
+      Normal& out_nn, float& out_pos_pdf, LightSample) const
+  {
+    out_p = this->pt;
+    out_p_epsilon = 0.f;
+    out_nn = Normal();
+    out_pos_pdf = 1.f;
+    return true;
+  }
+
+  Spectrum PointLight::eval_radiance(const Point&,
+      const Normal&, const Point& pivot) const
+  {
+    return this->intensity / length_squared(this->pt - pivot);
+  }
+
   float PointLight::ray_origin_radiance_pdf(const Scene&,
       const Point&, const Vector&) const 
   {

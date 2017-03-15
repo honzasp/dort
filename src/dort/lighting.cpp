@@ -131,11 +131,12 @@ namespace dort {
         if(light.flags & LIGHT_AREA) {
           Intersection light_isect;
           if(scene.intersect(light_ray, light_isect)) {
-            const AreaLight* area_light =
+            const Light* area_light =
               light_isect.primitive->get_area_light(light_isect.world_diff_geom);
             if(area_light == &light) {
-              light_radiance = area_light->emitted_radiance(
-                  light_isect.world_diff_geom.p, light_isect.world_diff_geom.nn, -wi);
+              light_radiance = area_light->eval_radiance(
+                  light_isect.world_diff_geom.p, light_isect.world_diff_geom.nn,
+                  geom.p);
             }
           }
         } else if(light.flags & LIGHT_BACKGROUND) {

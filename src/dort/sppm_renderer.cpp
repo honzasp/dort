@@ -148,7 +148,7 @@ namespace dort {
         break;
       }
 
-      Spectrum emitted = isect.emitted_radiance(-ray.dir);
+      Spectrum emitted = isect.eval_radiance(ray.orig);
       assert(is_finite(emitted) && is_nonnegative(emitted));
       radiance += weight * emitted;
 

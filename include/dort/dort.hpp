@@ -6,7 +6,6 @@
 
 namespace dort {
   class AnyTexture;
-  class AreaLight;
   class Bsdf;
   class Camera;
   class DiscreteDistrib1d;
