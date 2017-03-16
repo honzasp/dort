@@ -42,15 +42,13 @@ namespace dort {
     return Spectrum(0.f);
   }
 
-  float InfiniteLight::ray_origin_radiance_pdf(const Scene&,
-      const Point&, const Vector&) const 
+  float InfiniteLight::ray_dir_radiance_pdf(const Scene&,
+      const Vector&, const Point&, const Normal&) const
   {
     return 0.f;
   }
 
-  float InfiniteLight::ray_dir_radiance_pdf(const Scene&,
-      const Vector&, const Point&, const Normal&) const
-  {
+  float InfiniteLight::ray_orig_radiance_pdf(const Scene&, const Point&) const {
     return 0.f;
   }
 

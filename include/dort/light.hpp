@@ -112,16 +112,6 @@ namespace dort {
     virtual Spectrum eval_radiance(const Point& p,
         const Normal& nn, const Point& pivot) const = 0;
 
-    /// Computes the pdf of sampling a ray origin from sample_ray_radiance(),
-    /// given its direction.
-    /// Returns the pdf of sampling a ray with the origin from
-    /// sample_ray_radiance() when the direction is fixed. The pdf is w.r.t. the
-    /// area measure.
-    /// If the flag LIGHT_DELTA_POS is set or if this is not area light, the pdf
-    /// is always 0.
-    virtual float ray_origin_radiance_pdf(const Scene& scene,
-        const Point& origin_gen, const Vector& wo_fix) const = 0;
-
     /// Computes the pdf of sampling ray in the direction, given its origin,
     /// from sample_ray_radiance().
     /// Returns the pdf of sampling the direction wo_gen given origin and normal
@@ -132,6 +122,10 @@ namespace dort {
     /// always 0.
     virtual float ray_dir_radiance_pdf(const Scene& scene,
         const Vector& wo_gen, const Point& origin_fix, const Normal& nn_fix) const = 0;
+
+    /// Computes the pdf of sampling the ray origin from sample_ray_radiance().
+    virtual float ray_orig_radiance_pdf(const Scene& scene,
+        const Point& origin_gen) const = 0;
 
     /// Computes the pdf of sampling the direction from pivot in
     /// sample_pivot_radiance.

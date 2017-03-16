@@ -46,8 +46,8 @@ namespace dort {
     return Spectrum(0.f);
   }
 
-  float DirectionalLight::ray_origin_radiance_pdf(const Scene&,
-      const Point&, const Vector&) const 
+  float DirectionalLight::ray_orig_radiance_pdf(const Scene&,
+      const Point&) const 
   {
     return 0.f;
   }

@@ -99,7 +99,7 @@ namespace dort {
     y0.nn = light_nn;
     y0.bsdf = nullptr;
     y0.area_light = nullptr;
-    y0.fwd_area_pdf = light_pos_pdf * light_pick_pdf;
+    y0.fwd_area_pdf = light_pos_pdf;
     y0.bwd_area_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
     y0.is_delta = false;
@@ -107,7 +107,7 @@ namespace dort {
 
     Spectrum prev_bsdf_f(1.f);
     float fwd_dir_pdf = light_dir_pdf;
-    for(uint32_t bounces = 0; bounces < this->max_depth; ++bounces) {
+    for(uint32_t bounces = 0; bounces <= this->max_depth; ++bounces) {
       Vertex& prev_y = walk.at(walk.size() - 1);
       Intersection isect;
       if(!scene.intersect(light_ray, isect)) {
@@ -178,12 +178,12 @@ namespace dort {
 
     Spectrum prev_bsdf_f(1.f);
     float fwd_dir_pdf = 1.f;
-    for(uint32_t bounces = 0; bounces < this->max_depth; ++bounces) {
+    for(uint32_t bounces = 0; bounces <= this->max_depth; ++bounces) {
       Vertex& prev_z = walk.at(walk.size() - 1);
+      if(prev_z.alpha.is_black()) { break; }
+
       Intersection isect;
-      if(!scene.intersect(camera_ray, isect)) {
-        break;
-      }
+      if(!scene.intersect(camera_ray, isect)) { break; }
 
       std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
       Vector wo = -camera_ray.dir;
@@ -216,7 +216,7 @@ namespace dort {
       z.bwd_area_pdf = SIGNALING_NAN;
       z.alpha = prev_z.alpha * alpha_scale;
       z.is_delta = bsdf_flags & BSDF_DELTA;
-      if(z.alpha.is_black()) {
+      if(z.alpha.is_black() && !z.area_light) {
         break;
       }
 
@@ -240,19 +240,6 @@ namespace dort {
 
     if(s == 1 && t == 1) {
       // Connect the camera vertex to a new light vertex.
-
-      // There are two strategies possible:
-      // a) pick a point y on light (with area pdf) and sample a direction to
-      // point z on the camera (with solid angle pdf from y)
-      // b) pick a point z on camera (with area pdf) and sample a direction to
-      // point y on the light (with solid angle pdf from z)
-      //
-      // Note that a) cannot sample paths from delta-direction lights, while
-      // b) cannot sample paths from delta-direction cameras. We could try both
-      // methods and if both are applicable combine them with MIS, but this is
-      // probably not worth the trouble.
-      //
-      // TODO: implement this
       if(!(this->camera->flags & CAMERA_DIR_BY_POS_DELTA)) {
         // pick a point z on camera, sample light direction from this point,
         // sample film position from this direction
@@ -282,6 +269,9 @@ namespace dort {
         return (importance * radiance) 
           / (camera_p_pdf * wi_dir_pdf * film_pdf * light_pdf);
       } else {
+        // TODO: pick a point y on light, sample camera point, direction and
+        // film position to look at this point, evaluate radiance from the light
+        // in the direction
         out_film_pos = Vec2();
         return Spectrum(0.f);
       }
@@ -374,80 +364,94 @@ namespace dort {
       const std::vector<Vertex>& camera_walk,
       uint32_t s, uint32_t t) const
   {
-    (void)film_pos;
-    // HACK
-    if(s == 0) { return 1.f; }
-    if(s + t <= 2) { return 1.f; }
-    assert(s >= 1 && t >= 1);
-    const Vertex& last_light = light_walk.at(s - 1);
-    const Vertex& last_camera = camera_walk.at(t - 1);
-    Vector connect_wi = normalize(last_light.p - last_camera.p);
-    float dist_squared = length_squared(last_light.p - last_camera.p);
-
-    // Compute the area pdf of sampling the last light vertex from the last
-    // camera vertex.
-    float last_light_bwd_dir_pdf = 0.f;
-    if(t >= 2) {
-      Vector camera_wo = normalize(camera_walk.at(t - 2).p - last_camera.p);
-      last_light_bwd_dir_pdf = last_camera.bsdf->light_f_pdf(
-          connect_wi, camera_wo, BSDF_ALL);
-    } else if(t == 1) {
-      last_light_bwd_dir_pdf = camera.ray_dir_importance_pdf(film_res,
-          connect_wi, last_camera.p);
-    } else {
-      last_light_bwd_dir_pdf = 0.f;
-    }
-    float last_light_bwd_pdf = last_light_bwd_dir_pdf 
-      * abs_dot(last_light.nn, connect_wi) / dist_squared;
-
-    // Compute the area pdf of sampling the last camera vertex from the last
-    // light vertex.
-    float last_camera_bwd_dir_pdf = 0.f;
-    if(s >= 2) {
-      Vector light_wi = normalize(light_walk.at(s - 2).p - last_light.p);
-      last_camera_bwd_dir_pdf = last_light.bsdf->camera_f_pdf(
-          -connect_wi, light_wi, BSDF_ALL);
-    } else if(s == 1) {
-      // TODO: this is probably not correct, because we sample a new light for
-      // this case in path_contrib(), so the pdf is different. However, I guess
-      // that the estimator may still be correct.
-      // TODO: handle infinite lights
-      last_camera_bwd_dir_pdf = light.ray_dir_radiance_pdf(
-          scene, -connect_wi, last_light.p, last_light.nn);
-    } else if(s == 0) {
-      float light_pick_pdf = this->light_distrib_pdfs.at(&light);
-      last_camera_bwd_dir_pdf = light_pick_pdf * light.ray_origin_radiance_pdf(
-          scene, last_camera.p, -connect_wi);
-    }
-    float last_camera_bwd_pdf = last_camera_bwd_dir_pdf 
-      * abs_dot(last_camera.nn, connect_wi) / dist_squared;
-
-    // Sum all the relative probabilities to obtain the MIS weight.
+    assert(t >= 1 && s + t >= 2);
     float inv_weight_sum = 1.f;
 
     float ri_light = 1.f;
-    for(uint32_t i = s; i-- >= 1;) {
-      const Vertex& yi = light_walk.at(i);
-      float yi_bwd_pdf = i < s - 1 ? yi.bwd_area_pdf : last_light_bwd_pdf;
-      assert(yi.fwd_area_pdf > 0.f); assert(is_finite(yi_bwd_pdf));
-      ri_light = ri_light * yi_bwd_pdf / yi.fwd_area_pdf;
-      if(!yi.is_delta) {
+    for(uint32_t i = 1; i <= s; ++i) {
+      // alternative strategy with s - i light and t + 1 camera vertices
+      // y is the vertex that is now sampled from camera instead of being
+      // sampled from light
+      const Vertex& y = light_walk.at(s - i);
+
+      float y_bwd_pdf;
+      if(i == 1 && t >= 2) {
+        // pdf of sampling y from a surface vertex z
+        const Vertex& z = camera_walk.at(t - 1);
+        Vector wi = normalize(y.p - z.p);
+        Vector camera_wo = normalize(camera_walk.at(t - 2).p - z.p);
+        float wi_pdf = z.bsdf->light_f_pdf(wi, camera_wo, BSDF_ALL);
+        y_bwd_pdf = wi_pdf * abs_dot(y.nn, wi) / length_squared(y.p - z.p);
+      } else if(i == 1 && t == 1) {
+        // pdf of sampling y directly from a point z on camera
+        const Vertex& z = camera_walk.at(0);
+        Vector wi = normalize(y.p - z.p);
+        float wi_pdf = camera.ray_dir_importance_pdf(film_res, wi, z.p);
+        y_bwd_pdf = wi_pdf * abs_dot(y.nn, wi) / length_squared(y.p - z.p);
+      } else if(i >= 2) {
+        // pdf of sampling y from a previous vertex of the light path is
+        // already cached in the vertex y
+        y_bwd_pdf = y.bwd_area_pdf;
+      } else {
+        assert(false && "Impossible combination");
+      }
+      assert(y_bwd_pdf >= 0.f && is_finite(y_bwd_pdf));
+
+      ri_light = ri_light * y_bwd_pdf / y.fwd_area_pdf;
+      if(ri_light == 0.f) { break; }
+      if(!y.is_delta) {
         inv_weight_sum += ri_light;
       }
     }
 
     float ri_camera = 1.f;
-    for(uint32_t i = t; i-- >= 2;) {
-      const Vertex& zi = camera_walk.at(i);
-      float zi_bwd_pdf = i < t - 1 ? zi.bwd_area_pdf : last_camera_bwd_pdf;
-      assert(zi.fwd_area_pdf > 0.f); assert(is_finite(zi_bwd_pdf));
-      ri_camera = ri_camera * zi_bwd_pdf / zi.fwd_area_pdf;
-      if(i == 1 && !this->use_t1_paths) { continue; }
-      if(!zi.is_delta) {
+    for(uint32_t i = 1; i < t; ++i) {
+      // alternative strategy with s + i light and t - i camera vertices
+      // z is the vertex that is now sampled from light instead of being sampled
+      // from camera
+      const Vertex& z = camera_walk.at(t - i);
+
+      float z_bwd_pdf;
+      if(i == 1 && s >= 2) {
+        // pdf of sampling z from a surface vertex y
+        const Vertex& y = light_walk.at(s - 1);
+        Vector wo = normalize(z.p - y.p);
+        Vector light_wi = normalize(light_walk.at(s - 2).p - y.p);
+        float wo_pdf = y.bsdf->camera_f_pdf(wo, light_wi, BSDF_ALL);
+        z_bwd_pdf = wo_pdf * abs_dot(z.nn, wo) / length_squared(z.p - y.p);
+      } else if(i == 1 && s == 1) {
+        // pdf of sampling z directly from a point y on light
+        const Vertex& y = light_walk.at(0);
+        Vector wo = normalize(z.p - y.p);
+        float wo_pdf = light.ray_dir_radiance_pdf(scene, wo, y.p, y.nn);
+        z_bwd_pdf = wo_pdf * abs_dot(z.nn, wo) / length_squared(z.p - y.p);
+      } else if(i == 1 && s == 0) {
+        // pdf of sampling z as a point on light
+        if(&light == z.area_light) {
+          // this is only plausible if the last camera vertex lies on the given
+          // light
+          z_bwd_pdf = light.ray_orig_radiance_pdf(scene, z.p);
+        } else {
+          z_bwd_pdf = 0.f;
+        }
+      } else if(i >= 2) {
+        // pdf of sampling z from a previous camera vertex is cached in the
+        // vertex
+        z_bwd_pdf = z.bwd_area_pdf;
+      } else {
+        assert(false && "Impossible combination");
+      }
+      assert(z_bwd_pdf >= 0.f && is_finite(z_bwd_pdf));
+
+      ri_camera = ri_camera * z_bwd_pdf / z.fwd_area_pdf;
+      if(ri_camera == 0.f) { break; }
+      if(i == t - 1 && !this->use_t1_paths) { continue; }
+      if(!z.is_delta) {
         inv_weight_sum += ri_camera;
       }
     }
 
+    (void)film_pos;
     assert(is_finite(inv_weight_sum));
     return 1.f / inv_weight_sum;
   }

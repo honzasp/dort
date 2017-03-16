@@ -20,10 +20,10 @@ namespace dort {
     virtual Spectrum eval_radiance(const Point& pt,
         const Normal& nn, const Point& pivot) const override final;
 
-    virtual float ray_origin_radiance_pdf(const Scene& scene, const Point& origin_gen,
-        const Vector& wo_fix) const override final;
     virtual float ray_dir_radiance_pdf(const Scene& scene, const Vector& wo_gen,
         const Point& origin_fix, const Normal& nn_fix) const override final;
+    virtual float ray_orig_radiance_pdf(const Scene& scene,
+        const Point& origin_gen) const override final;
     virtual float pivot_radiance_pdf(const Point& pivot,
         const Vector& wi) const override final;
 

@@ -252,18 +252,18 @@ algos = {
     renderer = "lt",
     iterations = 4,
   }},
-  {"pt", {
-    min_depth = 1,
-    max_depth = 1,
-    renderer = "pt",
-    iterations = 1,
-  }},
   --]]
+  {"pt", {
+    min_depth = 0,
+    max_depth = 3,
+    renderer = "pt",
+    iterations = 2,
+  }},
   {"bdpt", {
     min_depth = 0,
-    max_depth = 4,
+    max_depth = 3,
     renderer = "bdpt",
-    iterations = 4,
+    iterations = 2,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -279,10 +279,10 @@ algos = {
 scenes = {
   --{"point_light", point_light_scene()},
   --{"light_disk", light_disk_scene()},
-  {"diffuse_box", cornell_box_scene("diffuse", "area")},
+  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
   --{"delta_box", cornell_box_scene("delta", "area")},
-  --{"diffusep_box", cornell_box_scene("diffuse", "point")},
+  {"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},
   --{"deltap_box", cornell_box_scene("delta", "point")},
   --[[
