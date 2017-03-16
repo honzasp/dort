@@ -3,6 +3,7 @@
 #include "dort/lua_camera.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_params.hpp"
+#include "dort/pinhole_camera.hpp"
 
 namespace dort {
   int lua_open_camera(lua_State* l) {

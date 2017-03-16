@@ -194,7 +194,7 @@ function light_disk_scene()
 end
 
 local res = 512
-local x_res = res/2
+local x_res = res
 local y_res = res
 common_opts = {
   x_res = x_res, y_res = y_res,
@@ -205,10 +205,10 @@ common_opts = {
   filter = box_filter { radius = 0.5 },
 }
 algos = {
+  --[[
   {"dot", {
     renderer = "dot",
   }},
-  --[[
   {"direct", {
     max_depth = 2,
     renderer = "direct",
@@ -216,14 +216,14 @@ algos = {
   }},
   --]]
   {"pt_2", {
-    max_depth = 0,
+    max_depth = 5,
     renderer = "pt",
     iterations = 4,
   }},
   {"lt_2", {
-    max_depth = 0,
+    max_depth = 5,
     renderer = "lt",
-    iterations = 1,
+    iterations = 4,
   }},
   --[[
   {"pt", {
@@ -247,13 +247,13 @@ algos = {
 }
 scenes = {
   --{"light_disk", light_disk_scene()},
-  {"diffuse_box", cornell_box_scene("diffuse", "area")},
-  --[[
-  {"glossy_box", cornell_box_scene("glossy", "area")},
+  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
+  --{"glossy_box", cornell_box_scene("glossy", "area")},
   {"delta_box", cornell_box_scene("delta", "area")},
-  {"diffusep_box", cornell_box_scene("diffuse", "point")},
-  {"glossyp_box", cornell_box_scene("glossy", "point")},
-  {"deltap_box", cornell_box_scene("delta", "point")},
+  --{"diffusep_box", cornell_box_scene("diffuse", "point")},
+  --{"glossyp_box", cornell_box_scene("glossy", "point")},
+  --{"deltap_box", cornell_box_scene("delta", "point")},
+  --[[
   --]]
   --{"cavern", cavern_scene()},
 }
