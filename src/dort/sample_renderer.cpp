@@ -61,6 +61,8 @@ namespace dort {
       uint32_t done = jobs_done.fetch_add(1) + 1;
       progress.set_percent_done(float(done) / float(job_count));
     });
+
+    this->postprocess(ctx);
   }
 
   void SampleRenderer::render_tile(CtxG&, Recti tile_rect, Recti tile_film_rect,
@@ -84,7 +86,8 @@ namespace dort {
               camera_ray, camera_pos_pdf, camera_dir_pdf, CameraSample(sampler.rng));
           float camera_ray_pdf = camera_pos_pdf * camera_dir_pdf;
 
-          Spectrum radiance = this->get_radiance(*this->scene, camera_ray, 0, sampler);
+          Spectrum radiance = this->get_radiance(*this->scene,
+              camera_ray, film_pos, 0, sampler);
           assert(is_finite(radiance));
           assert(is_nonnegative(radiance));
           if(is_finite(radiance) && is_nonnegative(radiance)) {

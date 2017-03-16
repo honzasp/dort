@@ -5,7 +5,7 @@
 #include "dort/stats.hpp"
 
 namespace dort {
-  Spectrum DirectRenderer::get_radiance(const Scene& scene, Ray& ray,
+  Spectrum DirectRenderer::get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
       uint32_t depth, Sampler& sampler) const 
   {
     StatTimer t(TIMER_DIRECT_GET_RADIANCE);
@@ -38,7 +38,7 @@ namespace dort {
     stat_sample_int(DISTRIB_INT_BSDF_NUM_BXDFS, bsdf->num_bxdfs());
 
     if(depth < this->max_depth) {
-      Spectrum specular = trace_specular(*this, scene,
+      Spectrum specular = trace_specular(*this, film_pos, scene,
           geom, *bsdf, BSDF_ALL_HEMISPHERES | BSDF_DELTA, depth, sampler);
       assert(is_finite(specular) && is_nonnegative(specular));
       radiance += specular;

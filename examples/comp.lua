@@ -193,6 +193,39 @@ function light_disk_scene()
   end)
 end
 
+function point_light_scene()
+  return define_scene(function()
+    block(function()
+      material(matte_material { color = rgb(0.5) })
+      add_shape(disk { radius = 3, z = 0 })
+    end)
+
+    ---[[
+    add_light(point_light {
+      point = point(3, 0, 4),
+      intensity = rgb(25),
+    })
+    --]]
+    --[[
+    add_light(diffuse_light {
+      shape = sphere { radius = 0.1 },
+      radiance = rgb(1),
+      transform = translate(3, 0, 4),
+    })
+    --]]
+
+    camera(pinhole_camera {
+      transform = look_at(
+        point(0, 0, 6),
+        point(0, 0, 0),
+        vector(0, 1, 0)),
+      fov = pi / 2,
+    })
+  end)
+end
+
+out_dir = "comp"
+
 local res = 512
 local x_res = res
 local y_res = res
@@ -214,28 +247,26 @@ algos = {
     renderer = "direct",
     iterations = 4,
   }},
-  --]]
-  {"pt_2", {
-    max_depth = 5,
-    renderer = "pt",
-    iterations = 4,
-  }},
-  {"lt_2", {
+  {"lt", {
     max_depth = 5,
     renderer = "lt",
     iterations = 4,
   }},
-  --[[
   {"pt", {
-    max_depth = 5,
+    min_depth = 1,
+    max_depth = 1,
     renderer = "pt",
-    iterations = 5,
+    iterations = 1,
   }},
+  --]]
   {"bdpt", {
-    max_depth = 5,
+    min_depth = 0,
+    max_depth = 4,
     renderer = "bdpt",
-    iterations = 5,
+    iterations = 4,
+    debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
+  --[[
   {"ref", {
     max_depth = 5,
     renderer = "sppm",
@@ -246,10 +277,11 @@ algos = {
   --]]
 }
 scenes = {
+  --{"point_light", point_light_scene()},
   --{"light_disk", light_disk_scene()},
-  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
+  {"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
-  {"delta_box", cornell_box_scene("delta", "area")},
+  --{"delta_box", cornell_box_scene("delta", "area")},
   --{"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},
   --{"deltap_box", cornell_box_scene("delta", "point")},
@@ -257,11 +289,10 @@ scenes = {
   --]]
   --{"cavern", cavern_scene()},
 }
-out_dir = "comp"
 
-for algo_i = 1, #algos do
-  local algo_name = algos[algo_i][1]
-  for scene_i = 1, #scenes do
+for scene_i = 1, #scenes do
+  for algo_i = 1, #algos do
+    local algo_name = algos[algo_i][1]
     local scene_name = scenes[scene_i][1]
 
     opts = {}

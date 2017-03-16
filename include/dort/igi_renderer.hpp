@@ -45,7 +45,7 @@ namespace dort {
       g_limit(g_limit),
       roulette_threshold(roulette_threshold)
     { }
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
+    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
         uint32_t depth, Sampler& sampler) const override final;
   private:
     virtual void preprocess(CtxG& ctx,

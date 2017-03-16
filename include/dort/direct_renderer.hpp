@@ -21,7 +21,7 @@ namespace dort {
       SampleRenderer(scene, film, sampler, camera, iteration_count),
       max_depth(max_depth), strategy(strategy)
     { }
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
+    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
         uint32_t depth, Sampler& sampler) const override final;
   private:
     virtual void preprocess(CtxG& ctx,

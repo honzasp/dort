@@ -4,8 +4,7 @@
 
 namespace dort {
   PinholeCamera::PinholeCamera(const Transform& camera_to_world, float fov):
-    Camera(CameraFlags(CAMERA_LENS_POS_DELTA | CAMERA_LENS_DIR_DELTA
-        | CAMERA_FILM_PIVOT_POS_DELTA), camera_to_world)
+    Camera(CameraFlags(CAMERA_POS_DELTA), camera_to_world)
   {
     this->world_origin = this->camera_to_world.apply(Point(0.f, 0.f, 0.f));
     this->project_dimension = 2.f * tan(0.5f * fov);
@@ -57,33 +56,32 @@ namespace dort {
     return Spectrum(1.f / (area * cube(cos_theta)));
   }
 
-  void PinholeCamera::sample_point(Point& out_p, float& out_p_epsilon,
+  Point PinholeCamera::sample_point(float& out_p_epsilon,
       float& out_pos_pdf, CameraSample) const
   {
-    out_p = this->world_origin;
     out_p_epsilon = 0.f;
     out_pos_pdf = 1.f;
+    return this->world_origin;
   }
 
   Spectrum PinholeCamera::sample_film_pos(Vec2 film_res,
-      const Point&, const Point& pivot, Vec2& out_film_pos, float& out_film_pdf) const
+      const Point&, const Vector& wi, Vec2& out_film_pos, float& out_film_pdf) const
   {
-    Point camera_pivot = this->camera_to_world.apply_inv(pivot);
-    if(camera_pivot.v.z <= 0.f) {
+    Vec3 pivot = this->camera_to_world.apply_inv(wi).v;
+    if(pivot.z <= 0.f) {
       out_film_pos = Vec2();
       out_film_pdf = 0.f;
       return Spectrum(0.f);
     }
 
     Vec2 film_pos;
-    if(!this->get_film_pos(film_res, camera_pivot.v, film_pos)) {
+    if(!this->get_film_pos(film_res, pivot, film_pos)) {
       out_film_pos = Vec2();
       out_film_pdf = 0.f;
       return Spectrum(0.f);
     }
 
-    Vector camera_dir = Vector(camera_pivot.v);
-    float cos_theta = camera_dir.v.z / length(camera_dir);
+    float cos_theta = pivot.z / length(pivot);
     float area = this->get_image_plane_area(film_res);
     out_film_pos = film_pos;
     out_film_pdf = 1.f;
@@ -105,10 +103,10 @@ namespace dort {
   }
 
   bool PinholeCamera::get_film_pos(Vec2 film_res,
-      const Vec3& camera_pivot, Vec2& out_film_pos) const 
+      const Vec3& pivot, Vec2& out_film_pos) const 
   {
-    assert(camera_pivot.z >= 0.f);
-    Vec2 project_pos = Vec2(camera_pivot.x, camera_pivot.y) / camera_pivot.z;
+    assert(pivot.z >= 0.f);
+    Vec2 project_pos = Vec2(pivot.x, pivot.y) / pivot.z;
     Vec2 normal_pos = project_pos / this->project_dimension;
     if(abs(normal_pos.x) > 0.5f || abs(normal_pos.y) > 0.5f) {
       return false;

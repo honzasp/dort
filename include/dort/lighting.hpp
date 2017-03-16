@@ -41,7 +41,7 @@ namespace dort {
       const Light& light, BxdfFlags bxdf_flags,
       LightSample light_sample, BsdfSample bsdf_sample,
       DirectStrategy strategy);
-  Spectrum trace_specular(const SampleRenderer& renderer,
+  Spectrum trace_specular(const SampleRenderer& renderer, Vec2 film_pos,
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler);
 

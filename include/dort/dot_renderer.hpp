@@ -10,7 +10,7 @@ namespace dort {
         std::shared_ptr<Camera> camera):
       SampleRenderer(scene, film, sampler, camera, 1) { }
 
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
+    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2,
         uint32_t depth, Sampler& sampler) const override final;
   protected:
     virtual void preprocess(CtxG& ctx, const Scene& scene,

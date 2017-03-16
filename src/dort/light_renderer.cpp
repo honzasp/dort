@@ -71,16 +71,15 @@ namespace dort {
       if(light.sample_point(light_p, light_epsilon,
           light_nn, light_pos_pdf, LightSample(sampler.rng))) 
       {
-        Point camera_p;
         float camera_epsilon;
         float camera_pos_pdf;
-        this->camera->sample_point(camera_p, camera_epsilon,
+        Point camera_p = this->camera->sample_point(camera_epsilon,
             camera_pos_pdf, CameraSample(sampler.rng));
 
         Vec2 film_pos;
         float film_pdf;
         Spectrum importance = this->camera->sample_film_pos(film_res,
-            camera_p, light_p, film_pos, film_pdf);
+            camera_p, normalize(light_p - camera_p), film_pos, film_pdf);
         Spectrum radiance = light.eval_radiance(light_p, light_nn, camera_p);
 
         float contrib_pdf = light_pdf * light_pos_pdf * camera_pos_pdf * film_pdf;

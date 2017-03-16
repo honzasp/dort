@@ -6,6 +6,7 @@
 namespace dort {
   class PathRenderer final: public SampleRenderer {
     static constexpr uint32_t MAX_SAMPLES = 4;
+    uint32_t min_depth;
     uint32_t max_depth;
     std::vector<SampleIdx> light_idxs;
     std::vector<LightSamplesIdxs> light_samples_idxs;
@@ -17,11 +18,11 @@ namespace dort {
         std::shared_ptr<Sampler> sampler,
         std::shared_ptr<Camera> camera,
         uint32_t iteration_count,
-        uint32_t max_depth):
+        uint32_t min_depth, uint32_t max_depth):
       SampleRenderer(scene, film, sampler, camera, iteration_count),
-      max_depth(max_depth)
+      min_depth(min_depth), max_depth(max_depth)
     { }
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
+    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2,
         uint32_t depth, Sampler& sampler) const override final;
   private:
     virtual void preprocess(CtxG& ctx,

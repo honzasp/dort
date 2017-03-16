@@ -3,7 +3,7 @@
 #include "dort/primitive.hpp"
 
 namespace dort {
-  Spectrum PathRenderer::get_radiance(const Scene& scene, Ray& ray,
+  Spectrum PathRenderer::get_radiance(const Scene& scene, Ray& ray, Vec2,
       uint32_t, Sampler& sampler) const
   {
     Spectrum radiance(0.f);
@@ -11,11 +11,12 @@ namespace dort {
     Ray next_ray(ray);
     bool last_bxdf_was_specular = false;
 
-    for(uint32_t bounces = 0; ; ++bounces) {
+    uint32_t bounces = 0;
+    for(;;) {
       Intersection isect;
       bool isected = scene.intersect(next_ray, isect);
 
-      if(bounces == 0 || last_bxdf_was_specular) {
+      if(bounces >= this->min_depth && (bounces == 0 || last_bxdf_was_specular)) {
         if(isected) {
           radiance += throughput * isect.eval_radiance(next_ray.orig);
         } else {
@@ -30,6 +31,7 @@ namespace dort {
       if(!isected || bounces >= this->max_depth) {
         break;
       }
+      ++bounces;
 
       LightingGeom geom;
       geom.p = isect.world_diff_geom.p;
@@ -38,18 +40,20 @@ namespace dort {
       geom.ray_epsilon = isect.ray_epsilon;
       auto bsdf = isect.get_bsdf();
 
-      Spectrum lighting;
-      if(bounces < this->bsdf_samples_idxs.size()) {
-        lighting = uniform_sample_one_light(scene, geom, *bsdf, sampler,
-            sampler.get_sample_1d(this->light_idxs.at(bounces)),
-            LightSample(sampler, this->light_samples_idxs.at(bounces), 0),
-            BsdfSample(sampler, this->bsdf_samples_idxs.at(bounces), 0));
-      } else {
-        lighting = uniform_sample_one_light(scene, geom, *bsdf, sampler,
-            sampler.random_1d(), LightSample(sampler.rng), BsdfSample(sampler.rng));
+      if(bounces >= this->min_depth) {
+        Spectrum lighting;
+        if(bounces < this->bsdf_samples_idxs.size()) {
+          lighting = uniform_sample_one_light(scene, geom, *bsdf, sampler,
+              sampler.get_sample_1d(this->light_idxs.at(bounces)),
+              LightSample(sampler, this->light_samples_idxs.at(bounces), 0),
+              BsdfSample(sampler, this->bsdf_samples_idxs.at(bounces), 0));
+        } else {
+          lighting = uniform_sample_one_light(scene, geom, *bsdf, sampler,
+              sampler.random_1d(), LightSample(sampler.rng), BsdfSample(sampler.rng));
+        }
+        assert(is_finite(lighting) && is_nonnegative(lighting));
+        radiance += lighting * throughput;
       }
-      assert(is_finite(lighting) && is_nonnegative(lighting));
-      radiance += lighting * throughput;
 
       Vector bsdf_wi;
       float bsdf_pdf;
@@ -69,7 +73,7 @@ namespace dort {
       next_ray = Ray(geom.p, bsdf_wi, geom.ray_epsilon);
       last_bxdf_was_specular = bsdf_flags & BSDF_DELTA;
 
-      if(bounces > this->max_depth / 2) {
+      if(bounces > this->max_depth / 2 && bounces > this->min_depth) {
         float term_prob = max(0.05f, 1.f - throughput.average());
         if(sampler.random_1d() < term_prob) {
           break;

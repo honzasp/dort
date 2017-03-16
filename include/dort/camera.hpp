@@ -6,15 +6,12 @@
 
 namespace dort {
   enum CameraFlags: uint8_t {
-    CAMERA_LENS_POS_DELTA = 1,
-      ///< For a fixed point on the film, the point on the lens is given by a
-      /// delta distribution.
-    CAMERA_LENS_DIR_DELTA = 2,
-      ///< For a fixed point on the film and given the ray origin on the lens,
-      /// the direction of the ray is given by a delta distribution.
-    CAMERA_FILM_PIVOT_POS_DELTA = 4,
-      ///< For a fixed point in the scene (pivot), the point on the film and the
-      /// lens direction is given by a delta distribution.
+    CAMERA_POS_DELTA = 1,
+      ///< The ray origins have delta distribution.
+    CAMERA_DIR_DELTA = 2,
+      ///< The ray directions have delta distribution.
+    CAMERA_DIR_BY_POS_DELTA = 4,
+      ///< The ray directions, given ray origin, have delta distribution.
   };
 
   struct CameraSamplesIdxs {
@@ -82,13 +79,13 @@ namespace dort {
         ShadowTest& out_shadow, CameraSample sample) const = 0;
 
     /// Samples a point on the camera.
-    virtual void sample_point(Point& out_p, float& out_p_epsilon,
+    virtual Point sample_point(float& out_p_epsilon,
         float& out_pos_pdf, CameraSample sample) const = 0;
 
-    /// Samples a point on film given a point on camera and a point to look at.
+    /// Samples a point on film given a point on camera and a direction to look at.
     /// Returns the importance and sets out_film_pos and out_film_pdf.
     virtual Spectrum sample_film_pos(Vec2 film_res,
-        const Point& p, const Point& pivot,
+        const Point& p, const Vector& wi,
         Vec2& out_film_pos, float& out_film_pdf) const = 0;
 
     /// Computes the pdf of sampling ray in the direction, given its origin,

@@ -5,7 +5,7 @@
 #include "dort/thread_pool.hpp"
 
 namespace dort {
-  Spectrum IgiRenderer::get_radiance(const Scene& scene, Ray& ray,
+  Spectrum IgiRenderer::get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
       uint32_t depth, Sampler& sampler) const
   {
     Spectrum radiance(0.f);
@@ -37,9 +37,9 @@ namespace dort {
     radiance += this->sample_virtual_lights(scene, geom, *bsdf, sampler);
 
     if(depth < this->max_depth) {
-      Spectrum reflection = trace_specular(*this, scene,
+      Spectrum reflection = trace_specular(*this, film_pos, scene,
           geom, *bsdf, BSDF_REFLECTION, depth, sampler);
-      Spectrum transmission = trace_specular(*this, scene,
+      Spectrum transmission = trace_specular(*this, film_pos, scene,
           geom, *bsdf, BSDF_TRANSMISSION, depth, sampler);
       assert(is_finite(reflection) && is_nonnegative(reflection));
       assert(is_finite(transmission) && is_nonnegative(transmission));

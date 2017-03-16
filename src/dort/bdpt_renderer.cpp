@@ -10,7 +10,7 @@ namespace dort {
   // TODO: correctly handle delta distributions in BSDFs
   // TODO: correctly handle background (infinite area) lights
   // TODO: implement the s==1 && t==1 case
-  Spectrum BdptRenderer::get_radiance(const Scene& scene, Ray& ray,
+  Spectrum BdptRenderer::get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
       uint32_t, Sampler& sampler) const
   {
     Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
@@ -20,21 +20,32 @@ namespace dort {
     std::vector<Vertex> camera_walk = this->random_camera_walk(scene, ray, sampler.rng);
 
     Spectrum contrib(0.f);
-    for(uint32_t s = 1; s <= light_walk.size(); ++s) {
+    for(uint32_t s = 0; s <= light_walk.size(); ++s) {
       for(uint32_t t = 1; t <= camera_walk.size(); ++t) {
         if(t == 1 && !this->use_t1_paths) { continue; }
-        Vec2 film_pos;
+        if(s + t < this->min_depth + 2) { continue; }
+        if(s + t > this->max_depth + 2) { continue; }
+
+        Vec2 new_film_pos;
         Spectrum path_contrib = this->path_contrib(scene, film_res, *light, camera,
-            sampler.rng, light_walk, camera_walk, s, t, film_pos);
+            sampler.rng, light_walk, camera_walk, s, t, new_film_pos);
         if(path_contrib.is_black()) { continue; }
 
-        float path_weight = this->path_weight(scene, film_res, *light, camera,
+        Vec2 path_film_pos = t == 1 ? new_film_pos : film_pos;
+        float path_weight = this->path_weight(scene, film_res,
+            *light, camera, path_film_pos,
             light_walk, camera_walk, s, t);
         Spectrum weighted_contrib = path_contrib * path_weight;
+
         if(t == 1) {
-          this->film->add_splat(film_pos, weighted_contrib);
+          this->film->add_splat(path_film_pos, weighted_contrib);
         } else {
           contrib += weighted_contrib;
+        }
+
+        if(!this->debug_image_dir.empty()) {
+          this->store_debug_contrib(s, t, false, path_film_pos, path_contrib);
+          this->store_debug_contrib(s, t, true, path_film_pos, weighted_contrib);
         }
       }
     }
@@ -47,6 +58,16 @@ namespace dort {
     for(uint32_t i = 0; i < scene.lights.size(); ++i) {
       this->light_distrib_pdfs.insert(std::make_pair(
           scene.lights.at(i).get(), this->light_distrib.pdf(i)));
+    }
+
+    if(!this->debug_image_dir.empty()) {
+      this->init_debug_films();
+    }
+  }
+
+  void BdptRenderer::postprocess(CtxG&) {
+    if(!this->debug_image_dir.empty()) {
+      this->save_debug_films();
     }
   }
 
@@ -215,7 +236,6 @@ namespace dort {
       const std::vector<Vertex>& camera_walk,
       uint32_t s, uint32_t t, Vec2& out_film_pos) const
   {
-    const Vertex& last_light = light_walk.at(s - 1);
     const Vertex& last_camera = camera_walk.at(t - 1);
 
     if(s == 1 && t == 1) {
@@ -233,8 +253,38 @@ namespace dort {
       // probably not worth the trouble.
       //
       // TODO: implement this
-      out_film_pos = Vec2();
-      return Spectrum(0.f);
+      if(!(this->camera->flags & CAMERA_DIR_BY_POS_DELTA)) {
+        // pick a point z on camera, sample light direction from this point,
+        // sample film position from this direction
+        float camera_epsilon;
+        float camera_p_pdf;
+        Point camera_p = camera.sample_point(camera_epsilon,
+            camera_p_pdf, CameraSample(rng));
+        if(camera_p_pdf == 0.f) { return Spectrum(0.f); }
+
+        Vector wi;
+        Normal light_nn;
+        float wi_dir_pdf;
+        ShadowTest shadow;
+        Spectrum radiance = light.sample_pivot_radiance(camera_p, camera_epsilon,
+            wi, wi_dir_pdf, shadow, LightSample(rng));
+        if(wi_dir_pdf == 0.f || radiance.is_black()) { return Spectrum(0.f); }
+
+        float film_pdf;
+        Spectrum importance = camera.sample_film_pos(film_res, camera_p, wi,
+            out_film_pos, film_pdf);
+        if(film_pdf == 0.f || importance.is_black()) { return Spectrum(0.f); }
+
+        float light_pdf = this->light_distrib_pdfs.at(&light);
+        if(light_pdf == 0.f) { return Spectrum(0.f); }
+        if(!shadow.visible(scene)) { return Spectrum(0.f); }
+
+        return (importance * radiance) 
+          / (camera_p_pdf * wi_dir_pdf * film_pdf * light_pdf);
+      } else {
+        out_film_pos = Vec2();
+        return Spectrum(0.f);
+      }
     } else if(s == 0 && t >= 2) {
       // Use only the camera path, provided that the last vertex is emissive.
       if(last_camera.area_light == nullptr) { return Spectrum(0.f); }
@@ -272,6 +322,7 @@ namespace dort {
         * (abs_dot(last_camera.nn, wi) / (light_pick_pdf * wi_dir_pdf));
     } else if(t == 1) {
       // Connect the light subpath to a new camera vertex.
+      const Vertex& last_light = light_walk.at(s - 1);
       Vector wo;
       float wo_dir_pdf;
       float film_pdf;
@@ -289,15 +340,11 @@ namespace dort {
       Spectrum bsdf_f = last_light.bsdf->eval_f(bsdf_wi, wo, BSDF_ALL);
       if(bsdf_f.is_black()) { return Spectrum(0.f); }
 
-      /*
-      std::printf("%g * %g * %g * %g / %g\n",
-          last_light.alpha.average(), bsdf_f.average(),
-          camera_importance.average(), abs_dot(last_light.nn, wo), wo_dir_pdf);
-          */
       return last_light.alpha * bsdf_f * camera_importance
         * (abs_dot(last_light.nn, wo) / (wo_dir_pdf * film_pdf));
     } else if(s >= 2 && t >= 2) {
       // Connect the light and camera subpaths.
+      const Vertex& last_light = light_walk.at(s - 1);
       ShadowTest shadow;
       shadow.init_point_point(last_light.p, last_light.p_epsilon,
           last_camera.p, last_camera.p_epsilon);
@@ -322,12 +369,16 @@ namespace dort {
   }
 
   float BdptRenderer::path_weight(const Scene& scene, Vec2 film_res,
-      const Light& light, const Camera& camera,
+      const Light& light, const Camera& camera, Vec2 film_pos,
       const std::vector<Vertex>& light_walk,
       const std::vector<Vertex>& camera_walk,
       uint32_t s, uint32_t t) const
   {
+    (void)film_pos;
+    // HACK
+    if(s == 0) { return 1.f; }
     if(s + t <= 2) { return 1.f; }
+    assert(s >= 1 && t >= 1);
     const Vertex& last_light = light_walk.at(s - 1);
     const Vertex& last_camera = camera_walk.at(t - 1);
     Vector connect_wi = normalize(last_light.p - last_camera.p);
@@ -388,7 +439,7 @@ namespace dort {
     float ri_camera = 1.f;
     for(uint32_t i = t; i-- >= 2;) {
       const Vertex& zi = camera_walk.at(i);
-      float zi_bwd_pdf = i < t - 1 ? zi.bwd_area_pdf : last_camera_bwd_pdf;;
+      float zi_bwd_pdf = i < t - 1 ? zi.bwd_area_pdf : last_camera_bwd_pdf;
       assert(zi.fwd_area_pdf > 0.f); assert(is_finite(zi_bwd_pdf));
       ri_camera = ri_camera * zi_bwd_pdf / zi.fwd_area_pdf;
       if(i == 1 && !this->use_t1_paths) { continue; }
@@ -399,5 +450,55 @@ namespace dort {
 
     assert(is_finite(inv_weight_sum));
     return 1.f / inv_weight_sum;
+  }
+
+
+  void BdptRenderer::init_debug_films() {
+    for(uint32_t s = 0; s < 5; ++s) {
+      for(uint32_t t = 1; t < 5; ++t) {
+        for(bool weighted: {true, false}) {
+          if(s + t < this->min_depth + 2) { continue; }
+          if(s + t > this->max_depth + 2) { continue; }
+          this->debug_films.emplace(std::piecewise_construct,
+              std::forward_as_tuple(weighted | (s << 1) | (t << 9)),
+              std::forward_as_tuple(
+                this->film->x_res, this->film->y_res, this->film->filter));
+        }
+      }
+    }
+  }
+
+  void BdptRenderer::save_debug_films() {
+    for(auto& pair: this->debug_films) {
+      auto key = pair.first;
+      uint32_t s = (key >> 1) & 0xff;
+      uint32_t t = (key >> 9) & 0xff;
+      bool weighted = (key & 1) != 0;
+      std::string path = this->debug_image_dir + "/bdpt_" +
+        std::to_string(s) + "_" + std::to_string(t) +
+        (weighted ? "_weighted" : "_contrib") + ".hdr";
+
+      auto& film = pair.second;
+      film.splat_scale = 1.f / float(this->iteration_count);
+      auto image = film.to_image<PixelRgbFloat>();
+
+      FILE* output = std::fopen(path.c_str(), "w");
+      assert(output != nullptr);
+      if(output != nullptr) {
+        write_image_rgbe(output, image);
+        std::fclose(output);
+      }
+    }
+  }
+
+  void BdptRenderer::store_debug_contrib(
+      uint32_t s, uint32_t t, bool weighted,
+      Vec2 film_pos, const Spectrum& contrib) const
+  {
+    auto iter = this->debug_films.find(weighted | (s << 1) | (t << 9));
+    if(iter == this->debug_films.end()) { return; }
+
+    Film& film = iter->second;
+    film.add_splat(film_pos, contrib);
   }
 }

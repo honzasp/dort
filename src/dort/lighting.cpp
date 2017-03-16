@@ -154,7 +154,7 @@ namespace dort {
     return light_contrib + bsdf_contrib;
   }
 
-  Spectrum trace_specular(const SampleRenderer& renderer,
+  Spectrum trace_specular(const SampleRenderer& renderer, Vec2 film_pos,
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler)
   {
@@ -168,7 +168,8 @@ namespace dort {
     assert(is_finite(bsdf_f) && is_nonnegative(bsdf_f));
     if(!bsdf_f.is_black() && wi_pdf != 0.f) {
       Ray spec_ray(geom.p, wi, geom.ray_epsilon, INFINITY);
-      Spectrum radiance = renderer.get_radiance(scene, spec_ray, depth + 1, sampler);
+      Spectrum radiance = renderer.get_radiance(scene, spec_ray, film_pos,
+          depth + 1, sampler);
       return radiance * bsdf_f * (abs_dot(wi, geom.nn) / wi_pdf);
     } else {
       return Spectrum(0.f);

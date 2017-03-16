@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "dort/bsdf.hpp"
 #include "dort/discrete_distrib_1d.hpp"
+#include "dort/film.hpp"
 #include "dort/light.hpp"
 #include "dort/sample_renderer.hpp"
 #include "dort/slice.hpp"
@@ -11,26 +12,35 @@ namespace dort {
   /// This renderer samples vertices both from light and the camera and combines
   /// the various sub-paths using multiple importance sampling.
   class BdptRenderer final: public SampleRenderer {
+    uint32_t min_depth;
     uint32_t max_depth;
     bool use_t1_paths;
     DiscreteDistrib1d light_distrib;
     std::unordered_map<const Light*, float> light_distrib_pdfs;
+
+    mutable std::unordered_map<uint32_t, Film> debug_films;
+    std::string debug_image_dir;
   public:
     BdptRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
         std::shared_ptr<Camera> camera,
         uint32_t iteration_count,
+        uint32_t min_depth,
         uint32_t max_depth,
-        bool use_t1_paths):
+        bool use_t1_paths,
+        const std::string& debug_image_dir):
       SampleRenderer(scene, film, sampler, camera, iteration_count),
-      max_depth(max_depth), use_t1_paths(use_t1_paths)
+      min_depth(min_depth), max_depth(max_depth),
+      use_t1_paths(use_t1_paths),
+      debug_image_dir(debug_image_dir)
     { }
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray,
+    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
         uint32_t depth, Sampler& sampler) const override final;
   private:
     virtual void preprocess(CtxG& ctx,
         const Scene& scene, Sampler& sampler) override final;
+    virtual void postprocess(CtxG& ctx) override final;
     virtual void iteration(Film& film, uint32_t iteration) override final;
 
     // The unweighted contribution of a path x[0], ..., x[n] is
@@ -90,9 +100,14 @@ namespace dort {
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t, Vec2& out_film_pos) const;
     float path_weight(const Scene& scene, Vec2 film_res,
-        const Light& light, const Camera& camera,
+        const Light& light, const Camera& camera, Vec2 film_pos,
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t) const;
+
+    void init_debug_films();
+    void save_debug_films();
+    void store_debug_contrib(uint32_t s, uint32_t t, bool weighted,
+        Vec2 film_pos, const Spectrum& contrib) const;
   };
 }

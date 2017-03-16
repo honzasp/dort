@@ -45,8 +45,10 @@ namespace dort {
 
         Film local_film(this->film->x_res, this->film->y_res, this->film->filter);
         this->iteration_serial(local_film, *samplers.at(i), radii.at(i));
-        std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->film->add_tile(Vec2i(0, 0), local_film);
+        {
+          std::unique_lock<std::mutex> film_lock(film_mutex);
+          this->film->add_tile(Vec2i(0, 0), local_film);
+        }
 
         uint32_t done = iterations_done.fetch_add(1) + 1;
         progress.set_percent_done(float(done) / float(this->iteration_count));

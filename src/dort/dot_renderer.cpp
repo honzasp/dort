@@ -5,7 +5,7 @@
 #include "dort/spectrum.hpp"
 
 namespace dort {
-  Spectrum DotRenderer::get_radiance(const Scene& scene, Ray& ray,
+  Spectrum DotRenderer::get_radiance(const Scene& scene, Ray& ray, Vec2,
       uint32_t, Sampler&) const
   {
     Intersection isect;
