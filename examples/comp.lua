@@ -214,31 +214,51 @@ function light_disk_scene()
   end)
 end
 
-function point_light_scene()
+function sphere_light_scene()
+  local a = 1
+  local b = 1
   return define_scene(function()
     block(function()
       material(matte_material { color = rgb(0.5) })
-      add_shape(disk { radius = 0.2, z = 10 })
+      add_shape(disk { radius = 0.2*b, z = 0 })
     end)
 
-    ---[[
-    add_light(point_light {
-      point = point(3, 0, 6),
-      intensity = rgb(100),
-    })
-    --]]
-    --[[
-    add_light(diffuse_light {
-      shape = sphere { radius = 0.1 },
-      radiance = rgb(1),
-      transform = translate(3, 0, 4),
-    })
-    --]]
+    block(function()
+      transform(translate(3*a, 0, -4*a))
+      add_light(diffuse_light {
+        radiance = rgb(1*a*a),
+        shape = sphere { radius = 1*a },
+      })
+    end)
 
     camera(pinhole_camera {
       transform = look_at(
+        point(0, 0, -10*b),
         point(0, 0, 0),
-        point(0, 0, 10),
+        vector(0, 1, 0)),
+      fov = pi / 2,
+    })
+  end)
+end
+
+function point_light_scene()
+  local a = 10
+  local b = 1
+  return define_scene(function()
+    block(function()
+      material(matte_material { color = rgb(0.5) })
+      add_shape(disk { radius = 0.2*b, z = 0 })
+    end)
+
+    add_light(point_light {
+      point = point(3*a, 0, -4*a),
+      intensity = rgb(100*a*a),
+    })
+
+    camera(pinhole_camera {
+      transform = look_at(
+        point(0, 0, -10*b),
+        point(0, 0, 0),
         vector(0, 1, 0)),
       fov = pi / 2,
     })
@@ -295,7 +315,7 @@ algos = {
     min_depth = 1,
     max_depth = 1,
     renderer = "bdpt",
-    iterations = 1,
+    iterations = 4,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -310,12 +330,13 @@ algos = {
 }
 scenes = {
   --{"point_light", point_light_scene()},
+  --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
+  {"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
   --{"delta_box", cornell_box_scene("delta", "area")},
-  {"diffusep_box", cornell_box_scene("diffuse", "point")},
+  --{"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},
   --{"deltap_box", cornell_box_scene("delta", "point")},
   --[[

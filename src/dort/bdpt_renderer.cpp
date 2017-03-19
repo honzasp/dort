@@ -478,6 +478,7 @@ namespace dort {
       }
     }
 
+#define printf(...) sqrt(0.f)
     // precompute the solid angle or area pdf of sampling x0 from x1 using
     // sample_pivot_radiance()
     float x0_pivot_pdf;
@@ -490,14 +491,16 @@ namespace dort {
       const Vertex& x1 = vertex_at(1);
       Vector wi = normalize(x0.p - x1.p);
       float x0_dir_pdf = light.pivot_radiance_pdf(wi, x1.p);
+      std::printf("  x0_dir_pdf = %g\n", x0_dir_pdf);
       if(light.flags & LIGHT_DISTANT) {
         x0_pivot_pdf = x0_dir_pdf;
       } else {
+        std::printf("  x0_pivot_pdf = %g * %g / %g\n", x0_dir_pdf,
+            abs_dot(x0.nn, wi), length_squared(x0.p - x1.p));
         x0_pivot_pdf = x0_dir_pdf * abs_dot(x0.nn, wi) / length_squared(x0.p - x1.p);
       }
     }
 
-#define printf(...) sqrt(0.f)
     // computes the pdf of sampling point x[i] from x[i-1] (i.e., from light)
     // if i == 0 and the light is distant, this is solid angle pdf, otherwise it
     // is area pdf.
@@ -544,8 +547,8 @@ namespace dort {
           }
         }
 
-        std::printf("    pivot / ray = %g / %g\n", x0_pivot_pdf, ray_pdf);
-        return x0_pivot_pdf / ray_pdf;
+        std::printf("    ray / pivot = %g / %g\n", ray_pdf, x0_pivot_pdf);
+        return ray_pdf / x0_pivot_pdf;
       } else if(i >= 2 && i < s) {
         // the BSDF sampling probability is cached in the light vertices
         std::printf("    cached fwd %g\n", vertex_at(i).fwd_pdf);
@@ -606,8 +609,8 @@ namespace dort {
           std::printf("    pivot %g\n", pivot_area_pdf);
         }
 
-        std::printf("    %g / %g\n", pivot_area_pdf, ray_area_pdf);
-        return pivot_area_pdf / ray_area_pdf;
+        std::printf("    %g / %g\n", ray_area_pdf, pivot_area_pdf);
+        return ray_area_pdf / pivot_area_pdf;
       } else if(i < s + t - 2 && i >= s) {
         // the forward BSDF sampling pdf is cached in the camera vertices
         std::printf("    cached fwd %g\n", vertex_at(i).fwd_pdf);

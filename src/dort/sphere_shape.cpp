@@ -68,7 +68,7 @@ namespace dort {
   }
 
   float SphereShape::point_pdf(const Point&) const {
-    return uniform_sphere_pdf() / this->area();
+    return 1.f / this->area();
   }
 
   Point SphereShape::sample_point_pivot(const Point& pivot, Vec2 uv,
