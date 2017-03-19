@@ -89,9 +89,10 @@ namespace dort {
           scene, film, sampler, camera, iteration_count, min_depth, max_depth);
     } else if(method == "lt" || method == "light") {
       uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
+      uint32_t min_depth = lua_param_uint32_opt(l, p, "min_depth", 0);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       renderer = std::make_shared<LightRenderer>(
-          scene, film, sampler, camera, iteration_count, max_depth);
+          scene, film, sampler, camera, iteration_count, min_depth, max_depth);
     } else if(method == "bdpt") {
       uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t min_depth = lua_param_uint32_opt(l, p, "min_depth", 0);

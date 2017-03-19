@@ -121,7 +121,7 @@ namespace dort {
       if(!bsdf_f.is_black() && wi_bsdf_pdf > 0.f) {
         float weight = 1.f;
         if(use_mis && !(sampled_flags & BSDF_DELTA)) {
-          float wi_light_pdf = light.pivot_radiance_pdf(geom.p, wi);
+          float wi_light_pdf = light.pivot_radiance_pdf(wi, geom.p);
           weight = mis_power_heuristic(1, wi_bsdf_pdf, 1, wi_light_pdf);
         }
 

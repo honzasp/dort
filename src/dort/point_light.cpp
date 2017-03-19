@@ -16,12 +16,16 @@ namespace dort {
   }
 
   Spectrum PointLight::sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
-      Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow, 
-      LightSample) const
+      Vector& out_wi, Point& out_p, Normal& out_nn, float& out_p_epsilon,
+      float& out_dir_pdf, ShadowTest& out_shadow, LightSample sample) const
   {
+    (void)sample;
     out_wi = normalize(this->pt - pivot);
-    out_dir_pdf = 1.f;
     out_shadow.init_point_point(pivot, pivot_epsilon, this->pt, 0.f);
+    out_p = this->pt;
+    out_nn = -Normal(out_wi);
+    out_p_epsilon = 0.f;
+    out_dir_pdf = 1.f;
     return this->intensity / length_squared(this->pt - pivot);
   }
 
@@ -41,18 +45,14 @@ namespace dort {
     return this->intensity / length_squared(this->pt - pivot);
   }
 
-  float PointLight::ray_dir_radiance_pdf(const Scene&,
-      const Vector&, const Point&, const Normal&) const
+  float PointLight::ray_radiance_pdf(const Scene&, const Point&,
+      const Vector&, const Normal&) const
   {
     return 1.f / (4.f * PI);
   }
 
-  float PointLight::ray_orig_radiance_pdf(const Scene&, const Point&) const {
-    return 0.f;
-  }
-
-  float PointLight::pivot_radiance_pdf(const Point&, const Vector&) const {
-    return 0.f;
+  float PointLight::pivot_radiance_pdf(const Vector&, const Point&) const {
+    return 1.f;
   }
 
   Spectrum PointLight::background_radiance(const Ray&) const {

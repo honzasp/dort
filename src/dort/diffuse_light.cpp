@@ -40,8 +40,8 @@ namespace dort {
   }
 
   Spectrum DiffuseLight::sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
-      Vector& out_wi, float& out_dir_pdf, ShadowTest& out_shadow,
-      LightSample sample) const
+      Vector& out_wi, Point& out_p, Normal& out_nn, float& out_p_epsilon,
+      float& out_dir_pdf, ShadowTest& out_shadow, LightSample sample) const
   {
     Point shape_pivot = this->shape_to_world.apply_inv(pivot);
     Normal shape_n;
@@ -53,6 +53,9 @@ namespace dort {
     Vector shape_wi = normalize(shape_p - shape_pivot);
     Point world_p = this->shape_to_world.apply(shape_p);
     out_wi = normalize(world_p - pivot);
+    out_p = world_p;
+    out_nn = this->shape_to_world.apply(shape_n);
+    out_p_epsilon = epsilon;
     out_dir_pdf = dir_pdf;
     out_shadow.init_point_point(pivot, pivot_epsilon, world_p, epsilon);
 
@@ -91,20 +94,21 @@ namespace dort {
     }
   }
 
-  float DiffuseLight::ray_dir_radiance_pdf(const Scene&,
-      const Vector& wo_gen, const Point&, const Normal& nn_fix) const
+  float DiffuseLight::ray_radiance_pdf(const Scene&, const Point& origin_gen,
+      const Vector& dir_gen, const Normal& nn) const
   {
-    return dot(wo_gen, nn_fix) > 0.f ? INV_TWO_PI : 0.f;
+    if(dot(dir_gen, nn) <= 0.f) { return 0.f; }
+    Point shape_p = this->shape_to_world.apply_inv(origin_gen);
+    float dir_pdf = INV_TWO_PI;
+    float p_pdf = this->shape->point_pdf(shape_p);
+    return p_pdf * dir_pdf;
   }
 
-  float DiffuseLight::ray_orig_radiance_pdf(const Scene&, const Point& origin_gen) const {
-    return this->shape->point_pdf(origin_gen);
-  }
-
-
-  float DiffuseLight::pivot_radiance_pdf(const Point& pivot, const Vector& wi) const {
-    Point shape_pivot = this->shape_to_world.apply_inv(pivot);
-    Vector shape_wi = normalize(this->shape_to_world.apply_inv(wi));
+  float DiffuseLight::pivot_radiance_pdf(const Vector& wi_gen,
+      const Point& pivot_fix) const 
+  {
+    Point shape_pivot = this->shape_to_world.apply_inv(pivot_fix);
+    Vector shape_wi = normalize(this->shape_to_world.apply_inv(wi_gen));
     return this->shape->point_pivot_pdf(shape_pivot, shape_wi);
   }
 

@@ -63,7 +63,7 @@ namespace dort {
       return;
     }
 
-    {
+    if(this->min_depth <= 0) {
       Point light_p;
       float light_epsilon;
       Normal light_nn;
@@ -71,10 +71,9 @@ namespace dort {
       if(light.sample_point(light_p, light_epsilon,
           light_nn, light_pos_pdf, LightSample(sampler.rng))) 
       {
-        float camera_epsilon;
         float camera_pos_pdf;
-        Point camera_p = this->camera->sample_point(camera_epsilon,
-            camera_pos_pdf, CameraSample(sampler.rng));
+        Point camera_p = this->camera->sample_point(camera_pos_pdf,
+            CameraSample(sampler.rng));
 
         Vec2 film_pos;
         float film_pdf;
@@ -91,7 +90,7 @@ namespace dort {
 
         if(!contrib.is_black() && contrib_pdf != 0.f) {
           ShadowTest shadow;
-          shadow.init_point_point(light_p, light_epsilon, camera_p, camera_epsilon);
+          shadow.init_point_point(light_p, light_epsilon, camera_p, 0.f);
           if(shadow.visible(*this->scene)) {
             this->add_contrib(film_pos, contrib);
           }
@@ -109,23 +108,25 @@ namespace dort {
       auto bsdf = isect.get_bsdf();
 
       bool has_non_delta = bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs();
-      if(has_non_delta) {
-        Vector camera_wo;
-        float camera_wo_pdf;
+      if(has_non_delta && bounces + 1 >= this->min_depth) {
+        Point camera_p;
+        float camera_p_pdf;
         ShadowTest shadow;
         Vec2 film_pos;
         float film_pdf;
         Spectrum importance = this->camera->sample_pivot_importance(film_res,
             isect.world_diff_geom.p, isect.ray_epsilon,
-            camera_wo, film_pos, camera_wo_pdf, film_pdf,
+            camera_p, film_pos, camera_p_pdf, film_pdf,
             shadow, CameraSample(sampler.rng));
-        if(camera_wo_pdf != 0.f && !importance.is_black()) {
+        if(camera_p_pdf != 0.f && !importance.is_black()) {
+          Vector camera_wo = normalize(camera_p - isect.world_diff_geom.p);
           Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
 
           Spectrum contrib = alpha * importance * bsdf_f
-            * (abs_dot(prev_nn, ray.dir)
-            * abs_dot(isect.world_diff_geom.nn, camera_wo)
-            / (prev_dir_pdf * camera_wo_pdf * film_pdf));
+            * ( abs_dot(prev_nn, ray.dir) 
+              * abs_dot(isect.world_diff_geom.nn, camera_wo)
+              / ( length_squared(camera_p - isect.world_diff_geom.p)
+                * prev_dir_pdf * camera_p_pdf * film_pdf));
           if(!contrib.is_black() && shadow.visible(*this->scene)) {
             this->add_contrib(film_pos, contrib);
           }

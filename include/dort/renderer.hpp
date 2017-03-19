@@ -22,8 +22,11 @@ namespace dort {
       scene(scene), film(film), sampler(sampler), camera(camera) { }
     virtual ~Renderer() {}
     virtual void render(CtxG& ctx, Progress& progress) = 0;
-
+  protected:
     static Vec2i layout_tiles(const CtxG& ctx,
         const Film& film, const Sampler& sampler);
+    void render_tiled(CtxG& ctx, Progress& progress, uint32_t iteration_count,
+        std::function<void(CtxG&,Recti,Recti,Film&,Sampler&,Progress&)> render_tile,
+        std::function<void(Film&,uint32_t)> iteration_callback);
   };
 }

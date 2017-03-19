@@ -61,7 +61,7 @@ namespace dort {
       Normal& out_n, float& out_ray_epsilon) const 
   {
     Vec3 w = uniform_sphere_sample(uv.x, uv.y);
-    out_pos_pdf = uniform_sphere_pdf() / this->area();
+    out_pos_pdf = 1.f / this->area();
     out_n = Normal(w);
     out_ray_epsilon = 5e-3f * this->radius;
     return Point() + Vector(w * this->radius);

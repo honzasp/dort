@@ -26,46 +26,37 @@ namespace dort {
 
   Spectrum PinholeCamera::sample_pivot_importance(Vec2 film_res,
       const Point& pivot, float pivot_epsilon,
-      Vector& out_wo, Vec2& out_film_pos,
-      float& out_dir_pdf, float& out_film_pdf,
+      Point& out_p, Vec2& out_film_pos,
+      float& out_p_pdf, float& out_film_pdf,
       ShadowTest& out_shadow, CameraSample) const
   {
-    Point camera_pivot = this->camera_to_world.apply_inv(pivot);
-    if(camera_pivot.v.z <= 0.f) {
-      out_wo = Vector();
-      out_dir_pdf = 0.f;
+    out_p = this->world_origin;
+    out_p_pdf = 1.f;
+
+    Vec3 camera_pivot = this->camera_to_world.apply_inv(pivot).v;
+    if(camera_pivot.z <= 0.f) {
       return Spectrum(0.f);
     }
 
     Vec2 film_pos;
-    if(!this->get_film_pos(film_res, camera_pivot.v, film_pos)) {
-      out_wo = Vector();
-      out_dir_pdf = 0.f;
+    if(!this->get_film_pos(film_res, camera_pivot, film_pos)) {
       return Spectrum(0.f);
     }
 
-    Vector camera_dir = Vector(camera_pivot.v);
-    float cos_theta = camera_dir.v.z / length(camera_dir);
-    float distance = length(pivot - this->world_origin);
     float area = this->get_image_plane_area(film_res);
-    out_wo = -normalize(this->camera_to_world.apply(camera_dir));
-    out_dir_pdf = square(distance) / cube(cos_theta);
     out_shadow.init_point_point(pivot, pivot_epsilon, this->world_origin, 0.f);
     out_film_pos = film_pos;
     out_film_pdf = 1.f;
-    return Spectrum(1.f / (area * cube(cos_theta)));
+    return Spectrum(1.f / area);
   }
 
-  Point PinholeCamera::sample_point(float& out_p_epsilon,
-      float& out_pos_pdf, CameraSample) const
-  {
-    out_p_epsilon = 0.f;
+  Point PinholeCamera::sample_point(float& out_pos_pdf, CameraSample) const {
     out_pos_pdf = 1.f;
     return this->world_origin;
   }
 
-  Spectrum PinholeCamera::sample_film_pos(Vec2 film_res,
-      const Point&, const Vector& wi, Vec2& out_film_pos, float& out_film_pdf) const
+  Spectrum PinholeCamera::sample_film_pos(Vec2 film_res, const Point&,
+      const Vector& wi, Vec2& out_film_pos, float& out_film_pdf) const
   {
     Vec3 pivot = this->camera_to_world.apply_inv(wi).v;
     if(pivot.z <= 0.f) {
@@ -88,18 +79,14 @@ namespace dort {
     return Spectrum(1.f / (area * cube(cos_theta)));
   }
 
-  float PinholeCamera::ray_dir_importance_pdf(Vec2,
-      const Vector& wi_gen, const Point&) const
-  {
-    Vector wi_camera = this->camera_to_world.apply_inv(wi_gen);
-    if(wi_camera.v.z <= 0.f) { return 0.f; }
-    float inv_z = 1.f / wi_camera.v.z;
-    Vec2 project_pos(wi_camera.v.x * inv_z, wi_camera.v.y * inv_z);
-    Vec2 normal_pos = project_pos / this->project_dimension;
+  float PinholeCamera::ray_importance_pdf(Vec2, const Point&, const Vector&, Vec2) const {
+    return 1.f;
+  }
 
-    if(abs(normal_pos.x) > 0.5 && abs(normal_pos.y) > 0.5) { return 0.f; }
-    float cos_theta = wi_camera.v.z / length(wi_camera);
-    return 1.f / cube(cos_theta);
+  float PinholeCamera::pivot_importance_pdf(Vec2,
+      const Point&, Vec2, const Point&) const 
+  {
+    return 1.f;
   }
 
   bool PinholeCamera::get_film_pos(Vec2 film_res,

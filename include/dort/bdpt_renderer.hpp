@@ -11,7 +11,8 @@ namespace dort {
   /// A bidirectional path renderer.
   /// This renderer samples vertices both from light and the camera and combines
   /// the various sub-paths using multiple importance sampling.
-  class BdptRenderer final: public SampleRenderer {
+  class BdptRenderer final: public Renderer {
+    uint32_t iteration_count;
     uint32_t min_depth;
     uint32_t max_depth;
     bool use_t1_paths;
@@ -30,80 +31,75 @@ namespace dort {
         uint32_t max_depth,
         bool use_t1_paths,
         const std::string& debug_image_dir):
-      SampleRenderer(scene, film, sampler, camera, iteration_count),
+      Renderer(scene, film, sampler, camera),
+      iteration_count(iteration_count),
       min_depth(min_depth), max_depth(max_depth),
       use_t1_paths(use_t1_paths),
       debug_image_dir(debug_image_dir)
     { }
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2 film_pos,
-        uint32_t depth, Sampler& sampler) const override final;
-  private:
-    virtual void preprocess(CtxG& ctx,
-        const Scene& scene, Sampler& sampler) override final;
-    virtual void postprocess(CtxG& ctx) override final;
-    virtual void iteration(Film& film, uint32_t iteration) override final;
 
-    // The unweighted contribution of a path x[0], ..., x[n] is
-    //
-    // C* = f(x[0..n]) / p(x[0..n])
-    // where
-    // f(x[0..n]) =
-    //   Le(x[0] -> x[1]) * We(x[n-1], x[n]) *
-    //   product([G(x[i] <-> x[i+1]) for i in 0..n-1]) *
-    //   product([bsdf(x[i] -> x[i+1] -> x[i+2] for i in 0..n-2])
-    // p(x[0..n]) =
-    //   product([p(x[i]) for i in 0..n])
-    //
-    // For efficient connection of light path y[0], ..., y[s-1] and camera path
-    // z[0], ..., z[t-1], we cache the quantity alpha(x[i]) for each vertex i,
-    // such that
-    //
-    // C*(y[0..s-1] z[0..t-1]) =
-    //   f(y[0..s-1] z[0..t-1]) / p(y[0..s-1] z[0..t-1]) = 
-    //   alpha(y[s-1]) * c(s,t) * alpha(z[t-1])
-    // where
-    // c(s,t) = G(y[s-1] <-> z[t-1]) *
-    //   bsdf(y[s-2] -> y[s-1] -> z[t-1]) *
-    //   bsdf(y[s-1] -> z[t-1] -> z[t-2])
-    //
-    // Therefore, alpha(x[n]) is defined as:
-    // alpha(x[n]) = product([rho(x[i]) / p(x[i]) for i in 0..n])
-    // where
-    // rho(y[0]) = Le0(y[0])
-    // rho(y[1]) = Le1(y[1])
-    // rho(y[i+2]) = bsdf(y[i] -> y[i+1] -> y[i+2])
-    // rho(z[0]) = We0(z[0])
-    // rho(z[1]) = We1(z[1])
-    // rho(z[i+2]) = bsdf(z[i+2] -> z[i+1] -> z[i])
-    //
-    // p(x[0]) = pArea(x[0])
-    // p(x[i+1]) = pDir(x[i+1] <- x[i]) / abs(n[i] dot (x[i] -> x[i+1]))
+    virtual void render(CtxG& ctx, Progress& progress) override final;
+  private:
+
     struct Vertex {
       Point p;
+      float p_epsilon;
       Normal nn;
       std::unique_ptr<Bsdf> bsdf;
       const Light* area_light;
-      float p_epsilon;
-      float fwd_area_pdf; 
-      float bwd_area_pdf;
+
+      /// Stores some form of pdf of being sampled from the previous vertex on
+      /// the same subpath.
+      /// - y0 on light_walk: area pdf of ray origin (for distant lights, the area
+      ///   is a plane perpendicular to the ray direction)
+      /// - y1 on light_walk: area pdf of the ray hit point (for non-distant
+      ///   lights) or solid angle pdf of the ray origin (for distant)
+      /// - y0 freshly sampled from path_contrib(): area pdf of y0 (for
+      ///   non-distant) or solid angle pdf of y1->y0 (for distant lights)
+      /// - yi for i >= 2: area pdf of sampling the BSDF at the previous vertex
+      ///
+      /// - z0 on camera_walk: area pdf of the ray origin
+      /// - z1 on camera_walk: area pdf of the ray hit point
+      /// - zi on camera_walk: area pdf of sampling the BSDF at previous vertex
+      /// - z0 sampled from path_contrib(): area pdf of z0 sampled from z1
+      float fwd_pdf; 
+
+      /// Stores the pdf of being sampled from the next vertex in the walk.
+      /// - yi on light_walk: area pdf of being sampled from y(i+1) with BSDF
+      /// - zi on camera_walk: area pdf of begin sampled from z(i+1) with BSDF
+      float bwd_pdf;
+
       Spectrum alpha;
       bool is_delta;
     };
 
+    void preprocess(const Scene& scene);
+    void postprocess();
+    void render_tile(CtxG& ctx, Recti tile_rect, Recti tile_film_rect,
+        Film& tile_film, Sampler& sampler, Progress& progress) const;
+    void iteration(Film& film, uint32_t iteration);
+
+    Spectrum sample_path(const Scene& scene, Vec2 film_pos, Sampler& sampler) const;
     std::vector<Vertex> random_light_walk(const Scene& scene,
         const Light*& out_light, Rng& rng) const;
     std::vector<Vertex> random_camera_walk(const Scene& scene,
-        const Ray& ray, Rng& rng) const;
+        Vec2 film_pos, Rng& rng) const;
     Spectrum path_contrib(const Scene& scene, Vec2 film_res,
         const Light& light, const Camera& camera, Rng& rng,
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
-        uint32_t s, uint32_t t, Vec2& out_film_pos) const;
+        uint32_t s, uint32_t t,
+        Vertex& out_first_light,
+        Vertex& out_first_camera,
+        Vec2& out_film_pos) const;
     float path_weight(const Scene& scene, Vec2 film_res,
-        const Light& light, const Camera& camera, Vec2 film_pos,
+        const Light& light, const Camera& camera,
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
-        uint32_t s, uint32_t t) const;
+        uint32_t s, uint32_t t,
+        const Vertex& first_light,
+        const Vertex& first_camera,
+        Vec2 film_pos) const;
 
     void init_debug_films();
     void save_debug_films();

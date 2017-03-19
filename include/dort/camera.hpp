@@ -67,20 +67,21 @@ namespace dort {
         Ray& out_ray, float& out_pos_pdf, float& out_dir_pdf,
         CameraSample sample) const = 0;
 
-    /// Samples a direction of a ray from the camera through pivot.
-    /// The direction out_wo points to the camera and out_shadow is initialized
-    /// with an occlusion test. The pdf is w.r.t. the solid angle at pivot. The
-    /// out_film_pos is initialized with a point on film sampled with pdf
-    /// out_film_pdf w.r.t. the film area.
+    /// Samples a point on camera and on the film that can look at the pivot.
+    /// Initializes out_p with a point p on the camera and out_p_pdf with the
+    /// pdf value of the point w.r.t. area (conditioned by the pivot). Also
+    /// initializes out_film_pos with a sample point on film and out_film_pdf
+    /// with the pdf value for this point (conditioned by the pivot and the
+    /// point p). Returns the importance from the point p in direction from p to
+    /// pivot at the film point.
     virtual Spectrum sample_pivot_importance(Vec2 film_res,
         const Point& pivot, float pivot_epsilon,
-        Vector& out_wo, Vec2& out_film_pos,
-        float& out_dir_pdf, float& out_film_pdf,
+        Point& out_p, Vec2& out_film_pos,
+        float& out_p_pdf, float& out_film_pdf,
         ShadowTest& out_shadow, CameraSample sample) const = 0;
 
     /// Samples a point on the camera.
-    virtual Point sample_point(float& out_p_epsilon,
-        float& out_pos_pdf, CameraSample sample) const = 0;
+    virtual Point sample_point(float& out_pos_pdf, CameraSample sample) const = 0;
 
     /// Samples a point on film given a point on camera and a direction to look at.
     /// Returns the importance and sets out_film_pos and out_film_pdf.
@@ -88,13 +89,16 @@ namespace dort {
         const Point& p, const Vector& wi,
         Vec2& out_film_pos, float& out_film_pdf) const = 0;
 
-    /// Computes the pdf of sampling ray in the direction, given its origin,
-    /// from sample_ray_importance().
-    /// Returns the pdf of sampling ray with direction dir_gen, given the ray
-    /// origin, from sample_ray_importance() (assuming the film pos is sampled
-    /// uniformly on the film plane). The pdf is w.r.t. the solid angle at origin.
-    virtual float ray_dir_importance_pdf(Vec2 film_res,
-        const Vector& wi_gen, const Point& origin_fix) const = 0;
+    /// Computes the pdf of sampling ray from sample_ray_importance(), given a
+    /// film_pos. The pdf is a product of area pdf of the origin and solid angle
+    /// pdf of the direction.
+    virtual float ray_importance_pdf(Vec2 film_res,
+        const Point& origin_gen, const Vector& wi_gen, Vec2 film_pos_fix) const = 0;
+
+    /// Computes the area pdf of sampling a point and film pos from
+    /// sample_pivot_importance().
+    virtual float pivot_importance_pdf(Vec2 film_res,
+        const Point& p_gen, Vec2 film_pos_gen, const Point& pivot_fix) const = 0;
   protected:
     static Vec2 film_to_normal(Vec2 film_res, Vec2 film_pos);
     static Vec2 normal_to_film(Vec2 film_res, Vec2 normal_pos);

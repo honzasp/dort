@@ -17,17 +17,21 @@ namespace dort {
 
     out_ray = Ray(orig, Vector(dir), 0.f);
     out_nn = Normal(dir);
-    out_pos_pdf = uniform_sphere_pdf();
-    out_dir_pdf = uniform_disk_pdf();
+    out_pos_pdf = INV_PI / square(radius);
+    out_dir_pdf = INV_FOUR_PI;
     return this->radiance;
   }
 
-  Spectrum InfiniteLight::sample_pivot_radiance(const Point& pivot,
-      float pivot_epsilon, Vector& out_wi, float& out_dir_pdf,
-      ShadowTest& out_shadow, LightSample sample) const
+  Spectrum InfiniteLight::sample_pivot_radiance(const Point& pivot, float pivot_epsilon,
+      Vector& out_wi, Point& out_p, Normal& out_nn, float& out_p_epsilon,
+      float& out_dir_pdf, ShadowTest& out_shadow,
+      LightSample sample) const
   {
     out_wi = Vector(uniform_sphere_sample(sample.uv_pos.x, sample.uv_pos.y));
-    out_dir_pdf = uniform_sphere_pdf();
+    out_p = Point(SIGNALING_NAN, SIGNALING_NAN, SIGNALING_NAN);
+    out_nn = Normal(SIGNALING_NAN, SIGNALING_NAN, SIGNALING_NAN);
+    out_p_epsilon = SIGNALING_NAN;
+    out_dir_pdf = INV_FOUR_PI;
     out_shadow.init_point_dir(pivot, pivot_epsilon, out_wi);
     return this->radiance;
   }
@@ -42,18 +46,15 @@ namespace dort {
     return Spectrum(0.f);
   }
 
-  float InfiniteLight::ray_dir_radiance_pdf(const Scene&,
-      const Vector&, const Point&, const Normal&) const
+  float InfiniteLight::ray_radiance_pdf(const Scene& scene, const Point&,
+      const Vector&, const Normal&) const
   {
-    return 0.f;
+    float radius = scene.radius;
+    return INV_PI * INV_FOUR_PI / square(radius);
   }
 
-  float InfiniteLight::ray_orig_radiance_pdf(const Scene&, const Point&) const {
-    return 0.f;
-  }
-
-  float InfiniteLight::pivot_radiance_pdf(const Point&, const Vector&) const {
-    return uniform_sphere_pdf();
+  float InfiniteLight::pivot_radiance_pdf(const Vector&, const Point&) const {
+    return INV_FOUR_PI;
   }
 
   Spectrum InfiniteLight::background_radiance(const Ray&) const {

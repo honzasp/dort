@@ -13,55 +13,15 @@ namespace dort {
   void SampleRenderer::render(CtxG& ctx, Progress& progress) {
     this->pixel_pos_idx = this->sampler->request_sample_2d();
     this->preprocess(ctx, *this->scene, *this->sampler);
-
-    StatTimer t(TIMER_RENDER);
-    Vec2i layout_tiles = Renderer::layout_tiles(ctx, *this->film, *this->sampler);
-    Vec2 tile_size = Vec2(float(this->film->x_res), float(this->film->y_res)) /
-      Vec2(float(layout_tiles.x), float(layout_tiles.y));
-    uint32_t job_count = layout_tiles.x * layout_tiles.y * this->iteration_count;
-    stat_sample_int(DISTRIB_INT_RENDER_JOBS, job_count);
-
-    // TODO: it is wasteful to produce so many samplers
-    std::vector<std::shared_ptr<Sampler>> samplers;
-    for(uint32_t i = 0; i < job_count; ++i) {
-      samplers.push_back(this->sampler->split());
-    }
-
-    std::mutex film_mutex;
-    std::atomic<uint32_t> jobs_done(0);
-    std::atomic<uint32_t> iters_done(0);
-    fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
-      if(progress.is_cancelled()) { return; }
-
-      uint32_t iter_job_i = job_i % (layout_tiles.x * layout_tiles.y);
-      if(iter_job_i == 0) {
-        uint32_t iteration = iters_done.fetch_add(1);
-        std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->iteration(*this->film, iteration);
-      }
-
-      uint32_t tile_x = iter_job_i % layout_tiles.x;
-      uint32_t tile_y = iter_job_i / layout_tiles.x;
-      Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));
-      Vec2 corner_1f = corner_0f + tile_size;
-      Recti tile_rect(floor_vec2i(corner_0f), floor_vec2i(corner_1f));
-
-      Vec2 margin = this->film->filter.radius;
-      Recti film_rect(floor_vec2i(corner_0f - margin), ceil_vec2i(corner_1f + margin));
-      Vec2i film_size = film_rect.p_max - film_rect.p_min;
-      Film tile_film(film_size.x, film_size.y, this->film->filter);
-      this->render_tile(ctx, tile_rect, film_rect, tile_film,
-        *samplers.at(job_i), progress);
-
-      {
-        std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->film->add_tile(film_rect.p_min, tile_film);
-      }
-
-      uint32_t done = jobs_done.fetch_add(1) + 1;
-      progress.set_percent_done(float(done) / float(job_count));
-    });
-
+    this->render_tiled(ctx, progress, this->iteration_count,
+        [this](CtxG& ctx, Recti tile_rect, Recti tile_film_res,
+            Film& file_film, Sampler& sampler, Progress& progress) 
+        {
+          this->render_tile(ctx, tile_rect, tile_film_res, file_film, sampler, progress);
+        },
+        [this](Film& film, uint32_t iter) {
+          this->iteration(film, iter);
+        });
     this->postprocess(ctx);
   }
 

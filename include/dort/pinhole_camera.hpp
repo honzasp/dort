@@ -16,17 +16,19 @@ namespace dort {
         CameraSample sample) const override final;
     virtual Spectrum sample_pivot_importance(Vec2 film_res,
         const Point& pivot, float pivot_epsilon,
-        Vector& out_wo, Vec2& out_film_pos,
-        float& out_dir_pdf, float& out_film_pdf,
+        Point& out_p, Vec2& out_film_pos,
+        float& out_p_pdf, float& out_film_pdf,
         ShadowTest& out_shadow, CameraSample sample) const override final;
-    virtual Point sample_point(float& out_p_epsilon,
+    virtual Point sample_point(
         float& out_pos_pdf, CameraSample sample) const override final;
     virtual Spectrum sample_film_pos(Vec2 film_res,
         const Point& p, const Vector& wi,
         Vec2& out_film_pos, float& out_film_pdf) const override final;
 
-    virtual float ray_dir_importance_pdf(Vec2 film_res,
-        const Vector& wi_gen, const Point& origin_fix) const override final;
+    virtual float ray_importance_pdf(Vec2 film_res, const Point& origin_gen,
+        const Vector& wi_gen, Vec2 film_pos_fix) const override final;
+    virtual float pivot_importance_pdf(Vec2 film_res, const Point& p_gen,
+        Vec2 film_pos_gen, const Point& pivot_fix) const override final;
   private:
     bool get_film_pos(Vec2 film_res, const Vec3& pivot,
         Vec2& out_film_pos) const;

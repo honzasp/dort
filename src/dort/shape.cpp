@@ -21,7 +21,7 @@ namespace dort {
       return 0.f;
     }
 
-    return length_squared(ray.point_t(t_hit) - pivot) /
-      (abs_dot(w, diff_geom.nn) * this->area());
+    Point pt = ray.point_t(t_hit);
+    return this->point_pdf(pt) * length_squared(pt - pivot) / abs_dot(w, diff_geom.nn);
   }
 }

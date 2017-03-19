@@ -111,18 +111,32 @@ function cornell_box_scene(surface_kind, light_kind)
         for _, index in ipairs({0, 3}) do
           local shape = triangle(m, index)
           local light = diffuse_light {
-            radiance = rgb(1, 1, 1) * 100,
+            radiance = rgb(100),
             shape = shape,
           }
           add_light(light)
           add_shape(shape, light)
         end
       end)
+    elseif light_kind == "sphere" then
+      block(function()
+        transform(translate(250*s, 400*s, 250*s))
+        material(matte_material { color = rgb(0) })
+        local shape = sphere { radius = 20*s }
+        local light = diffuse_light {
+          radiance = rgb(100),
+          shape = shape,
+        }
+        add_light(light)
+        add_shape(shape, light)
+      end)
     elseif light_kind == "point" then
       add_light(point_light {
         point = point(250*s, 400*s, 250*s),
         intensity = rgb(1) * 15e4 *s*s,
       })
+    else
+      error("bad light kind " .. light_kind)
     end
   end)
 end
@@ -170,10 +184,17 @@ function cavern_scene()
 end
 
 function light_disk_scene()
+  local s = 1
   return define_scene(function()
     block(function()
+      material(matte_material { color = rgb(0.5) })
+      add_shape(disk { radius = 5*s, z = 10*s })
+    end)
+
+    block(function()
       material(matte_material { color = rgb(0) })
-      local shape = disk { radius = 0.1, z = 0 }
+      local shape = sphere { radius = 1*s }
+      transform(translate(4*s, 0*s, 6*s))
       local light = diffuse_light {
         shape = shape,
         radiance = rgb(1),
@@ -185,10 +206,10 @@ function light_disk_scene()
 
     camera(pinhole_camera {
       transform = look_at(
-        point(0, 0, 2),
         point(0, 0, 0),
+        point(0, 0, 10*s),
         vector(0, 1, 0)),
-      fov = pi / 3,
+      fov = pi / 2,
     })
   end)
 end
@@ -237,6 +258,7 @@ common_opts = {
   },
   filter = box_filter { radius = 0.5 },
 }
+
 algos = {
   --[[
   {"dot", {
@@ -248,22 +270,33 @@ algos = {
     iterations = 4,
   }},
   {"lt", {
-    max_depth = 5,
+    min_depth = 2,
+    max_depth = 2,
     renderer = "lt",
     iterations = 4,
   }},
-  --]]
+  --[[
   {"pt", {
-    min_depth = 0,
-    max_depth = 3,
+    min_depth = 2,
+    max_depth = 2,
     renderer = "pt",
     iterations = 2,
   }},
+  --]]
+  {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 4}},
+  {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 4}},
+  {"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 4}},
+  {"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 4}},
+  --{"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 10}},
+  --{"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 10}},
+  --{"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 10}},
+  --{"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 10}},
+  --[[
   {"bdpt", {
     min_depth = 0,
     max_depth = 3,
     renderer = "bdpt",
-    iterations = 2,
+    iterations = 5,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -280,9 +313,10 @@ scenes = {
   --{"point_light", point_light_scene()},
   --{"light_disk", light_disk_scene()},
   --{"diffuse_box", cornell_box_scene("diffuse", "area")},
+  {"diffuses_box", cornell_box_scene("diffuse", "sphere")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
   --{"delta_box", cornell_box_scene("delta", "area")},
-  {"diffusep_box", cornell_box_scene("diffuse", "point")},
+  --{"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},
   --{"deltap_box", cornell_box_scene("delta", "point")},
   --[[
