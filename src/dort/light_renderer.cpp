@@ -76,12 +76,11 @@ namespace dort {
             CameraSample(sampler.rng));
 
         Vec2 film_pos;
-        float film_pdf;
-        Spectrum importance = this->camera->sample_film_pos(film_res,
-            camera_p, normalize(light_p - camera_p), film_pos, film_pdf);
+        Spectrum importance = this->camera->eval_importance(film_res,
+            camera_p, normalize(light_p - camera_p), film_pos);
         Spectrum radiance = light.eval_radiance(light_p, light_nn, camera_p);
 
-        float contrib_pdf = light_pdf * light_pos_pdf * camera_pos_pdf * film_pdf;
+        float contrib_pdf = light_pdf * light_pos_pdf * camera_pos_pdf;
         Spectrum contrib = radiance * importance /
           (length_squared(light_p - camera_p) * contrib_pdf);
         if(!(light_nn == Normal())) {
@@ -113,10 +112,9 @@ namespace dort {
         float camera_p_pdf;
         ShadowTest shadow;
         Vec2 film_pos;
-        float film_pdf;
         Spectrum importance = this->camera->sample_pivot_importance(film_res,
             isect.world_diff_geom.p, isect.ray_epsilon,
-            camera_p, film_pos, camera_p_pdf, film_pdf,
+            camera_p, film_pos, camera_p_pdf,
             shadow, CameraSample(sampler.rng));
         if(camera_p_pdf != 0.f && !importance.is_black()) {
           Vector camera_wo = normalize(camera_p - isect.world_diff_geom.p);
@@ -126,7 +124,7 @@ namespace dort {
             * ( abs_dot(prev_nn, ray.dir) 
               * abs_dot(isect.world_diff_geom.nn, camera_wo)
               / ( length_squared(camera_p - isect.world_diff_geom.p)
-                * prev_dir_pdf * camera_p_pdf * film_pdf));
+                * prev_dir_pdf * camera_p_pdf));
           if(!contrib.is_black() && shadow.visible(*this->scene)) {
             this->add_contrib(film_pos, contrib);
           }

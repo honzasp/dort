@@ -11,7 +11,7 @@ namespace dort {
     out_ray = Ray(this->pt, Vector(wi), 0.f);
     out_nn = Normal(wi);
     out_pos_pdf = 1.f;
-    out_dir_pdf = uniform_sphere_pdf();
+    out_dir_pdf = INV_FOUR_PI;
     return this->intensity;
   }
 
@@ -25,8 +25,8 @@ namespace dort {
     out_p = this->pt;
     out_nn = -Normal(out_wi);
     out_p_epsilon = 0.f;
-    out_dir_pdf = 1.f;
-    return this->intensity / length_squared(this->pt - pivot);
+    out_dir_pdf = length_squared(this->pt - pivot);
+    return this->intensity;
   }
 
   bool PointLight::sample_point(Point& out_p, float& out_p_epsilon,
@@ -51,8 +51,8 @@ namespace dort {
     return 1.f / (4.f * PI);
   }
 
-  float PointLight::pivot_radiance_pdf(const Vector&, const Point&) const {
-    return 1.f;
+  float PointLight::pivot_radiance_pdf(const Vector&, const Point& pivot_fix) const {
+    return length_squared(this->pt - pivot_fix);
   }
 
   Spectrum PointLight::background_radiance(const Ray&) const {

@@ -107,7 +107,7 @@ namespace dort {
 
         float path_weight = this->path_weight(scene, film_res,
             *light, camera, light_walk, camera_walk, s, t,
-            path_first_light, path_first_camera, path_film_pos);
+            path_first_light, path_first_camera);
         Spectrum weighted_contrib = path_contrib * path_weight;
 
         if(t == 1) {
@@ -151,7 +151,7 @@ namespace dort {
     y0.fwd_pdf = light_pos_pdf;
     y0.bwd_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
-    y0.is_delta = false;
+    y0.is_delta = light.flags & LIGHT_DELTA_POS;
     walk.push_back(std::move(y0));
 
     Spectrum prev_bsdf_f(1.f);
@@ -228,6 +228,7 @@ namespace dort {
     z0.fwd_pdf = ray_pos_pdf;
     z0.bwd_pdf = SIGNALING_NAN;
     z0.alpha = importance / ray_pos_pdf;
+    z0.is_delta = false;
     walk.push_back(std::move(z0));
 
     Spectrum prev_bsdf_f(1.f);
@@ -310,10 +311,9 @@ namespace dort {
             wi, wi_dir_pdf, shadow, LightSample(rng));
         if(wi_dir_pdf == 0.f || radiance.is_black()) { return Spectrum(0.f); }
 
-        float film_pdf;
-        Spectrum importance = camera.sample_film_pos(film_res, camera_p, wi,
-            out_film_pos, film_pdf);
-        if(film_pdf == 0.f || importance.is_black()) { return Spectrum(0.f); }
+        Spectrum importance = camera.eval_importance(film_res,
+            camera_p, wi, out_film_pos);
+        if(importance.is_black()) { return Spectrum(0.f); }
 
         float light_pdf = this->light_distrib_pdfs.at(&light);
         if(light_pdf == 0.f) { return Spectrum(0.f); }
@@ -321,8 +321,7 @@ namespace dort {
 
         // TODO: initialize out_first_light and out_first_camera
 
-        return (importance * radiance) 
-          / (camera_p_pdf * wi_dir_pdf * film_pdf * light_pdf);
+        return (importance * radiance) / (camera_p_pdf * wi_dir_pdf * light_pdf);
       } else {
         // TODO: pick a point y on light, sample camera point, direction and
         // film position to look at this point, evaluate radiance from the light
@@ -379,7 +378,7 @@ namespace dort {
       out_first_light.bsdf = nullptr;
       out_first_light.area_light = nullptr;
       out_first_light.alpha = Spectrum(SIGNALING_NAN);
-      out_first_light.is_delta = false;
+      out_first_light.is_delta = light.flags & LIGHT_DELTA;
       out_first_light.bwd_pdf = last_camera.bsdf->light_f_pdf(wi, bsdf_wo, BSDF_ALL);
 
       return last_camera.alpha * bsdf_f * light_radiance
@@ -389,11 +388,10 @@ namespace dort {
       const Vertex& last_light = light_walk.at(s - 1);
       Point camera_p;
       float camera_p_pdf;
-      float film_pdf;
       ShadowTest shadow;
       Spectrum camera_importance = camera.sample_pivot_importance(film_res,
           last_light.p, last_light.p_epsilon,
-          camera_p, out_film_pos, camera_p_pdf, film_pdf,
+          camera_p, out_film_pos, camera_p_pdf,
           shadow, CameraSample(rng));
       if(camera_importance.is_black() || camera_p_pdf == 0.f) {
         return Spectrum(0.f);
@@ -411,13 +409,13 @@ namespace dort {
       out_first_camera.bsdf = nullptr;
       out_first_camera.area_light = nullptr;
       out_first_camera.fwd_pdf = camera_p_pdf;
-      out_first_camera.bwd_pdf = last_light.bsdf->camera_f_pdf(wo, wi, BSDF_ALL);
+      out_first_camera.bwd_pdf = SIGNALING_NAN;
       out_first_camera.alpha = camera_importance;
       out_first_camera.is_delta = false;
 
       return last_light.alpha * bsdf_f * camera_importance
         * (abs_dot(last_light.nn, wo) 
-        / (length_squared(camera_p - last_light.p) * camera_p_pdf * film_pdf));
+        / (length_squared(camera_p - last_light.p) * camera_p_pdf));
     } else if(s >= 2 && t >= 2) {
       // Connect the light and camera subpaths.
       const Vertex& last_light = light_walk.at(s - 1);
@@ -450,8 +448,7 @@ namespace dort {
       const std::vector<Vertex>& camera_walk,
       uint32_t s, uint32_t t,
       const Vertex& first_light,
-      const Vertex& first_camera,
-      Vec2 film_pos) const
+      const Vertex& first_camera) const
   {
     assert(t >= 1 && s + t >= 2);
     auto light_at = [&](uint32_t i) -> const Vertex& {
@@ -500,23 +497,24 @@ namespace dort {
       }
     }
 
+#define printf(...) sqrt(0.f)
     // computes the pdf of sampling point x[i] from x[i-1] (i.e., from light)
     // if i == 0 and the light is distant, this is solid angle pdf, otherwise it
     // is area pdf.
     auto pdf_light = [&](uint32_t i) {
-      //std::printf("  * pdf_light(%u)\n", i);
+      std::printf("  * pdf_light(%u)\n", i);
       if(i == 0) {
         // pdf of sampling x0 from x1 using sample_pivot_radiance()
-        //std::printf("    pivot %g\n", x0_pivot_pdf);   
+        std::printf("    pivot %g\n", x0_pivot_pdf);   
         return x0_pivot_pdf;
       } else if(i == 1) {
         // area pdf of sampling x1 from x0 (cancelling the pdf of sampling x0
         // from x1) using sample_pivot_radiance()
-        if(x0_pivot_pdf == 0.f) { return 0.f; }
 
-        const Vertex& x0 = vertex_at(i);
-        const Vertex& x1 = vertex_at(i+1);
+        const Vertex& x0 = vertex_at(i-1);
+        const Vertex& x1 = vertex_at(i);
         Vector wi = normalize(x0.p - x1.p);
+        float ray_pdf;
         if(s >= 2) {
           // the pdfs are stored in the vertices
           if(light.flags & LIGHT_DISTANT) {
@@ -525,48 +523,47 @@ namespace dort {
             // x1.fwd_pdf is the directional density corresponding to wi
             float x0_dir_pdf = x1.fwd_pdf;
             float x1_area_pdf = x0.fwd_pdf * abs_dot(wi, x1.nn);
-            //std::printf("    dl %g * %g / %g\n",
-                //x0_dir_pdf, x1_area_pdf, x0_pivot_pdf);
-            return x0_dir_pdf * x1_area_pdf / x0_pivot_pdf;
+            std::printf("    dl %g * %g\n", x0_dir_pdf, x1_area_pdf);
+            ray_pdf = x0_dir_pdf * x1_area_pdf;
           } else {
             // for non-distant lights, both pdfs w.r.t. area are already stored
             // in the vertices
-            //std::printf("    ndl %g * %g / %g\n",
-                //x0.fwd_pdf, x1.fwd_pdf, x0_pivot_pdf);
-            return x0.fwd_pdf * x1.fwd_pdf / x0_pivot_pdf;
+            std::printf("    ndl %g * %g\n", x0.fwd_pdf, x1.fwd_pdf);
+            ray_pdf = x0.fwd_pdf * x1.fwd_pdf;
           }
         } else {
-          float ray_pdf = light.ray_radiance_pdf(scene, x0.p, -wi, x0.nn);
+          float ray_angle_pdf = light.ray_radiance_pdf(scene, x0.p, -wi, x0.nn);
           if(light.flags & LIGHT_DISTANT) {
-            //std::printf("    dl %g / %g\n", ray_pdf, x0_pivot_pdf);
-            return ray_pdf / x0_pivot_pdf;
+            std::printf("    dl %g\n", ray_angle_pdf);
+            ray_pdf = ray_angle_pdf;
           } else {
             // the ray pdf must be converted from area*solidangle to area*area
-            //std::printf("    ndl %g * %g / %g / %g\n", ray_pdf, abs_dot(x1.nn, wi),
-                //length_squared(x0.p - x1.p), x0_pivot_pdf);
-            return ray_pdf * abs_dot(x1.nn, wi) /
-              (length_squared(x0.p - x1.p) * x0_pivot_pdf);
+            std::printf("    ndl %g * %g / %g\n", ray_angle_pdf,
+                abs_dot(x1.nn, wi), length_squared(x0.p - x1.p));
+            ray_pdf = ray_angle_pdf * abs_dot(x1.nn, wi) / length_squared(x0.p - x1.p);
           }
         }
+
+        std::printf("    pivot / ray = %g / %g\n", x0_pivot_pdf, ray_pdf);
+        return x0_pivot_pdf / ray_pdf;
       } else if(i >= 2 && i < s) {
         // the BSDF sampling probability is cached in the light vertices
+        std::printf("    cached fwd %g\n", vertex_at(i).fwd_pdf);
         return vertex_at(i).fwd_pdf;
-      } else if(i >= 2 && i == s) {
-        // the pdf of sampling the last camera vertex must be computed
+      } else if(i >= 2 && i == s && t != 1) {
+        // the pdf of sampling the last surface camera vertex must be computed
         const Vertex& xo = vertex_at(i);
         const Vertex& x = vertex_at(i-1);
         const Vertex& xi = vertex_at(i-2);
         Vector bsdf_wi = normalize(xi.p - x.p);
         Vector bsdf_wo = normalize(xo.p - x.p);
         float wo_dir_pdf = x.bsdf->camera_f_pdf(bsdf_wo, bsdf_wi, BSDF_ALL);
-        if(t >= 2) {
-          // only multiply by the cosine if xo is a surface vertex
-          return wo_dir_pdf * abs_dot(bsdf_wo, xo.nn) / length_squared(xo.p - x.p);
-        } else {
-          return wo_dir_pdf / length_squared(xo.p - x.p);
-        }
+        std::printf("    bsdf %g * %g / %g\n", wo_dir_pdf,
+            abs_dot(bsdf_wo, xo.nn), length_squared(xo.p - x.p));
+        return wo_dir_pdf * abs_dot(bsdf_wo, xo.nn) / length_squared(xo.p - x.p);
       } else if(i >= 2 && i > s && i < s + t - 1) {
         // the backward BSDF sampling pdf is cached in the camera vertices
+        std::printf("    cached bwd %g\n", vertex_at(i).bwd_pdf);
         return vertex_at(i).bwd_pdf;
       } else {
         assert(false && "Invalid combination in pdf_light()");
@@ -578,6 +575,7 @@ namespace dort {
     // if i == 0 and the light is distant, this is solid angle pdf, otherwise it
     // is area pdf.
     auto pdf_camera = [&](uint32_t i) {
+      std::printf("  * pdf_camera(%u)\n", i);
       if(i == s + t - 2) {
         const Vertex& z1 = vertex_at(s + t - 2);
         const Vertex& z0 = vertex_at(s + t - 1);
@@ -587,10 +585,13 @@ namespace dort {
         if(t >= 2) {
           // the path was sampled using sample_ray_importance() and the pdfs are
           // stored in the vertices
+          std::printf("    ray %g * %g\n", z0.fwd_pdf, z1.fwd_pdf);
           ray_area_pdf = z0.fwd_pdf * z1.fwd_pdf;
         } else {
           // the camera vertex was freshly sampled
-          float ray_pdf = camera.ray_importance_pdf(film_res, z0.p, wi, film_pos);
+          float ray_pdf = camera.ray_importance_pdf(film_res, z0.p, wi);
+          std::printf("    ray %g * %g / %g\n", ray_pdf, abs_dot(wi, z1.nn),
+              length_squared(z1.p - z0.p));
           ray_area_pdf = ray_pdf * abs_dot(wi, z1.nn) / length_squared(z1.p - z0.p);
         }
 
@@ -598,17 +599,26 @@ namespace dort {
         if(t == 1) {
           // the path was sampled using sample_pivot_importance() and the pdf is
           // stored in z0
+          std::printf("    pivot %g\n", z0.fwd_pdf);
           pivot_area_pdf = z0.fwd_pdf;
         } else {
-          pivot_area_pdf = camera.pivot_importance_pdf(film_res, z0.p, film_pos, z1.p);
+          pivot_area_pdf = camera.pivot_importance_pdf(film_res, z0.p, z1.p);
+          std::printf("    pivot %g\n", pivot_area_pdf);
         }
 
-        return ray_area_pdf / pivot_area_pdf;
+        std::printf("    %g / %g\n", pivot_area_pdf, ray_area_pdf);
+        return pivot_area_pdf / ray_area_pdf;
       } else if(i < s + t - 2 && i >= s) {
         // the forward BSDF sampling pdf is cached in the camera vertices
+        std::printf("    cached fwd %g\n", vertex_at(i).fwd_pdf);
         return vertex_at(i).fwd_pdf;
       } else if(i == s - 1 && t >= 2) {
         // the pdf of sampling the last light vertex must be computed
+        if(i == 0 && (light.flags & LIGHT_DELTA)) {
+          // delta light cannot be intersected randomly
+          std::printf("    no delta\n");
+          return 0.f;
+        }
         const Vertex& xi = vertex_at(i);
         const Vertex& x = vertex_at(i+1);
         const Vertex& xo = vertex_at(i+2);
@@ -616,13 +626,17 @@ namespace dort {
         Vector bsdf_wo = normalize(xo.p - x.p);
         float wi_dir_pdf = x.bsdf->light_f_pdf(bsdf_wi, bsdf_wo, BSDF_ALL);
         if(i == 0 && (light.flags & LIGHT_DISTANT)) {
+          std::printf("    dl %g\n", wi_dir_pdf);
           return wi_dir_pdf;
         } else {
+          std::printf("    ndl %g * %g / %g\n", wi_dir_pdf,
+              abs_dot(xi.nn, bsdf_wi), length_squared(xi.p - x.p));
           return wi_dir_pdf * abs_dot(xi.nn, bsdf_wi) / length_squared(xi.p - x.p);
         }
       } else if(i < s - 1) {
-        assert(!(s == 1 && i == 1));
+        assert(!(s == 1 && i == 0));
         // the backward BSDF sampling pdf is cached in the light vertices
+        std::printf("    cached bwd %g\n", vertex_at(i).bwd_pdf);
         return vertex_at(i).bwd_pdf;
       } else {
         assert(false && "Invalid combination in pdf_camera()");
@@ -632,7 +646,6 @@ namespace dort {
 
     float inv_weight_sum = 1.f;
 
-    /*
     std::printf("s = %u, t = %u\n", s, t);
     std::printf("  x0_pivot_pdf = %g\n", x0_pivot_pdf);
     for(uint32_t i = 0; i < s + t; ++i) {
@@ -641,45 +654,45 @@ namespace dort {
           x.p.v.x, x.p.v.y, x.p.v.z,
           x.fwd_pdf, x.bwd_pdf);
     }
-    */
 
     float r_light = 1.f;
     for(uint32_t j = 1; j <= t - 1; ++j) {
       // alternative strategy using s + j light vertices and t - j camera
       // vertices
-      //std::printf("* alt %u,%u\n", s + j, t - j);
+      std::printf("* alt %u,%u\n", s + j, t - j);
       float fwd_pdf = pdf_light(s + j - 1);
       float bwd_pdf = pdf_camera(s + j - 1);
-      //std::printf("  %g / %g = %g\n", fwd_pdf, bwd_pdf, fwd_pdf / bwd_pdf);
+      std::printf("  %g / %g = %g\n", fwd_pdf, bwd_pdf, fwd_pdf / bwd_pdf);
       assert(fwd_pdf >= 0.f && is_finite(fwd_pdf));
       assert(bwd_pdf >= 0.f && is_finite(bwd_pdf));
       if(bwd_pdf == 0.f) { break; }
       r_light *= fwd_pdf / bwd_pdf;
-      //std::printf("  ratio %g\n", r_light);
+      std::printf("  ratio %g\n", r_light);
       if(r_light == 0.f) { break; }
-      if(!vertex_at(s + j).is_delta) { inv_weight_sum += r_light; }
+      if(!vertex_at(s + j - 1).is_delta) { inv_weight_sum += r_light; }
     }
 
     float r_camera = 1.f;
     for(uint32_t j = 1; j <= s; ++j) {
       // alternative strategy using s - j light vertices and t + j camera
       // vertices
-      //std::printf("* alt %u,%u\n", s - j, t + j);
+      std::printf("* alt %u,%u\n", s - j, t + j);
       float fwd_pdf = pdf_camera(s - j);
       float bwd_pdf = pdf_light(s - j);
-      //std::printf("  %g / %g = %g\n", fwd_pdf, bwd_pdf, fwd_pdf / bwd_pdf);
+      std::printf("  %g / %g = %g\n", fwd_pdf, bwd_pdf, fwd_pdf / bwd_pdf);
       assert(fwd_pdf >= 0.f && is_finite(fwd_pdf));
       assert(bwd_pdf >= 0.f && is_finite(bwd_pdf));
       if(bwd_pdf == 0.f) { break; }
       r_camera *= fwd_pdf / bwd_pdf;
-      //std::printf("  ratio %g\n", r_camera);
+      std::printf("  ratio %g\n", r_camera);
       if(r_camera == 0.f) { break; }
-      if(!vertex_at(s - j + 1).is_delta) { inv_weight_sum += r_camera; }
+      if(!vertex_at(s - j).is_delta) { inv_weight_sum += r_camera; }
     }
 
     assert(inv_weight_sum >= 1.f && is_finite(inv_weight_sum));
-    //std::printf("  weight %g\n", 1.f / inv_weight_sum);
+    std::printf("  weight %g\n", 1.f / inv_weight_sum);
     return 1.f / inv_weight_sum;
+#undef printf
   }
 
   void BdptRenderer::init_debug_films() {

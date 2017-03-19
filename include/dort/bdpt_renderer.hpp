@@ -98,8 +98,7 @@ namespace dort {
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t,
         const Vertex& first_light,
-        const Vertex& first_camera,
-        Vec2 film_pos) const;
+        const Vertex& first_camera) const;
 
     void init_debug_films();
     void save_debug_films();
