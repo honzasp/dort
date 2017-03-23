@@ -135,6 +135,11 @@ function cornell_box_scene(surface_kind, light_kind)
         point = point(250*s, 400*s, 250*s),
         intensity = rgb(1) * 15e4 *s*s,
       })
+    elseif light_kind == "direction" then
+      add_light(directional_light {
+        direction = vector(1, -1, 5),
+        radiance = rgb(10),
+      })
     else
       error("bad light kind " .. light_kind)
     end
@@ -183,88 +188,6 @@ function cavern_scene()
   end)
 end
 
-function light_disk_scene()
-  local s = 1
-  return define_scene(function()
-    block(function()
-      material(matte_material { color = rgb(0.5) })
-      add_shape(disk { radius = 5*s, z = 10*s })
-    end)
-
-    block(function()
-      material(matte_material { color = rgb(0) })
-      local shape = sphere { radius = 1*s }
-      transform(translate(4*s, 0*s, 6*s))
-      local light = diffuse_light {
-        shape = shape,
-        radiance = rgb(1),
-        transform = identity(),
-      }
-      add_shape(shape, light)
-      add_light(light)
-    end)
-
-    camera(pinhole_camera {
-      transform = look_at(
-        point(0, 0, 0),
-        point(0, 0, 10*s),
-        vector(0, 1, 0)),
-      fov = pi / 2,
-    })
-  end)
-end
-
-function sphere_light_scene()
-  local a = 1
-  local b = 1
-  return define_scene(function()
-    block(function()
-      material(matte_material { color = rgb(0.5) })
-      add_shape(disk { radius = 0.2*b, z = 0 })
-    end)
-
-    block(function()
-      transform(translate(3*a, 0, -4*a))
-      add_light(diffuse_light {
-        radiance = rgb(1*a*a),
-        shape = sphere { radius = 1*a },
-      })
-    end)
-
-    camera(pinhole_camera {
-      transform = look_at(
-        point(0, 0, -10*b),
-        point(0, 0, 0),
-        vector(0, 1, 0)),
-      fov = pi / 2,
-    })
-  end)
-end
-
-function point_light_scene()
-  local a = 10
-  local b = 1
-  return define_scene(function()
-    block(function()
-      material(matte_material { color = rgb(0.5) })
-      add_shape(disk { radius = 0.2*b, z = 0 })
-    end)
-
-    add_light(point_light {
-      point = point(3*a, 0, -4*a),
-      intensity = rgb(100*a*a),
-    })
-
-    camera(pinhole_camera {
-      transform = look_at(
-        point(0, 0, -10*b),
-        point(0, 0, 0),
-        vector(0, 1, 0)),
-      fov = pi / 2,
-    })
-  end)
-end
-
 out_dir = "comp"
 
 local res = 512
@@ -285,13 +208,14 @@ algos = {
     renderer = "dot",
   }},
   --]]
+  --[[
   {"direct", {
     max_depth = 1,
     renderer = "direct",
     iterations = 4,
   }},
   --]]
-  ---[[
+  --[[
   {"lt", {
     min_depth = 0,
     max_depth = 4,
@@ -299,7 +223,7 @@ algos = {
     iterations = 10,
   }},
   --]]
-  ---[[
+  --[[
   {"pt", {
     min_depth = 0,
     max_depth = 4,
@@ -322,7 +246,7 @@ algos = {
     min_depth = 0,
     max_depth = 4,
     renderer = "bdpt",
-    iterations = 10,
+    iterations = 2,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -341,7 +265,8 @@ scenes = {
   --{"light_disk", light_disk_scene()},
   --{"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
-  {"glossy_box", cornell_box_scene("glossy", "area")},
+  {"diffused_box", cornell_box_scene("diffuse", "direction")},
+  --{"glossy_box", cornell_box_scene("glossy", "area")},
   --{"delta_box", cornell_box_scene("delta", "area")},
   --{"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},

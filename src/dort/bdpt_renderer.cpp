@@ -152,7 +152,7 @@ namespace dort {
     y0.fwd_pdf = light_pos_pdf;
     y0.bwd_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
-    y0.is_delta = light.flags & LIGHT_DELTA_POS;
+    y0.is_delta = light.flags & LIGHT_DELTA;
     walk.push_back(std::move(y0));
 
     Spectrum prev_bsdf_f(1.f);
