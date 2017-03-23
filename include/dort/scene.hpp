@@ -12,6 +12,7 @@ namespace dort {
 
     std::unique_ptr<Primitive> primitive;
     std::vector<std::shared_ptr<Light>> lights;
+    std::vector<std::shared_ptr<Light>> background_lights;
     std::vector<std::shared_ptr<Mesh>> meshes;
     std::vector<std::shared_ptr<PrimitiveMesh>> prim_meshes;
     std::shared_ptr<Camera> default_camera;

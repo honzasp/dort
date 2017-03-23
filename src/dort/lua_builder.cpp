@@ -97,6 +97,12 @@ namespace dort {
     scene->lights = std::move(builder->lights);
     scene->default_camera = std::move(builder->camera);
 
+    for(const auto& light: scene->lights) {
+      if(light->flags & LIGHT_BACKGROUND) {
+        scene->background_lights.push_back(light);
+      }
+    }
+
     std::move(builder->meshes.begin(), builder->meshes.end(),
         std::back_inserter(scene->meshes));
     std::move(builder->prim_meshes.begin(), builder->prim_meshes.end(),

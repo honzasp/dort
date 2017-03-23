@@ -13,10 +13,8 @@ namespace dort {
 
     Intersection isect;
     if(!scene.intersect(ray, isect)) {
-      for(const auto& light: scene.lights) {
-        if(light->flags & LIGHT_BACKGROUND) {
-          radiance += light->background_radiance(ray);
-        }
+      for(const auto& light: scene.background_lights) {
+        radiance += light->background_radiance(ray);
       }
       return radiance;
     }

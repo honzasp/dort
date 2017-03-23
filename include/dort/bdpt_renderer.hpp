@@ -17,6 +17,7 @@ namespace dort {
     uint32_t max_depth;
     bool use_t1_paths;
     DiscreteDistrib1d light_distrib;
+    DiscreteDistrib1d background_light_distrib;
     std::unordered_map<const Light*, float> light_distrib_pdfs;
 
     mutable std::unordered_map<uint32_t, Film> debug_films;
@@ -46,7 +47,15 @@ namespace dort {
       float p_epsilon;
       Normal nn;
       std::unique_ptr<Bsdf> bsdf;
+
+      /// Stores an area light hit on the camera path.
       const Light* area_light;
+
+      /// Stores a background light if the camera walk escaped the scene.
+      /// The last vertex on the camera path may represent a "virtual vertex"
+      /// that was created when the last camera ray escaped the scene and "hit"
+      /// a background light.
+      const Light* background_light;
 
       /// Stores some form of pdf of being sampled from the previous vertex on
       /// the same subpath.
@@ -61,6 +70,8 @@ namespace dort {
       /// - z0 on camera_walk: area pdf of the ray origin
       /// - z1 on camera_walk: area pdf of the ray hit point
       /// - zi on camera_walk: area pdf of sampling the BSDF at previous vertex
+      /// - z(t-1) on camera_walk if background_light != nullptr: solid angle
+      ///   pdf of sampling from the BSDF at previous vertex
       /// - z0 sampled from path_contrib(): area pdf of z0 sampled from z1
       float fwd_pdf; 
 

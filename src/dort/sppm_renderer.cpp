@@ -142,10 +142,8 @@ namespace dort {
     for(uint32_t depth = 0; depth < this->max_depth; ++depth) {
       Intersection isect;
       if(!this->scene->intersect(ray, isect)) {
-        for(const auto& light: this->scene->lights) {
-          if(light->flags & LIGHT_BACKGROUND) {
-            radiance += weight * light->background_radiance(ray);
-          }
+        for(const auto& light: this->scene->background_lights) {
+          radiance += weight * light->background_radiance(ray);
         }
         break;
       }

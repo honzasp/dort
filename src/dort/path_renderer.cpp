@@ -20,10 +20,8 @@ namespace dort {
         if(isected) {
           radiance += throughput * isect.eval_radiance(next_ray.orig);
         } else {
-          for(const auto& light: scene.lights) {
-            if(light->flags & LIGHT_BACKGROUND) {
-              radiance += throughput * light->background_radiance(next_ray);
-            }
+          for(const auto& light: scene.background_lights) {
+            radiance += throughput * light->background_radiance(next_ray);
           }
         }
       }

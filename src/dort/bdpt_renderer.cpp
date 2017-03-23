@@ -21,6 +21,7 @@ namespace dort {
 
   void BdptRenderer::preprocess(const Scene& scene) {
     this->light_distrib = compute_light_distrib(scene);
+    this->background_light_distrib = compute_light_distrib(scene, true);
     for(uint32_t i = 0; i < scene.lights.size(); ++i) {
       this->light_distrib_pdfs.insert(std::make_pair(
           scene.lights.at(i).get(), this->light_distrib.pdf(i)));
@@ -149,6 +150,7 @@ namespace dort {
     y0.nn = light_nn;
     y0.bsdf = nullptr;
     y0.area_light = nullptr;
+    y0.background_light = nullptr;
     y0.fwd_pdf = light_pos_pdf;
     y0.bwd_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
@@ -190,6 +192,7 @@ namespace dort {
       y.nn = isect.world_diff_geom.nn;
       y.bsdf = std::move(bsdf);
       y.area_light = nullptr;
+      y.background_light = nullptr;
       y.fwd_pdf = (bounces == 0 && (light.flags & LIGHT_DISTANT)) ? light_dir_pdf
         : fwd_dir_pdf * abs_dot(y.nn, wi) / dist_squared;
       y.bwd_pdf = SIGNALING_NAN;
@@ -226,6 +229,7 @@ namespace dort {
     z0.nn = Normal(ray.dir);
     z0.bsdf = nullptr;
     z0.area_light = nullptr;
+    z0.background_light = nullptr;
     z0.fwd_pdf = ray_pos_pdf;
     z0.bwd_pdf = SIGNALING_NAN;
     z0.alpha = importance / ray_pos_pdf;
@@ -238,8 +242,34 @@ namespace dort {
       Vertex& prev_z = walk.at(walk.size() - 1);
       if(prev_z.alpha.is_black()) { break; }
 
+      Spectrum alpha_scale = prev_bsdf_f * (abs_dot(prev_z.nn, ray.dir) / fwd_dir_pdf);
+      if(bounces >= 2) {
+        float rr_prob = min(alpha_scale.average(), 0.9f);
+        if(rng.uniform_float() > rr_prob) { break; }
+        alpha_scale /= rr_prob;
+      }
+
       Intersection isect;
-      if(!scene.intersect(ray, isect)) { break; }
+      if(!scene.intersect(ray, isect)) {
+        uint32_t bg_light_i = this->background_light_distrib.sample(sampler->random_1d());
+        float bg_light_pdf = this->background_light_distrib.pdf(bg_light_i);
+        if(bg_light_pdf == 0.f) { break; }
+        const Light* bg_light = scene.background_lights.at(bg_light_i).get();
+
+        Vertex z_bg;
+        z_bg.p = prev_z.p + ray.dir;
+        z_bg.p_epsilon = SIGNALING_NAN;
+        z_bg.nn = Normal(SIGNALING_NAN, SIGNALING_NAN, SIGNALING_NAN);
+        z_bg.bsdf = nullptr;
+        z_bg.area_light = nullptr;
+        z_bg.background_light = bg_light;
+        z_bg.fwd_pdf = fwd_dir_pdf;
+        z_bg.bwd_pdf = SIGNALING_NAN;
+        z_bg.alpha = prev_z.alpha * alpha_scale / bg_light_pdf;
+        z_bg.is_delta = false;
+        walk.push_back(std::move(z_bg));
+        break; 
+      }
 
       std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
       Vector wo = -ray.dir;
@@ -254,19 +284,13 @@ namespace dort {
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_z.p);
       if(dist_squared < 1e-9f) { break; }
 
-      Spectrum alpha_scale = prev_bsdf_f * (abs_dot(prev_z.nn, wo) / fwd_dir_pdf);
-      if(bounces >= 2) {
-        float rr_prob = min(alpha_scale.average(), 0.9f);
-        if(rng.uniform_float() > rr_prob) { break; }
-        alpha_scale /= rr_prob;
-      }
-
       Vertex z;
       z.p = isect.world_diff_geom.p;
       z.p_epsilon = isect.ray_epsilon;
       z.nn = isect.world_diff_geom.nn;
       z.bsdf = std::move(bsdf);
       z.area_light = isect.get_area_light();
+      z.background_light = nullptr;
       z.fwd_pdf = fwd_dir_pdf * abs_dot(z.nn, wo) / dist_squared;;
       z.bwd_pdf = SIGNALING_NAN;
       z.alpha = prev_z.alpha * alpha_scale;
@@ -296,7 +320,11 @@ namespace dort {
   {
     const Vertex& last_camera = camera_walk.at(t - 1);
 
-    if(s == 1 && t == 1) {
+    if(s > 0 && last_camera.background_light != nullptr) {
+      // The last camera vertex is only "virtual" and cannot be connected to any
+      // light vertex.
+      return Spectrum(0.f);
+    } else if(s == 1 && t == 1) {
       // Connect the camera vertex to a new light vertex.
       if(!(this->camera->flags & CAMERA_DIR_BY_POS_DELTA)) {
         // pick a point z on camera, sample light direction from this point,
@@ -331,16 +359,27 @@ namespace dort {
         out_film_pos = Vec2();
         return Spectrum(0.f);
       }
-    } else if(s == 0 && t >= 2) {
-      // TODO: use the background light if any
-      // Use only the camera path, provided that the last vertex is emissive.
-      if(last_camera.area_light == nullptr) { return Spectrum(0.f); }
+    } else if(s == 0 && t >= 2 && last_camera.background_light != nullptr) {
+      // Camera path hit a background light
+      assert(last_camera.background_light->flags & LIGHT_BACKGROUND);
+      assert(last_camera.background_light->flags & LIGHT_DISTANT);
+      Spectrum emitted_radiance = last_camera.background_light->background_radiance(
+          Ray(camera_walk.at(t - 2).p, last_camera.p - camera_walk.at(t - 2).p, 0.f));
+      if(emitted_radiance.is_black()) { return Spectrum(0.f); }
+
+      out_light = last_camera.background_light;
+      return emitted_radiance * last_camera.alpha;
+    } else if(s == 0 && t >= 2 && last_camera.area_light != nullptr) {
+      // Camera path hit an area light
       Spectrum emitted_radiance = last_camera.area_light->eval_radiance(
           last_camera.p, last_camera.nn, camera_walk.at(t - 2).p);
       if(emitted_radiance.is_black()) { return Spectrum(0.f); }
 
       out_light = last_camera.area_light;
       return emitted_radiance * last_camera.alpha;
+    } else if(s == 0 && t >= 2) {
+      // The camera path hit neither a background or an area light
+      return Spectrum(0.f);
     } else if(s == 1) {
       // Connect the camera subpath to a new light vertex.
       uint32_t light_i = this->light_distrib.sample(rng.uniform_float());
@@ -383,6 +422,7 @@ namespace dort {
       }
       out_first_light.bsdf = nullptr;
       out_first_light.area_light = nullptr;
+      out_first_light.background_light = nullptr;
       out_first_light.alpha = Spectrum(SIGNALING_NAN);
       out_first_light.is_delta = light.flags & LIGHT_DELTA;
       out_first_light.bwd_pdf = last_camera.bsdf->light_f_pdf(wi, bsdf_wo, BSDF_ALL);
@@ -414,6 +454,7 @@ namespace dort {
       out_first_camera.nn = Normal(SIGNALING_NAN, SIGNALING_NAN, SIGNALING_NAN);
       out_first_camera.bsdf = nullptr;
       out_first_camera.area_light = nullptr;
+      out_first_camera.background_light = nullptr;
       out_first_camera.fwd_pdf = camera_p_pdf;
       out_first_camera.bwd_pdf = SIGNALING_NAN;
       out_first_camera.alpha = camera_importance;
@@ -472,15 +513,20 @@ namespace dort {
       }
     };
 
+    if(camera_at(t - 1).background_light != nullptr && s != 0) {
+      return 0.f;
+    }
+
     if(s + t == 2) {
       // Special cases for the direct paths
       // TODO: this is very crude
-      if(light.flags & LIGHT_AREA) {
-        // let area lights be intersected by the camera rays
-        return t == 2 ? 1.f : 0.f;
+      if(light.flags & (LIGHT_AREA | LIGHT_BACKGROUND)) {
+        // let area and background lights be intersected by camera rays only
+        return s == 0 ? 1.f : 0.f;
       } else {
         // non-area lights will sample their camera vertices
         return t == 1 ? 1.f : 0.f;
+
       }
     }
 

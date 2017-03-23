@@ -176,10 +176,13 @@ namespace dort {
     }
   }
 
-  DiscreteDistrib1d compute_light_distrib(const Scene& scene) {
+  DiscreteDistrib1d compute_light_distrib(const Scene& scene, bool only_background) {
     std::vector<float> powers(scene.lights.size());
     for(uint32_t i = 0; i < scene.lights.size(); ++i) {
       const auto& light = scene.lights.at(i);
+      if(only_background && !(light->flags & LIGHT_BACKGROUND)) {
+        continue;
+      }
       float power = light->approximate_power(scene).average();
       float weight = float(light->num_samples);
       powers.at(i) = power * weight;

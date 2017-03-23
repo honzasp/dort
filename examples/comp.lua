@@ -1,6 +1,7 @@
 local _ENV = require "dort/dsl"
 
-function cornell_box_scene(surface_kind, light_kind)
+function cornell_box_scene(surface_kind, light_kind, geom_kind)
+  geom_kind = geom_kind or "all"
   local s = 0.1
   return define_scene(function()
     local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
@@ -28,6 +29,14 @@ function cornell_box_scene(surface_kind, light_kind)
       left_wall = mirror
     end
 
+    local add_walls = true
+    if geom_kind == "all" then
+    elseif geom_kind == "open" then
+      add_walls = false
+    else
+      error(geom_kind)
+    end
+
     block(function()
       local m = mesh {
         points = {
@@ -53,18 +62,21 @@ function cornell_box_scene(surface_kind, light_kind)
       material(floor)
       add_triangle(m, 0)
       add_triangle(m, 3)
-      add_triangle(m, 6)
-      add_triangle(m, 9)
-      add_triangle(m, 12)
-      add_triangle(m, 15)
 
-      material(left_wall)
-      add_triangle(m, 18)
-      add_triangle(m, 21)
+      if add_walls then
+        add_triangle(m, 6)
+        add_triangle(m, 9)
+        add_triangle(m, 12)
+        add_triangle(m, 15)
 
-      material(right_wall)
-      add_triangle(m, 24)
-      add_triangle(m, 27)
+        material(left_wall)
+        add_triangle(m, 18)
+        add_triangle(m, 21)
+
+        material(right_wall)
+        add_triangle(m, 24)
+        add_triangle(m, 27)
+      end
     end)
 
     block(function()
@@ -139,6 +151,10 @@ function cornell_box_scene(surface_kind, light_kind)
       add_light(directional_light {
         direction = vector(1, -1, 5),
         radiance = rgb(10),
+      })
+    elseif light_kind == "infinite" then
+      add_light(infinite_light {
+        radiance = rgb(1),
       })
     else
       error("bad light kind " .. light_kind)
@@ -220,7 +236,7 @@ algos = {
     min_depth = 0,
     max_depth = 4,
     renderer = "lt",
-    iterations = 10,
+    iterations = 20,
   }},
   --]]
   --[[
@@ -228,18 +244,18 @@ algos = {
     min_depth = 0,
     max_depth = 4,
     renderer = "pt",
-    iterations = 10,
+    iterations = 20,
   }},
   --]]
   --[[
-  {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 2}},
-  {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 2}},
-  {"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 2}},
-  {"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 2}},
-  {"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 2}},
-  {"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 2}},
-  {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
-  {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
+  {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 10}},
+  {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 10}},
+  {"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 10}},
+  {"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 10}},
+  {"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 10}},
+  {"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 10}},
+  {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 10}},
+  {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 10}},
   --]]
   ---[[
   {"bdpt", {
@@ -265,14 +281,17 @@ scenes = {
   --{"light_disk", light_disk_scene()},
   --{"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
-  {"diffused_box", cornell_box_scene("diffuse", "direction")},
+  --{"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
+  --{"glossyd_box", cornell_box_scene("glossy", "direction")},
+  --{"deltad_box", cornell_box_scene("delta", "direction")},
   --{"delta_box", cornell_box_scene("delta", "area")},
   --{"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},
   --{"deltap_box", cornell_box_scene("delta", "point")},
-  --[[
-  --]]
+  --{"diffuse_open", cornell_box_scene("diffuse", "area", "open")},
+  --{"diffused_open", cornell_box_scene("diffuse", "direction", "open")},
+  {"diffusei_open", cornell_box_scene("diffuse", "infinite", "open")},
   --{"cavern", cavern_scene()},
 }
 

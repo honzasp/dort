@@ -45,5 +45,6 @@ namespace dort {
       const Scene& scene, const LightingGeom& geom, const Bsdf& bsdf,
       BxdfFlags flags, uint32_t depth, Sampler& sampler);
 
-  DiscreteDistrib1d compute_light_distrib(const Scene& scene);
+  DiscreteDistrib1d compute_light_distrib(const Scene& scene,
+      bool only_background = false);
 }

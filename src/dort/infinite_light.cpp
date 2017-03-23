@@ -13,7 +13,7 @@ namespace dort {
 
     Vector s, t;
     coordinate_system(Vector(dir), s, t);
-    Point orig = center - Vector(radius * dir) + disk_p.x * s + disk_p.y * t;
+    Point orig = center + radius * (-Vector(dir) + disk_p.x * s + disk_p.y * t);
 
     out_ray = Ray(orig, Vector(dir), 0.f);
     out_nn = Normal(dir);
