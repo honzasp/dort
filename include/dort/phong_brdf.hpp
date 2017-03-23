@@ -6,7 +6,7 @@ namespace dort {
     Spectrum k_diffuse;
     Spectrum k_glossy;
     float exponent;
-    float glossy_pdf;
+    float pick_glossy_pdf;
   public:
     PhongBrdf(const Spectrum& k_diffuse, const Spectrum& k_glossy, float exponent);
 

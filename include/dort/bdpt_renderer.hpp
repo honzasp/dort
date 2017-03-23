@@ -89,6 +89,7 @@ namespace dort {
         const std::vector<Vertex>& light_walk,
         const std::vector<Vertex>& camera_walk,
         uint32_t s, uint32_t t,
+        const Light*& out_light,
         Vertex& out_first_light,
         Vertex& out_first_camera,
         Vec2& out_film_pos) const;

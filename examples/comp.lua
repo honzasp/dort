@@ -8,8 +8,8 @@ function cornell_box_scene(surface_kind, light_kind)
     local red = matte_material { color = rgb(0.5, 0, 0) }
     local glossy_white = phong_material { color = rgb(0.5), exponent = 50 }
     local glossy_red = phong_material { color = rgb(0.5, 0, 0), exponent = 50 }
-    local mirror = mirror_material { color = rgb(0.9) }
-    local glass = glass_material { color = rgb(0.9) }
+    local mirror = mirror_material { color = rgb(1) }
+    local glass = glass_material { color = rgb(1) }
 
     local right_box = white
     local left_box = white
@@ -284,38 +284,45 @@ algos = {
   {"dot", {
     renderer = "dot",
   }},
+  --]]
   {"direct", {
-    max_depth = 2,
+    max_depth = 1,
     renderer = "direct",
     iterations = 4,
   }},
+  --]]
+  ---[[
   {"lt", {
-    min_depth = 2,
-    max_depth = 2,
+    min_depth = 0,
+    max_depth = 4,
     renderer = "lt",
-    iterations = 4,
-  }},
-  --[[
-  {"pt", {
-    min_depth = 2,
-    max_depth = 2,
-    renderer = "pt",
-    iterations = 2,
+    iterations = 10,
   }},
   --]]
-  --{"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 4}},
-  --{"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 4}},
-  --{"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 4}},
-  --{"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 4}},
-  --{"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 10}},
-  --{"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 10}},
-  --{"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 10}},
-  --{"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 10}},
+  ---[[
+  {"pt", {
+    min_depth = 0,
+    max_depth = 4,
+    renderer = "pt",
+    iterations = 10,
+  }},
+  --]]
+  --[[
+  {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 2}},
+  {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 2}},
+  {"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 2}},
+  {"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 2}},
+  {"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 2}},
+  {"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 2}},
+  {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
+  {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
+  --]]
+  ---[[
   {"bdpt", {
-    min_depth = 1,
-    max_depth = 1,
+    min_depth = 0,
+    max_depth = 4,
     renderer = "bdpt",
-    iterations = 4,
+    iterations = 10,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -332,9 +339,9 @@ scenes = {
   --{"point_light", point_light_scene()},
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  {"diffuse_box", cornell_box_scene("diffuse", "area")},
+  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
-  --{"glossy_box", cornell_box_scene("glossy", "area")},
+  {"glossy_box", cornell_box_scene("glossy", "area")},
   --{"delta_box", cornell_box_scene("delta", "area")},
   --{"diffusep_box", cornell_box_scene("diffuse", "point")},
   --{"glossyp_box", cornell_box_scene("glossy", "point")},
@@ -363,7 +370,7 @@ for scene_i = 1, #scenes do
 
     hdr_image = render(scenes[scene_i][2], opts)
     write_rgbe_image(out_dir.."/"..image_name..".hdr", hdr_image)
-    srgb_image = tonemap_srgb(hdr_image)
-    write_png_image(out_dir.."/"..image_name..".png", srgb_image)
+    --srgb_image = tonemap_srgb(hdr_image)
+    --write_png_image(out_dir.."/"..image_name..".png", srgb_image)
   end
 end

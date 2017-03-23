@@ -67,7 +67,7 @@ namespace dort {
       if(bsdf_f.is_black() || bsdf_pdf == 0.f) {
         break;
       }
-      throughput = throughput * bsdf_f * abs_dot(bsdf_wi, geom.nn) / bsdf_pdf;
+      throughput = throughput * bsdf_f * (abs_dot(bsdf_wi, geom.nn) / bsdf_pdf);
       assert(is_finite(throughput) && is_nonnegative(throughput));
 
       next_ray = Ray(geom.p, bsdf_wi, geom.ray_epsilon);

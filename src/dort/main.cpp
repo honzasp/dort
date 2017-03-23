@@ -26,7 +26,6 @@ namespace dort {
     stat_init_global();
 
     uint32_t num_threads = std::thread::hardware_concurrency();
-    num_threads = 1; std::printf("foo\n");
     auto pool_g = std::make_shared<ThreadPool>(num_threads == 0 ? 1 : num_threads);
     CtxG ctx_g(pool_g);
 

@@ -4,12 +4,17 @@
 namespace dort {
   PhongBrdf::PhongBrdf(const Spectrum& k_diffuse,
       const Spectrum& k_glossy, float exponent):
-    SymmetricBxdf(BSDF_REFLECTION | BSDF_GLOSSY),
+    SymmetricBxdf(BSDF_REFLECTION | BSDF_DIFFUSE | BSDF_GLOSSY),
     k_diffuse(k_diffuse), k_glossy(k_glossy), exponent(exponent)
   { 
     float diffuse_weight = this->k_diffuse.average();
     float glossy_weight = this->k_glossy.average();
-    this->glossy_pdf = glossy_weight / (diffuse_weight + glossy_weight);
+    float sum = diffuse_weight + glossy_weight;
+    if(sum != 0.f) {
+      this->pick_glossy_pdf = glossy_weight / sum;
+    } else {
+      this->pick_glossy_pdf = 0.f;
+    }
   }
 
   Spectrum PhongBrdf::eval_f(const Vector& wi_light, const Vector& wo_camera) const {
@@ -24,16 +29,16 @@ namespace dort {
       return diffuse;
     }
 
-    Spectrum glossy = this->k_glossy * (this->exponent + 2.f) * INV_TWO_PI
-      * pow(cos_alpha, this->exponent);
+    Spectrum glossy = (this->exponent + 2.f) * INV_TWO_PI
+      * pow(cos_alpha, this->exponent) * this->k_glossy;
     return diffuse + glossy;
   }
 
   Spectrum PhongBrdf::sample_symmetric_f(const Vector& w_fix,
       Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const
   {
-    if(uv.x < this->glossy_pdf) {
-      uv.x = uv.x / this->glossy_pdf;
+    if(uv.x < this->pick_glossy_pdf) {
+      uv.x = uv.x / this->pick_glossy_pdf;
       Vector refl_w = Vector(-w_fix.v.x, -w_fix.v.y, w_fix.v.z);
       Vector refl_s, refl_t;
       coordinate_system(refl_w, refl_s, refl_t);
@@ -41,17 +46,13 @@ namespace dort {
       Vec3 relative_wi = power_cosine_hemisphere_sample(uv.x, uv.y, this->exponent);
       out_w_gen = refl_w * relative_wi.z 
         + refl_s * relative_wi.x + refl_t * relative_wi.y;
-      out_dir_pdf = this->glossy_pdf * power_cosine_hemisphere_pdf(
-          relative_wi.z, this->exponent);
     } else {
-      uv.x = (uv.x - this->glossy_pdf) / (1.f - this->glossy_pdf);
+      uv.x = (uv.x - this->pick_glossy_pdf) / (1.f - this->pick_glossy_pdf);
       out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
-      out_dir_pdf = (1.f - this->glossy_pdf) * cosine_hemisphere_pdf(out_w_gen.v.z);
     }
 
-    if(w_fix.v.z < 0.f) {
-      out_w_gen.v.z = -out_w_gen.v.z;
-    }
+    out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
+    out_dir_pdf = this->symmetric_f_pdf(out_w_gen, w_fix);
     return this->eval_f(w_fix, out_w_gen);
   }
 
@@ -59,10 +60,10 @@ namespace dort {
     if(!Bsdf::same_hemisphere(w_gen, w_fix)) {
       return 0.f;
     }
-    Vector w_reflect(-w_gen.v.x, -w_gen.v.y, w_gen.v.z);
-    float cos_alpha = abs_dot(w_reflect, w_fix);
-    return lerp(this->glossy_pdf,
-      cosine_hemisphere_pdf(w_fix.v.z),
-      power_cosine_hemisphere_pdf(cos_alpha, this->exponent));
+    Vector w_reflect(-w_fix.v.x, -w_fix.v.y, w_fix.v.z);
+    float cos_alpha = abs_dot(w_reflect, w_gen);
+    float diffuse_pdf = cosine_hemisphere_pdf(w_gen.v.z);
+    float glossy_pdf = power_cosine_hemisphere_pdf(cos_alpha, this->exponent);
+    return lerp(this->pick_glossy_pdf, glossy_pdf, diffuse_pdf);
   }
 }

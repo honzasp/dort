@@ -16,9 +16,7 @@ namespace dort {
   {
     out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
     out_dir_pdf = cosine_hemisphere_pdf(out_w_gen.v.z);
-    if(w_fix.v.z < 0.f) {
-      out_w_gen.v.z = -out_w_gen.v.z;
-    }
+    out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
     return this->reflectance * INV_PI;
   }
 
