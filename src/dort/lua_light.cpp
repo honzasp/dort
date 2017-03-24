@@ -1,5 +1,6 @@
 #include "dort/diffuse_light.hpp"
 #include "dort/directional_light.hpp"
+#include "dort/environment_light.hpp"
 #include "dort/infinite_light.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_geometry.hpp"
@@ -20,6 +21,7 @@ namespace dort {
       {"make_directional", lua_light_make_directional},
       {"make_diffuse", lua_light_make_diffuse},
       {"make_infinite", lua_light_make_infinite},
+      {"make_environment", lua_light_make_environment},
       {0, 0},
     };
 
@@ -74,6 +76,20 @@ namespace dort {
     return 1;
   }
 
+  int lua_light_make_environment(lua_State* l) {
+    int p = 1;
+    auto image = lua_param_image_f(l, p, "image");
+    auto up = lua_param_vector(l, p, "up");
+    auto forward = lua_param_vector(l, p, "forward");
+    auto scale = lua_param_spectrum_opt(l, p, "scale", Spectrum(1.f));
+    auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
+    auto transform = lua_param_transform_opt(l, p, "transform", identity());
+    lua_params_check_unused(l, p);
+
+    lua_push_light(l, std::make_shared<EnvironmentLight>(image, scale,
+          transform.apply(up), transform.apply(forward), num_samples));
+    return 1;
+  }
 
   std::shared_ptr<Light> lua_check_light(lua_State* l, int idx) {
     return lua_check_shared_obj<Light, LIGHT_TNAME>(l, idx);

@@ -156,6 +156,13 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind)
       add_light(infinite_light {
         radiance = rgb(1),
       })
+    elseif light_kind == "environment" then
+      add_light(environment_light {
+        image = read_image("data/vogl_14.hdr", { hdr = true }),
+        up = vector(0, 1, 0),
+        forward = vector(1, 0, 0),
+        scale = rgb(8),
+      })
     else
       error("bad light kind " .. light_kind)
     end
@@ -231,20 +238,20 @@ algos = {
     iterations = 4,
   }},
   --]]
-  --[[
+  ---[[
   {"lt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "lt",
-    iterations = 20,
+    iterations = 10,
   }},
   --]]
-  --[[
+  ---[[
   {"pt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "pt",
-    iterations = 20,
+    iterations = 10,
   }},
   --]]
   --[[
@@ -262,8 +269,8 @@ algos = {
     min_depth = 0,
     max_depth = 4,
     renderer = "bdpt",
-    iterations = 2,
-    debug_image_dir = out_dir .. "/_bdpt_debug",
+    iterations = 10,
+    --debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
   {"ref", {
@@ -291,7 +298,12 @@ scenes = {
   --{"deltap_box", cornell_box_scene("delta", "point")},
   --{"diffuse_open", cornell_box_scene("diffuse", "area", "open")},
   --{"diffused_open", cornell_box_scene("diffuse", "direction", "open")},
-  {"diffusei_open", cornell_box_scene("diffuse", "infinite", "open")},
+  --{"diffusei_open", cornell_box_scene("diffuse", "infinite", "open")},
+  --{"glossyi_open", cornell_box_scene("glossy", "infinite", "open")},
+  --{"deltai_open", cornell_box_scene("delta", "infinite", "open")},
+  {"diffusee_open", cornell_box_scene("diffuse", "environment", "open")},
+  {"glossye_open", cornell_box_scene("glossy", "environment", "open")},
+  {"deltae_open", cornell_box_scene("delta", "environment", "open")},
   --{"cavern", cavern_scene()},
 }
 

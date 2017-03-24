@@ -33,13 +33,24 @@ namespace dort {
 
   int lua_image_read(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
+    int p = 2;
+    bool hdr = lua_param_bool_opt(l, p, "hdr", false);
+    lua_params_check_unused(l, p);
+
     FILE* file = std::fopen(file_name, "r");
     if(!file) {
       return luaL_error(l, "Could not open image file for reading: %s", file_name);
     }
-    auto image = std::make_shared<Image<PixelRgb8>>(read_image(file));
+
+    if(hdr) {
+      auto image = std::make_shared<Image<PixelRgbFloat>>(read_image_f(file));
+      lua_push_image_f(l, image);
+    } else {
+      auto image = std::make_shared<Image<PixelRgb8>>(read_image_8(file));
+      lua_push_image_8(l, image);
+    }
+
     std::fclose(file);
-    lua_push_image_8(l, image);
     return 1;
   }
 

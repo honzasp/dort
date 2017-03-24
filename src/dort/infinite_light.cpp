@@ -49,8 +49,7 @@ namespace dort {
   float InfiniteLight::ray_radiance_pdf(const Scene& scene, const Point&,
       const Vector&, const Normal&) const
   {
-    float radius = scene.radius;
-    return INV_PI * INV_FOUR_PI / square(radius);
+    return INV_PI * INV_FOUR_PI / square(scene.radius);
   }
 
   float InfiniteLight::pivot_radiance_pdf(const Vector&, const Point&) const {

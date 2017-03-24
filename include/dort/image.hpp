@@ -96,7 +96,8 @@ namespace dort {
     }
   };
 
-  Image<PixelRgb8> read_image(FILE* input);
+  Image<PixelRgb8> read_image_8(FILE* input);
+  Image<PixelRgbFloat> read_image_f(FILE* input);
   void write_image_png(FILE* output, const Image<PixelRgb8>& img);
   void write_image_ppm(FILE* output, const Image<PixelRgb8>& img);
   void write_image_rgbe(FILE* output, const Image<PixelRgbFloat>& img);

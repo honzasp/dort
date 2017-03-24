@@ -526,7 +526,6 @@ namespace dort {
       } else {
         // non-area lights will sample their camera vertices
         return t == 1 ? 1.f : 0.f;
-
       }
     }
 

@@ -119,6 +119,10 @@ function dsl.directional_light(params)
   params.transform = apply_builder_transform(params.transform)
   return dort.light.make_directional(params)
 end
+function dsl.environment_light(params)
+  params.transform = apply_builder_transform(params.transform)
+  return dort.light.make_environment(params)
+end
 dsl.infinite_light = dort.light.make_infinite
 
 dsl.matte_material = dort.material.make_matte
