@@ -23,7 +23,7 @@ namespace dort {
     float area = this->get_image_plane_area(film_res);
     out_ray = Ray(this->world_origin, world_dir, 0.f);
     out_pos_pdf = 1.f;
-    out_dir_pdf = 1 / (area * cube(cos_theta));
+    out_dir_pdf = 1.f / (area * cube(cos_theta));
     return Spectrum(1.f / (area * cube(cos_theta)));
   }
 
@@ -51,7 +51,7 @@ namespace dort {
     return Spectrum(1.f / area);
   }
 
-  Point PinholeCamera::sample_point(float& out_pos_pdf, CameraSample) const {
+  Point PinholeCamera::sample_point(Vec2, float& out_pos_pdf, CameraSample) const {
     out_pos_pdf = 1.f;
     return this->world_origin;
   }

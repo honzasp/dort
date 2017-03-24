@@ -330,7 +330,7 @@ namespace dort {
         // pick a point z on camera, sample light direction from this point,
         // sample film position from this direction
         float camera_p_pdf;
-        Point camera_p = camera.sample_point(camera_p_pdf, CameraSample(rng));
+        Point camera_p = camera.sample_point(film_res, camera_p_pdf, CameraSample(rng));
         if(camera_p_pdf == 0.f) { return Spectrum(0.f); }
 
         Vector wi;

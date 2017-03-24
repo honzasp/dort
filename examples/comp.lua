@@ -1,7 +1,8 @@
 local _ENV = require "dort/dsl"
 
-function cornell_box_scene(surface_kind, light_kind, geom_kind)
+function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
   geom_kind = geom_kind or "all"
+  camera_kind = camera_kind or "pinhole"
   local s = 0.1
   return define_scene(function()
     local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
@@ -30,7 +31,7 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind)
     end
 
     local add_walls = true
-    if geom_kind == "all" then
+    if geom_kind == "box" then
     elseif geom_kind == "open" then
       add_walls = false
     else
@@ -97,13 +98,25 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind)
       add_shape(cube())
     end)
 
-    camera(pinhole_camera {
-      transform = look_at(
-        point(278*s, 273*s, -800*s),
-        point(278*s, 273*s, 0),
-        vector(0, 1, 0)) * scale(1, -1, 1),
-      fov = 0.686,
-    })
+    if camera_kind == "pinhole" then
+      camera(pinhole_camera {
+        transform = look_at(
+          point(278*s, 273*s, -800*s),
+          point(278*s, 273*s, 0),
+          vector(0, 1, 0)) * scale(1, -1, 1),
+        fov = 0.686,
+      })
+    elseif camera_kind == "ortho" then
+      camera(ortho_camera {
+        transform = look_at(
+          point(250*s, 200*s, -800*s),
+          point(278*s, 273*s, 0),
+          vector(0, 1, 0)) * scale(1, -1, 1),
+        dimension = 800*s,
+      })
+    else
+      error(camera_kind)
+    end
 
     if light_kind == "area" then
       block(function() 
@@ -247,36 +260,36 @@ algos = {
   ---[[
   {"lt", {
     min_depth = 0,
-    max_depth = 10,
+    max_depth = 4,
     renderer = "lt",
-    iterations = 4,
+    iterations = 5,
   }},
   --]]
-  --[[
+  ---[[
   {"pt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "pt",
-    iterations = 2,
+    iterations = 5,
   }},
   --]]
   --[[
-  {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 10}},
-  {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 10}},
-  {"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 10}},
-  {"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 10}},
-  {"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 10}},
-  {"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 10}},
-  {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 10}},
-  {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 10}},
+  {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 2}},
+  {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 2}},
+  {"lt_2", {renderer = "lt", min_depth = 2, max_depth = 2, iterations = 2}},
+  {"lt_3", {renderer = "lt", min_depth = 3, max_depth = 3, iterations = 2}},
+  {"pt_0", {renderer = "pt", min_depth = 0, max_depth = 0, iterations = 2}},
+  {"pt_1", {renderer = "pt", min_depth = 1, max_depth = 1, iterations = 2}},
+  {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
+  {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
   --]]
   ---[[
   {"bdpt", {
     min_depth = 0,
-    max_depth = 10,
+    max_depth = 4,
     renderer = "bdpt",
-    iterations = 4,
-    --debug_image_dir = out_dir .. "/_bdpt_debug",
+    iterations = 2,
+    debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
   {"ref", {
@@ -312,8 +325,9 @@ scenes = {
   --{"deltae_open", cornell_box_scene("delta", "environment", "open")},
   --{"diffuseb_box", cornell_box_scene("diffuse", "beam")},
   --{"glossyb_box", cornell_box_scene("glossy", "beam")},
-  {"deltab_box", cornell_box_scene("delta", "beam")},
+  --{"deltab_box", cornell_box_scene("delta", "beam")},
   --{"cavern", cavern_scene()},
+  {"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
 }
 
 for scene_i = 1, #scenes do

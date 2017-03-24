@@ -2,14 +2,15 @@
 #include "dort/camera.hpp"
 
 namespace dort {
-  /// Pinhole camera has a pinhole lens at the origin of the camera space and
-  /// projects to the plane z = 1. The angle visible in the longer film
-  /// dimension is given as the fov parameter;
-  class PinholeCamera final: public Camera {
-    Point world_origin;
-    float project_dimension;
+  /// Orthographic camera maps each film point to a point on the lens plane with
+  /// the direction given by the vector perpendicular to the lens plane.
+  /// The lens plane is the plane z = 0 in the camera space, the longer
+  /// dimension is given by the dimension parameter;
+  class OrthoCamera final: public Camera {
+    Vector world_dir;
+    float dimension;
   public:
-    PinholeCamera(const Transform& camera_to_world, float fov);
+    OrthoCamera(const Transform& camera_to_world, float dimension);
 
     virtual Spectrum sample_ray_importance(Vec2 film_res, Vec2 film_pos,
         Ray& out_ray, float& out_pos_pdf, float& out_dir_pdf,
@@ -30,6 +31,7 @@ namespace dort {
   private:
     bool get_film_pos(Vec2 film_res, const Vec3& pivot,
         Vec2& out_film_pos) const;
+    Vec2 get_plane_pos(Vec2 film_res, Vec2 film_pos) const;
     float get_image_plane_area(Vec2 film_res) const;
   };
 }

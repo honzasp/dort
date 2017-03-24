@@ -72,7 +72,7 @@ namespace dort {
           light_nn, light_pos_pdf, LightSample(sampler.rng))) 
       {
         float camera_pos_pdf;
-        Point camera_p = this->camera->sample_point(camera_pos_pdf,
+        Point camera_p = this->camera->sample_point(film_res, camera_pos_pdf,
             CameraSample(sampler.rng));
 
         Vec2 film_pos;

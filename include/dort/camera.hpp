@@ -69,11 +69,13 @@ namespace dort {
         ShadowTest& out_shadow, CameraSample sample) const = 0;
 
     /// Samples a point on the camera.
-    virtual Point sample_point(float& out_pos_pdf, CameraSample sample) const = 0;
+    virtual Point sample_point(Vec2 film_res,
+        float& out_pos_pdf, CameraSample sample) const = 0;
 
     /// Evaluates the importance from point p in direction wi.
     /// Returns the importance and sets out_film_pos to the film position
-    /// corresponding to the point and direction.
+    /// corresponding to the point and direction. The point is assumed to lie on
+    /// the camera, but the direction is arbitrary.
     virtual Spectrum eval_importance(Vec2 film_res,
         const Point& p, const Vector& wi, Vec2& out_film_pos) const = 0;
 
@@ -91,46 +93,4 @@ namespace dort {
     static Vec2 film_to_normal(Vec2 film_res, Vec2 film_pos);
     static Vec2 normal_to_film(Vec2 film_res, Vec2 normal_pos);
   };
-
-  /// Orthographic camera maps each film point to a point on the lens plane with
-  /// the direction given by the vector perpendicular to the lens plane.
-  /// The lens plane is the plane z = 0 in the camera space, the longer
-  /// dimension is given by the dimension parameter;
-  /*
-  class OrthographicCamera final: public Camera {
-    float dimension;
-  public:
-    OrthographicCamera(const Transform& camera_to_world, float dimension);
-
-    virtual Spectrum sample_ray_importance(Vec2 film_res, Vec2 film_pos,
-        Ray& out_ray, float& out_pos_pdf, float& out_dir_pdf,
-        CameraSample sample) const override final;
-    virtual Spectrum sample_pivot_importance(Vec2 film_res,
-        const Point& pivot, float pivot_epsilon,
-        Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
-        Vec2& out_film_pos, CameraSample sample) const override final;
-    virtual float ray_dir_importance_pdf(Vec2 film_res,
-        const Vector& wi_gen, const Point& origin_fix) const override final;
-  };
-  */
-
-  /*
-  /// Thin lens camera projects through a thin lens with depth of field.
-  class ThinLensCamera final: public Camera {
-    float fov;
-    float lens_radius;
-    float focal_distance;
-  public:
-    ThinLensCamera(const Transform& camera_to_world,
-        float lens_radius, float focal_distance):
-      lens_radius(lens_radius), focal_distance(focal_distance) { }
-
-    virtual Spectrum sample_ray_importance(Vec2 film_res, Vec2 film_pos,
-        Ray& out_ray, float& out_pos_pdf, float& out_dir_pdf,
-        CameraSample sample) const override final;
-    virtual Spectrum sample_pivot_importance(const Point& pivot, float pivot_epsilon,
-        Vector& out_wo, float& out_dir_pdf, ShadowTest& out_shadow,
-        Vec2& out_film_pos, CameraSample sample) const override final;
-  };
-  */
 }
