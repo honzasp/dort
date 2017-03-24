@@ -1,3 +1,4 @@
+#include "dort/beam_light.hpp"
 #include "dort/diffuse_light.hpp"
 #include "dort/directional_light.hpp"
 #include "dort/environment_light.hpp"
@@ -22,6 +23,7 @@ namespace dort {
       {"make_diffuse", lua_light_make_diffuse},
       {"make_infinite", lua_light_make_infinite},
       {"make_environment", lua_light_make_environment},
+      {"make_beam", lua_light_make_beam},
       {0, 0},
     };
 
@@ -88,6 +90,20 @@ namespace dort {
 
     lua_push_light(l, std::make_shared<EnvironmentLight>(image, scale,
           transform.apply(up), transform.apply(forward), num_samples));
+    return 1;
+  }
+
+  int lua_light_make_beam(lua_State* l) {
+    int p = 1;
+    auto pt = lua_param_point(l, p, "point");
+    auto dir = lua_param_vector(l, p, "direction");
+    auto radiance = lua_param_spectrum(l, p, "radiance");
+    auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
+    auto transform = lua_param_transform_opt(l, p, "transform", identity());
+    lua_params_check_unused(l, p);
+
+    lua_push_light(l, std::make_shared<BeamLight>(
+          transform.apply(pt), transform.apply(dir), radiance, num_samples));
     return 1;
   }
 

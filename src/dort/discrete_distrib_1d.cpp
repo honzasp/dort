@@ -13,7 +13,7 @@ namespace dort {
     this->cdf.push_back(sum);
 
     this->sum_ = sum;
-    float inv_sum = 1.f / sum;
+    float inv_sum = sum == 0.f ? 0.f : 1.f / sum;
     for(uint32_t i = 0; i <= xs.size(); ++i) {
       this->cdf.at(i) *= inv_sum;
     }
@@ -35,7 +35,7 @@ namespace dort {
   }
 
   float DiscreteDistrib1d::pdf(uint32_t sample) const {
-    if(sample >= this->cdf.size() - 1) {
+    if(sample + 1 >= this->cdf.size()) {
       return 0.f;
     }
     return this->cdf.at(sample + 1) - this->cdf.at(sample);

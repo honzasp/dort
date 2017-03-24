@@ -163,6 +163,12 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind)
         forward = vector(1, 0, 0),
         scale = rgb(8),
       })
+    elseif light_kind == "beam" then
+      add_light(beam_light {
+        point = point(343*s, (548.8-10)*s, 332*s),
+        direction = vector(0, -1, 0),
+        radiance = rgb(32e3),
+      })
     else
       error("bad light kind " .. light_kind)
     end
@@ -241,17 +247,17 @@ algos = {
   ---[[
   {"lt", {
     min_depth = 0,
-    max_depth = 4,
+    max_depth = 10,
     renderer = "lt",
-    iterations = 10,
+    iterations = 4,
   }},
   --]]
-  ---[[
+  --[[
   {"pt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "pt",
-    iterations = 10,
+    iterations = 2,
   }},
   --]]
   --[[
@@ -267,9 +273,9 @@ algos = {
   ---[[
   {"bdpt", {
     min_depth = 0,
-    max_depth = 4,
+    max_depth = 10,
     renderer = "bdpt",
-    iterations = 10,
+    iterations = 4,
     --debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -301,9 +307,12 @@ scenes = {
   --{"diffusei_open", cornell_box_scene("diffuse", "infinite", "open")},
   --{"glossyi_open", cornell_box_scene("glossy", "infinite", "open")},
   --{"deltai_open", cornell_box_scene("delta", "infinite", "open")},
-  {"diffusee_open", cornell_box_scene("diffuse", "environment", "open")},
-  {"glossye_open", cornell_box_scene("glossy", "environment", "open")},
-  {"deltae_open", cornell_box_scene("delta", "environment", "open")},
+  --{"diffusee_open", cornell_box_scene("diffuse", "environment", "open")},
+  --{"glossye_open", cornell_box_scene("glossy", "environment", "open")},
+  --{"deltae_open", cornell_box_scene("delta", "environment", "open")},
+  --{"diffuseb_box", cornell_box_scene("diffuse", "beam")},
+  --{"glossyb_box", cornell_box_scene("glossy", "beam")},
+  {"deltab_box", cornell_box_scene("delta", "beam")},
   --{"cavern", cavern_scene()},
 }
 
