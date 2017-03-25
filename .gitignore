@@ -3,6 +3,7 @@
 build/
 data/
 comp/
+comp_ref/
 .doxy/
 .tup/
 output.ppm

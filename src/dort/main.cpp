@@ -47,9 +47,9 @@ namespace dort {
 
       lua_getglobal(l, "package");
       lua_createtable(l, 2, 0);
-      lua_pushcfunction(l, lua_searcher);
+      lua_pushcfunction(l, lua_builtin_searcher);
       lua_rawseti(l, -2, 1);
-      lua_pushcfunction(l, lua_extern_searcher);
+      lua_pushcfunction(l, lua_file_searcher);
       lua_rawseti(l, -2, 2);
       lua_setfield(l, -2, "searchers");
       lua_pop(l, 1);

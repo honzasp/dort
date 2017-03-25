@@ -1,6 +1,7 @@
 #include "dort/dort.hpp"
 #include "dort/ctx.hpp"
 #include "dort/lua.hpp"
+#include "dort/lua_sources.hpp"
 
 namespace dort {
   void lua_set_ctx(lua_State* l, CtxG* ctx) {
@@ -18,18 +19,13 @@ namespace dort {
     return (CtxG*)ptr;
   }
 
-  int lua_searcher(lua_State* l) {
-    std::string library_name(luaL_checkstring(l, 1));
-    return lua_searcher_search(l, "lua/" + library_name + ".lua");
-  }
-
 #ifdef DORT_USE_GTK
   extern "C" {
     int luaopen_lgi_corelgilua51(lua_State* L);
   }
 #endif
 
-  int lua_extern_searcher(lua_State* l) {
+  int lua_builtin_searcher(lua_State* l) {
     std::string library_name(luaL_checkstring(l, 1));
 #ifdef DORT_USE_GTK
     if(library_name == "lgi.corelgilua51") {
@@ -41,19 +37,30 @@ namespace dort {
     for(char& ch: library_name) {
       if(ch == '.') { ch = '/'; }
     }
-    return lua_searcher_search(l, "lua/extern/" + library_name + ".lua");
+
+    auto iter = lua_sources.find(library_name);
+    if(iter == lua_sources.end()) {
+      library_name = "extern/" + library_name;
+      iter = lua_sources.find(library_name);
+    }
+
+    if(iter == lua_sources.end()) {
+      lua_pushstring(l, "No builtin library with this name found");
+      return 1;
+    }
+
+    const char* begin = iter->second.first;
+    const char* end  = iter->second.second;
+    int status = luaL_loadbufferx(l, begin, end - begin, library_name.c_str(), "bt");
+    if(status != LUA_OK) {
+      return 1;
+    }
+    return 1;
   }
 
-  int lua_searcher_search(lua_State* l, const std::string& path) {
-    int status = luaL_loadfile(l, path.c_str());
-    if(status == LUA_OK) {
-      lua_pushvalue(l, 1);
-      return 2;
-    } else if(status == LUA_ERRFILE) {
-      return 1;
-    } else {
-      return luaL_error(l, "Load error: %s", lua_tostring(l, -1));
-    }
+  int lua_file_searcher(lua_State* l) {
+    lua_pushstring(l, "Not implemented yet");
+    return 1;
   }
 }
 

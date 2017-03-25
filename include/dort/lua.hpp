@@ -13,7 +13,6 @@ namespace dort {
   void lua_set_ctx(lua_State* l, CtxG* ctx);
   CtxG* lua_get_ctx(lua_State* l);
 
-  int lua_searcher(lua_State* l);
-  int lua_extern_searcher(lua_State* l);
-  int lua_searcher_search(lua_State* l, const std::string& path);
+  int lua_builtin_searcher(lua_State* l);
+  int lua_file_searcher(lua_State* l);
 }
