@@ -89,8 +89,5 @@ namespace dort {
     /// sample_pivot_importance().
     virtual float pivot_importance_pdf(Vec2 film_res,
         const Point& p_gen, const Point& pivot_fix) const = 0;
-  protected:
-    static Vec2 film_to_normal(Vec2 film_res, Vec2 film_pos);
-    static Vec2 normal_to_film(Vec2 film_res, Vec2 normal_pos);
   };
 }

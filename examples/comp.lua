@@ -114,6 +114,16 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
           vector(0, 1, 0)) * scale(1, -1, 1),
         dimension = 800*s,
       })
+    elseif camera_kind == "thin" then
+      camera(thin_lens_camera {
+        transform = look_at(
+          point(278*s, 273*s, -800*s),
+          point(278*s, 273*s, 0),
+          vector(0, 1, 0)) * scale(1, -1, 1),
+        fov = 0.686,
+        lens_radius = 50*s,
+        focal_distance = 1200*s,
+      })
     else
       error(camera_kind)
     end
@@ -257,20 +267,20 @@ algos = {
     iterations = 4,
   }},
   --]]
-  ---[[
+  --[[
   {"lt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "lt",
-    iterations = 5,
+    iterations = 1,
   }},
   --]]
-  ---[[
+  --[[
   {"pt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "pt",
-    iterations = 5,
+    iterations = 1,
   }},
   --]]
   --[[
@@ -288,7 +298,7 @@ algos = {
     min_depth = 0,
     max_depth = 4,
     renderer = "bdpt",
-    iterations = 2,
+    iterations = 1,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --[[
@@ -327,7 +337,8 @@ scenes = {
   --{"glossyb_box", cornell_box_scene("glossy", "beam")},
   --{"deltab_box", cornell_box_scene("delta", "beam")},
   --{"cavern", cavern_scene()},
-  {"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
+  --{"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
+  {"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
 }
 
 for scene_i = 1, #scenes do

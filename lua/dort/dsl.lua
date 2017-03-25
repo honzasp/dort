@@ -65,8 +65,9 @@ function dsl.render(scene, params)
   return dort.render.get_image(render_job, { hdr = hdr })
 end
 
-dsl.ortho_camera = dort.camera.make_ortho
 dsl.pinhole_camera = dort.camera.make_pinhole
+dsl.ortho_camera = dort.camera.make_ortho
+dsl.thin_lens_camera = dort.camera.make_thin_lens
 
 dsl.box_filter = dort.filter.make_box
 dsl.triangle_filter = dort.filter.make_triangle

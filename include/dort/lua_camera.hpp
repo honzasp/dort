@@ -9,6 +9,7 @@ namespace dort {
 
   int lua_camera_make_ortho(lua_State* l);
   int lua_camera_make_pinhole(lua_State* l);
+  int lua_camera_make_thin_lens(lua_State* l);
 
   std::shared_ptr<Camera> lua_check_camera(lua_State* l, int idx);
   bool lua_test_camera(lua_State* l, int idx);

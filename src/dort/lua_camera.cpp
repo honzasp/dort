@@ -5,6 +5,7 @@
 #include "dort/lua_params.hpp"
 #include "dort/ortho_camera.hpp"
 #include "dort/pinhole_camera.hpp"
+#include "dort/thin_lens_camera.hpp"
 
 namespace dort {
   int lua_open_camera(lua_State* l) {
@@ -16,6 +17,7 @@ namespace dort {
     const luaL_Reg camera_funs[] = {
       {"make_ortho", lua_camera_make_ortho},
       {"make_pinhole", lua_camera_make_pinhole},
+      {"make_thin_lens", lua_camera_make_thin_lens},
       {0, 0},
     };
 
@@ -42,6 +44,19 @@ namespace dort {
 
     lua_push_camera(l, std::make_shared<PinholeCamera>(transform,
           clamp(fov, 1e-2f, PI)));
+    return 1;
+  }
+
+  int lua_camera_make_thin_lens(lua_State* l) {
+    int p = 1;
+    auto transform = lua_param_transform(l, p, "transform");
+    float lens_radius = lua_param_float(l, p, "lens_radius");
+    float focal_distance = lua_param_float(l, p, "focal_distance");
+    float fov = lua_param_float_opt(l, p, "fov", PI * 0.5f);
+    lua_params_check_unused(l, p);
+
+    lua_push_camera(l, std::make_shared<ThinLensCamera>(transform,
+          clamp(fov, 1e-2f, PI), lens_radius, focal_distance));
     return 1;
   }
 

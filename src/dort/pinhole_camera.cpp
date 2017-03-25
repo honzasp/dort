@@ -14,7 +14,10 @@ namespace dort {
       Ray& out_ray, float& out_pos_pdf, float& out_dir_pdf,
       CameraSample) const
   {
-    Vec2 normal_pos = Camera::film_to_normal(film_res, film_pos);
+    Vec2 center_pos = film_pos / film_res - Vec2(0.5f, 0.5f);
+    Vec2 normal_pos = film_res.x > film_res.y
+      ? Vec2(center_pos.x, center_pos.y * film_res.y / film_res.x)
+      : Vec2(center_pos.x * film_res.x / film_res.y, center_pos.y);
     Vec2 project_pos = normal_pos * this->project_dimension;
     Vector camera_dir = Vector(project_pos.x, project_pos.y, 1.f);
     Vector world_dir = normalize(this->camera_to_world.apply(camera_dir));
@@ -108,7 +111,11 @@ namespace dort {
     if(abs(normal_pos.x) > 0.5f || abs(normal_pos.y) > 0.5f) {
       return false;
     }
-    out_film_pos = Camera::normal_to_film(film_res, normal_pos);
+
+    Vec2 center_pos = film_res.x > film_res.y
+      ? Vec2(normal_pos.x, normal_pos.y * film_res.x / film_res.y)
+      : Vec2(normal_pos.x * film_res.y / film_res.x, normal_pos.y);
+    out_film_pos = (center_pos + Vec2(0.5f, 0.5f)) * film_res;
     return true;
   }
 

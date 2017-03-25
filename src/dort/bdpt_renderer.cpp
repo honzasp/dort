@@ -167,7 +167,7 @@ namespace dort {
       }
 
       std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
-      Vector wi = -light_ray.dir;
+      Vector wi = -normalize(light_ray.dir);
       Vector wo;
       float wo_pdf;
       BxdfFlags bsdf_flags;
@@ -226,7 +226,7 @@ namespace dort {
     Vertex z0;
     z0.p = ray.orig;
     z0.p_epsilon = 0.f;
-    z0.nn = Normal(ray.dir);
+    z0.nn = Normal(normalize(ray.dir));
     z0.bsdf = nullptr;
     z0.area_light = nullptr;
     z0.background_light = nullptr;
@@ -242,7 +242,8 @@ namespace dort {
       Vertex& prev_z = walk.at(walk.size() - 1);
       if(prev_z.alpha.is_black()) { break; }
 
-      Spectrum alpha_scale = prev_bsdf_f * (abs_dot(prev_z.nn, ray.dir) / fwd_dir_pdf);
+      Spectrum alpha_scale = prev_bsdf_f * 
+        (abs_dot(prev_z.nn, normalize(ray.dir)) / fwd_dir_pdf);
       if(bounces >= 2) {
         float rr_prob = min(alpha_scale.average(), 0.9f);
         if(rng.uniform_float() > rr_prob) { break; }
@@ -272,7 +273,7 @@ namespace dort {
       }
 
       std::unique_ptr<Bsdf> bsdf = isect.get_bsdf();
-      Vector wo = -ray.dir;
+      Vector wo = -normalize(ray.dir);
       Vector wi;
       float wi_pdf;
       BxdfFlags bsdf_flags;
@@ -482,7 +483,6 @@ namespace dort {
 
       float geom = abs_dot(wo, last_light.nn) * abs_dot(wo, last_camera.nn)
         / length_squared(last_light.p - last_camera.p);
-
       return last_light.alpha * last_camera.alpha * light_bsdf_f * camera_bsdf_f * geom;
     }
     assert(false && "Unhandled combination of path lengths");
@@ -666,6 +666,7 @@ namespace dort {
         return vertex_at(i).bwd_pdf;
       } else {
         assert(false && "Invalid combination in pdf_camera()");
+        return 0.f;
       }
     };
 
