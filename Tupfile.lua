@@ -6,14 +6,16 @@ local includes = "-Iinclude -Iextern/rply -Iextern/stb -Iextern/lua -Iextern/lgi
 local warnings = "-Wall -Wextra -Wstrict-aliasing"
 local cxxflags = "-x c++ -std=c++1y -pthread "..includes.." "..warnings
 local cflags   = "-x c -std=c11 -pthread "..includes.." "..warnings
-local ldflags  = "-pthread -lz"
+local ldflags  = "-pthread -lz -static-libstdc++ -static-libgcc"
 local target_flags = {
   debug = "-g -O2 -DLUA_USE_APICHECK",
   slow  = "-g3 -O0 -DLUA_USE_APICHECK",
   fast  = "-g -O3 -DNDEBUG -DDORT_DISABLE_STAT",
 }
 
-if tup.getconfig("USE_GTK") then
+local use_gtk = tup.getconfig("USE_GTK") != ""
+
+if use_gtk then
   local pkgs = "gobject-introspection-1.0 gmodule-2.0 gio-2.0 gdk-pixbuf-2.0 libffi"
   local pkg_libs = string.format("`%s --libs %s`", pkg_config, pkgs)
   local pkg_cflags = string.format("`%s --cflags %s`", pkg_config, pkgs)
@@ -34,7 +36,7 @@ local source_dirs = {
   {"c", "extern/lua/*.c", "lua"},
   {"c", "extern/luac/*.c", "luac"},
 }
-if tup.getconfig("USE_GTK") then
+if use_gtk then
   source_dirs[#source_dirs + 1] = {"c", "extern/lgi/lgi/*.c", "lgi"}
 end
 
