@@ -23,6 +23,11 @@
 
 namespace dort {
   int main(int argc, char** argv) {
+    if(argc <= 1) {
+      std::fprintf(stderr, "Usage: %s program.lua\n", argv[0]);
+      return 1;
+    }
+
     stat_init_global();
 
     uint32_t num_threads = std::thread::hardware_concurrency();
@@ -79,7 +84,8 @@ namespace dort {
       load_sublib("texture", lua_open_texture);
       lua_setglobal(l, "dort");
 
-      const char* input_file = argc == 1 ? 0 : argv[1];
+      assert(argc >= 2);
+      const char* input_file = argv[1];
 
       lua_pushcfunction(l, [](lua_State* l) -> int {
         if(!lua_isstring(l, 1)) {

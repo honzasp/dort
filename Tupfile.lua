@@ -31,7 +31,7 @@ local build_dirs = {
 }
 
 local source_dirs = {
-  {"c++", "src/dort/*.cpp", "o"},
+  {"c++", "src/dort/*.cpp", "dort"},
   {"c", "extern/rply/*.c", "rply"},
   {"c", "extern/lua/*.c", "lua"},
   {"c", "extern/luac/*.c", "luac"},
@@ -79,14 +79,21 @@ function compile_target(target)
   end
 
   local dort_objs = {}
+  local dort_cat_cxxs = {}
   local luac_objs = {}
 
   for _, row in ipairs(source_dirs) do
     local lang = row[1]
     local input_glob = row[2]
     local subdir = row[3]
+
     for _, input_file in ipairs(tup.glob(input_glob)) do
-      local output_obj = string.format("%s/%s/%s.o",
+      if target == "fast" and string.find(subdir, "dort") then
+        dort_cat_cxxs[#dort_cat_cxxs + 1] = input_file
+        goto skip_obj
+      end
+
+      local output_obj = string.format("%s/o/%s/%s.o",
         build_dir, subdir, tup.base(input_file))
       compile(lang, input_file, output_obj)
 
@@ -96,7 +103,25 @@ function compile_target(target)
       if subdir == "luac" or subdir == "lua" then
         luac_objs[#luac_objs + 1] = output_obj
       end
+      ::skip_obj::
     end
+  end
+
+  function cat_cxxs(input_sources, output_cxx)
+    tup.definerule {
+      command = string.format("^ cat_cxxs.sh %s^ sh script/cat_cxxs.sh %s >%s",
+        target, table.concat(input_sources, " "), output_cxx),
+      inputs = input_sources,
+      outputs = {output_cxx},
+    }
+  end
+
+  if #dort_cat_cxxs > 0 then
+    local cat_cxx = string.format("%s/dort_cat.cpp", build_dir)
+    local cat_obj = string.format("%s/o/dort_cat.o", build_dir)
+    cat_cxxs(dort_cat_cxxs, cat_cxx)
+    compile("c++", cat_cxx, cat_obj)
+    dort_objs[#dort_objs + 1] = cat_obj
   end
 
   local luac_exec = string.format("%s/luac_exec", build_dir)
@@ -175,3 +200,9 @@ function compile_target(target)
 end
 
 compile_target("debug")
+if tup.getconfig("SLOW") != "" then
+  compile_target("slow")
+end
+if tup.getconfig("FAST") != "" then
+  compile_target("fast")
+end
