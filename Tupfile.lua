@@ -10,7 +10,12 @@ local ldflags  = "-pthread -lz -static-libstdc++ -static-libgcc"
 local target_flags = {
   debug = "-g -O2 -DLUA_USE_APICHECK",
   slow  = "-g3 -O0 -DLUA_USE_APICHECK",
-  fast  = "-g -O3 -DNDEBUG -DDORT_DISABLE_STAT",
+  fast  = "-g -O3 -DNDEBUG -DDORT_DISABLE_STAT -flto",
+}
+local target_ldflags = {
+  debug = "",
+  slow = "",
+  fast = "-flto -fuse-ld=gold",
 }
 
 local use_gtk = tup.getconfig("USE_GTK") != ""
@@ -69,17 +74,17 @@ function compile_target(target)
   end
 
   function link(input_objs, output_exec)
+    flags = ldflags .. " " .. target_ldflags[target]
     tup.definerule {
       command = string.format("^ link %s %s^ %s %s -o %s %s",
         target, output_exec,
-        cxx, table.concat(input_objs, " "), output_exec, ldflags),
+        cxx, table.concat(input_objs, " "), output_exec, flags),
       inputs = input_objs,
       outputs = {output_exec},
     }
   end
 
   local dort_objs = {}
-  local dort_cat_cxxs = {}
   local luac_objs = {}
 
   for _, row in ipairs(source_dirs) do
@@ -88,11 +93,6 @@ function compile_target(target)
     local subdir = row[3]
 
     for _, input_file in ipairs(tup.glob(input_glob)) do
-      if target == "fast" and string.find(subdir, "dort") then
-        dort_cat_cxxs[#dort_cat_cxxs + 1] = input_file
-        goto skip_obj
-      end
-
       local output_obj = string.format("%s/o/%s/%s.o",
         build_dir, subdir, tup.base(input_file))
       compile(lang, input_file, output_obj)
@@ -103,25 +103,7 @@ function compile_target(target)
       if subdir == "luac" or subdir == "lua" then
         luac_objs[#luac_objs + 1] = output_obj
       end
-      ::skip_obj::
     end
-  end
-
-  function cat_cxxs(input_sources, output_cxx)
-    tup.definerule {
-      command = string.format("^ cat_cxxs.sh %s^ sh script/cat_cxxs.sh %s >%s",
-        target, table.concat(input_sources, " "), output_cxx),
-      inputs = input_sources,
-      outputs = {output_cxx},
-    }
-  end
-
-  if #dort_cat_cxxs > 0 then
-    local cat_cxx = string.format("%s/dort_cat.cpp", build_dir)
-    local cat_obj = string.format("%s/o/dort_cat.o", build_dir)
-    cat_cxxs(dort_cat_cxxs, cat_cxx)
-    compile("c++", cat_cxx, cat_obj)
-    dort_objs[#dort_objs + 1] = cat_obj
   end
 
   local luac_exec = string.format("%s/luac_exec", build_dir)

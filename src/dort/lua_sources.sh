@@ -9,7 +9,6 @@
 printf "// this file was generated automatically by %s\n" "$0"
 cat <<END
 #include <unordered_map>
-//#include "dort/lua_sources.hpp"
 
 namespace dort {
   extern "C" {

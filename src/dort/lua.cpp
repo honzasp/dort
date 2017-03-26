@@ -19,14 +19,15 @@ namespace dort {
     return (CtxG*)ptr;
   }
 
-#ifdef DORT_USE_GTK
   extern "C" {
+#ifdef DORT_USE_GTK
     int luaopen_lgi_corelgilua51(lua_State* L);
-  }
 #endif
+  }
 
   int lua_builtin_searcher(lua_State* l) {
     std::string library_name(luaL_checkstring(l, 1));
+
 #ifdef DORT_USE_GTK
     if(library_name == "lgi.corelgilua51") {
       lua_pushcfunction(l, luaopen_lgi_corelgilua51);
@@ -34,6 +35,7 @@ namespace dort {
       return 2;
     }
 #endif
+
     for(char& ch: library_name) {
       if(ch == '.') { ch = '/'; }
     }
@@ -45,7 +47,7 @@ namespace dort {
     }
 
     if(iter == lua_sources.end()) {
-      lua_pushstring(l, "No builtin library with this name found");
+      lua_pushstring(l, "No builtin library with this name found\n");
       return 1;
     }
 
@@ -59,7 +61,7 @@ namespace dort {
   }
 
   int lua_file_searcher(lua_State* l) {
-    lua_pushstring(l, "Not implemented yet");
+    lua_pushstring(l, "Cannot load from files yet\n");
     return 1;
   }
 }
