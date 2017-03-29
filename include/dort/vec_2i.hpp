@@ -51,6 +51,9 @@ namespace dort {
   inline Vec2i operator*(int32_t a, Vec2i v) {
     return Vec2i(a * v.x, a * v.y);
   }
+  inline bool operator==(Vec2i v1, Vec2i v2) {
+    return v1.x == v2.x && v1.y == v2.y;
+  }
 
   inline Vec2i floor_vec2i(const Vec2& v) {
     return Vec2i(floor_int32(v.x), floor_int32(v.y));

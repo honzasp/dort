@@ -2,7 +2,7 @@
 #include <vector>
 #include "dort/atomic_spectrum.hpp"
 #include "dort/image.hpp"
-#include "dort/recti.hpp"
+#include "dort/rect_i.hpp"
 #include "dort/sampled_filter.hpp"
 #include "dort/vec_2.hpp"
 #include "dort/vec_2i.hpp"

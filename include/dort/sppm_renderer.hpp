@@ -3,7 +3,7 @@
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
 #include "dort/photon_map.hpp"
-#include "dort/recti.hpp"
+#include "dort/rect_i.hpp"
 #include "dort/renderer.hpp"
 
 namespace dort {

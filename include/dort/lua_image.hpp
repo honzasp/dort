@@ -14,6 +14,8 @@ namespace dort {
   int lua_image_write_rgbe(lua_State* l);
   int lua_image_tonemap_srgb(lua_State* l);
   int lua_image_tonemap_gamma(lua_State* l);
+  int lua_image_get_res(lua_State* l);
+  int lua_image_bias_variance(lua_State* l);
 
   std::shared_ptr<Image<PixelRgb8>> lua_check_image_8(lua_State* l, int idx);
   bool lua_test_image_8(lua_State* l, int idx);

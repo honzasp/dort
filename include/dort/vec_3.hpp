@@ -48,6 +48,10 @@ namespace dort {
     uint8_t max_axis() const {
       return arg_max_3(this->x, this->y, this->z);
     }
+
+    float sum() const {
+      return this->x + this->y + this->z;
+    }
   };
 
   inline Vec3 operator+(const Vec3& v1, const Vec3& v2) {

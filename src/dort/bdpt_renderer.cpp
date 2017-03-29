@@ -686,7 +686,6 @@ namespace dort {
 
       if(r_light == 0.f) { break; }
       if(vertex_at(s + j - 1).is_delta) { continue; }
-      if(vertex_at(s + j).is_delta) { continue; }
       inv_weight_sum += r_light;
     }
 
@@ -703,7 +702,6 @@ namespace dort {
 
       if(r_camera == 0.f) { break; }
       if(vertex_at(s - j).is_delta) { continue; }
-      if(s - j > 0 && vertex_at(s - j - 1).is_delta) { continue; }
       inv_weight_sum += r_camera;
     }
 

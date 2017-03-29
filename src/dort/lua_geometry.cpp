@@ -2,8 +2,10 @@
 #include "dort/geometry.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
+#include "dort/rect_i.hpp"
 #include "dort/transform.hpp"
 #include "dort/vec_3i.hpp"
+#include "dort/vec_2i.hpp"
 #include "dort/vec_2.hpp"
 
 namespace dort {
@@ -54,6 +56,16 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg vec2i_methods[] = {
+      {"x", lua_vec2i_get_x},
+      {"y", lua_vec2i_get_y},
+      {"__tostring", lua_vec2i_tostring},
+      {"__add", lua_geometry_add},
+      {"__sub", lua_geometry_sub},
+      {"__eq", lua_geometry_eq},
+      {0, 0},
+    };
+
     const luaL_Reg vec2_methods[] = {
       {"x", lua_vec2_get_x},
       {"y", lua_vec2_get_y},
@@ -72,6 +84,13 @@ namespace dort {
       {0, 0},
     };
 
+    const luaL_Reg recti_methods[] = {
+      {"min", lua_recti_get_min},
+      {"max", lua_recti_get_max},
+      {"__tostring", lua_recti_tostring},
+      {0, 0},
+    };
+
     const luaL_Reg geometry_funs[] = {
       {"vector", lua_vector_make},
       {"point", lua_point_make},
@@ -86,8 +105,10 @@ namespace dort {
       {"look_at", lua_transform_look_at},
       {"stretch", lua_transform_stretch},
       {"vec3i", lua_vec3i_make},
+      {"vec2i", lua_vec2i_make},
       {"vec2", lua_vec2_make},
       {"boxi", lua_boxi_make},
+      {"recti", lua_recti_make},
       {0, 0},
     };
 
@@ -95,8 +116,10 @@ namespace dort {
     lua_register_type(l, POINT_TNAME, point_methods);
     lua_register_type(l, TRANSFORM_TNAME, transform_methods);
     lua_register_type(l, VEC3I_TNAME, vec3i_methods);
+    lua_register_type(l, VEC2I_TNAME, vec2i_methods);
     lua_register_type(l, VEC2_TNAME, vec2_methods);
     lua_register_type(l, BOXI_TNAME, boxi_methods);
+    lua_register_type(l, RECTI_TNAME, recti_methods);
     luaL_newlib(l, geometry_funs);
     return 1;
   }
@@ -112,6 +135,8 @@ namespace dort {
       lua_push_vector(l, lua_check_vector(l, 1) + lua_check_vector(l, 2));
     } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
       lua_push_vec3i(l, lua_check_vec3i(l, 1) + lua_check_vec3i(l, 2));
+    } else if(lua_test_vec2i(l, 1) && lua_test_vec2i(l, 2)) {
+      lua_push_vec2i(l, lua_check_vec2i(l, 1) + lua_check_vec2i(l, 2));
     } else {
       luaL_error(l, "Wrong combination of arguments to +");
     }
@@ -126,6 +151,8 @@ namespace dort {
       lua_push_vector(l, lua_check_vector(l, 1) - lua_check_vector(l, 2));
     } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
       lua_push_vec3i(l, lua_check_vec3i(l, 1) - lua_check_vec3i(l, 2));
+    } else if(lua_test_vec2i(l, 1) && lua_test_vec2i(l, 2)) {
+      lua_push_vec2i(l, lua_check_vec2i(l, 1) - lua_check_vec2i(l, 2));
     } else {
       luaL_error(l, "Wrong combination of arguments to -");
     }
@@ -148,6 +175,8 @@ namespace dort {
       lua_pushboolean(l, lua_check_point(l, 1) == lua_check_point(l, 2));
     } else if(lua_test_vec3i(l, 1) && lua_test_vec3i(l, 2)) {
       lua_pushboolean(l, lua_check_vec3i(l, 1) == lua_check_vec3i(l, 2));
+    } else if(lua_test_vec2i(l, 1) && lua_test_vec2i(l, 2)) {
+      lua_pushboolean(l, lua_check_vec2i(l, 1) == lua_check_vec2i(l, 2));
     } else {
       lua_pushboolean(l, false);
     }
@@ -391,6 +420,26 @@ namespace dort {
     return 1;
   }
 
+  int lua_vec2i_make(lua_State* l) {
+    int32_t x = luaL_checkinteger(l, 1);
+    int32_t y = luaL_checkinteger(l, 2);
+    lua_push_vec2i(l, Vec2i(x, y));
+    return 1;
+  }
+  int lua_vec2i_get_x(lua_State* l) {
+    lua_pushinteger(l, lua_check_vec2i(l, 1).x);
+    return 1;
+  }
+  int lua_vec2i_get_y(lua_State* l) {
+    lua_pushinteger(l, lua_check_vec2i(l, 1).y);
+    return 1;
+  }
+  int lua_vec2i_tostring(lua_State* l) {
+    Vec2i vec = lua_check_vec2i(l, 1);
+    lua_pushfstring(l, "vec2i(%d, %d)", vec.x, vec.y);
+    return 1;
+  }
+
   int lua_vec2_make(lua_State* l) {
     float x = luaL_checknumber(l, 1);
     float y = luaL_checknumber(l, 2);
@@ -453,6 +502,39 @@ namespace dort {
     return 1;
   }
 
+  int lua_recti_make(lua_State* l) {
+    if(lua_gettop(l) == 0) {
+      lua_push_recti(l, Recti());
+    } else if(lua_gettop(l) == 2) {
+      Vec2i min = lua_check_vec2i(l, 1);
+      Vec2i max = lua_check_vec2i(l, 2);
+      lua_push_recti(l, Recti(min, max));
+    } else {
+      int32_t x1 = luaL_checkinteger(l, 1);
+      int32_t y1 = luaL_checkinteger(l, 2);
+      int32_t x2 = luaL_checkinteger(l, 3);
+      int32_t y2 = luaL_checkinteger(l, 4);
+      lua_push_recti(l, Recti(Vec2i(x1, y1), Vec2i(x2, y2)));
+    }
+    return 1;
+  }
+  int lua_recti_get_min(lua_State* l) {
+    const Recti& rect = lua_check_recti(l, 1);
+    lua_push_vec2i(l, rect.p_min);
+    return 1;
+  }
+  int lua_recti_get_max(lua_State* l) {
+    const Recti& rect = lua_check_recti(l, 1);
+    lua_push_vec2i(l, rect.p_max);
+    return 1;
+  }
+  int lua_recti_tostring(lua_State* l) {
+    Recti rect = lua_check_recti(l, 1);
+    lua_pushfstring(l, "recti(vec2i(%d, %d), vec2i(%d, %d))",
+        rect.p_min.x, rect.p_min.y, rect.p_max.x, rect.p_max.y);
+    return 1;
+  }
+
   const Vector& lua_check_vector(lua_State* l, int idx) {
     return lua_check_managed_obj<Vector, VECTOR_TNAME>(l, idx);
   }
@@ -493,6 +575,16 @@ namespace dort {
     return lua_push_managed_obj<Vec3i, VEC3I_TNAME>(l, vec);
   }
 
+  const Vec2i& lua_check_vec2i(lua_State* l, int idx) {
+    return lua_check_managed_obj<Vec2i, VEC2I_TNAME>(l, idx);
+  }
+  bool lua_test_vec2i(lua_State* l, int idx) {
+    return lua_test_managed_obj<Vec2i, VEC2I_TNAME>(l, idx);
+  }
+  void lua_push_vec2i(lua_State* l, const Vec2i& vec) {
+    return lua_push_managed_obj<Vec2i, VEC2I_TNAME>(l, vec);
+  }
+
   const Vec2& lua_check_vec2(lua_State* l, int idx) {
     return lua_check_managed_obj<Vec2, VEC2_TNAME>(l, idx);
   }
@@ -511,5 +603,15 @@ namespace dort {
   }
   void lua_push_boxi(lua_State* l, const Boxi& vec) {
     return lua_push_managed_obj<Boxi, BOXI_TNAME>(l, vec);
+  }
+
+  const Recti& lua_check_recti(lua_State* l, int idx) {
+    return lua_check_managed_obj<Recti, RECTI_TNAME>(l, idx);
+  }
+  bool lua_test_recti(lua_State* l, int idx) {
+    return lua_test_managed_obj<Recti, RECTI_TNAME>(l, idx);
+  }
+  void lua_push_recti(lua_State* l, const Recti& vec) {
+    return lua_push_managed_obj<Recti, RECTI_TNAME>(l, vec);
   }
 }

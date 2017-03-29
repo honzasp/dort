@@ -1,6 +1,6 @@
 #pragma once
 #include "dort/ctx.hpp"
-#include "dort/recti.hpp"
+#include "dort/rect_i.hpp"
 #include "dort/renderer.hpp"
 #include "dort/sampler.hpp"
 #include "dort/vec_2i.hpp"

@@ -1,7 +1,9 @@
 #include "dort/image.hpp"
+#include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_image.hpp"
 #include "dort/lua_params.hpp"
+#include "dort/rect_i.hpp"
 #include "dort/tonemap.hpp"
 
 namespace dort {
@@ -22,6 +24,8 @@ namespace dort {
       {"write_rgbe", lua_image_write_rgbe},
       {"tonemap_srgb", lua_image_tonemap_srgb},
       {"tonemap_gamma", lua_image_tonemap_gamma},
+      {"get_res", lua_image_get_res},
+      {"bias_variance", lua_image_bias_variance},
       {0, 0},
     };
 
@@ -99,6 +103,58 @@ namespace dort {
     return 1;
   }
 
+  int lua_image_get_res(lua_State* l) {
+    uint32_t x_res, y_res;
+    if(lua_test_image_8(l, 1)) {
+      auto image = lua_check_image_8(l, 1);
+      x_res = image->x_res;
+      y_res = image->y_res;
+    } else if(lua_test_image_f(l, 1)) {
+      auto image = lua_check_image_f(l, 1);
+      x_res = image->x_res;
+      y_res = image->y_res;
+    } else {
+      return luaL_error(l, "Expected an image");
+    }
+
+    lua_pushinteger(l, x_res);
+    lua_pushinteger(l, y_res);
+    return 2;
+  }
+
+  int lua_image_bias_variance(lua_State* l) {
+    auto ref_image = lua_check_image_f(l, 1);
+    auto tested_image = lua_check_image_f(l, 2);
+    Recti rect = lua_check_recti(l, 3);
+
+    uint32_t x0 = rect.p_min.x;
+    uint32_t x1 = rect.p_max.x;
+    uint32_t y0 = rect.p_min.y;
+    uint32_t y1 = rect.p_max.y;
+
+    if(x1 > ref_image->x_res || y1 > ref_image->y_res) {
+      return luaL_error(l, "Rect is out of the ref_image");
+    }
+    if(x1 > tested_image->x_res || y1 > tested_image->y_res) {
+      return luaL_error(l, "Rect is out of the tested_image");
+    }
+
+    float sum_bias = 0.f;
+    float sum_var = 0.f;
+    for(uint32_t y = y0; y < y1; ++y) {
+      for(uint32_t x = x0; x < x1; ++x) {
+        auto ref_rgb = PixelRgbFloat::to_rgb(ref_image->get_pixel(x, y));
+        auto tested_rgb = PixelRgbFloat::to_rgb(tested_image->get_pixel(x, y));
+        auto delta = (ref_rgb - tested_rgb).rgb;
+        sum_bias += delta.sum();
+        sum_var += (delta * delta).sum();
+      }
+    }
+
+    lua_pushnumber(l, sum_bias);
+    lua_pushnumber(l, sum_var);
+    return 2;
+  }
 
   std::shared_ptr<Image<PixelRgb8>> lua_check_image_8(lua_State* l, int idx) {
     return lua_check_shared_obj<Image<PixelRgb8>, IMAGE_RGB8_TNAME>(l, idx);

@@ -4,6 +4,8 @@ build/
 data/
 comp/
 comp_ref/
+test/out/
+test/_bdpt_debug/
 .doxy/
 .tup/
 output.ppm

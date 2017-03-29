@@ -7,8 +7,10 @@ namespace dort {
   constexpr const char POINT_TNAME[] = "dort.Point";
   constexpr const char TRANSFORM_TNAME[] = "dort.Transform";
   constexpr const char VEC3I_TNAME[] = "dort.Vec3i";
+  constexpr const char VEC2I_TNAME[] = "dort.Vec2i";
   constexpr const char VEC2_TNAME[] = "dort.Vec2";
   constexpr const char BOXI_TNAME[] = "dort.Boxi";
+  constexpr const char RECTI_TNAME[] = "dort.Recti";
 
   int lua_open_geometry(lua_State* l);
 
@@ -53,6 +55,11 @@ namespace dort {
   int lua_vec3i_get_z(lua_State* l);
   int lua_vec3i_tostring(lua_State* l);
 
+  int lua_vec2i_make(lua_State* l);
+  int lua_vec2i_get_x(lua_State* l);
+  int lua_vec2i_get_y(lua_State* l);
+  int lua_vec2i_tostring(lua_State* l);
+
   int lua_vec2_make(lua_State* l);
   int lua_vec2_get_x(lua_State* l);
   int lua_vec2_get_y(lua_State* l);
@@ -63,6 +70,11 @@ namespace dort {
   int lua_boxi_get_max(lua_State* l);
   int lua_boxi_tostring(lua_State* l);
   int lua_boxi_contains(lua_State* l);
+
+  int lua_recti_make(lua_State* l);
+  int lua_recti_get_min(lua_State* l);
+  int lua_recti_get_max(lua_State* l);
+  int lua_recti_tostring(lua_State* l);
 
   const Vector& lua_check_vector(lua_State* l, int idx);
   bool lua_test_vector(lua_State* l, int idx);
@@ -80,6 +92,10 @@ namespace dort {
   bool lua_test_vec3i(lua_State* l, int idx);
   void lua_push_vec3i(lua_State* l, const Vec3i& vec3i);
 
+  const Vec2i& lua_check_vec2i(lua_State* l, int idx);
+  bool lua_test_vec2i(lua_State* l, int idx);
+  void lua_push_vec2i(lua_State* l, const Vec2i& vec2i);
+
   const Vec2& lua_check_vec2(lua_State* l, int idx);
   bool lua_test_vec2(lua_State* l, int idx);
   void lua_push_vec2(lua_State* l, Vec2 vec2);
@@ -87,4 +103,8 @@ namespace dort {
   const Boxi& lua_check_boxi(lua_State* l, int idx);
   bool lua_test_boxi(lua_State* l, int idx);
   void lua_push_boxi(lua_State* l, const Boxi& box);
+
+  const Recti& lua_check_recti(lua_State* l, int idx);
+  bool lua_test_recti(lua_State* l, int idx);
+  void lua_push_recti(lua_State* l, const Recti& rect);
 }

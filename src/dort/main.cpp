@@ -4,6 +4,7 @@
 #include "dort/lua.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
+#include "dort/lua_chrono.hpp"
 #include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_grid.hpp"
@@ -68,6 +69,7 @@ namespace dort {
       lua_newtable(l);
       load_sublib("builder", lua_open_builder);
       load_sublib("camera", lua_open_camera);
+      load_sublib("chrono", lua_open_chrono);
       load_sublib("filter", lua_open_filter);
       load_sublib("geometry", lua_open_geometry);
       load_sublib("grid", lua_open_grid);
