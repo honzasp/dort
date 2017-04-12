@@ -3,6 +3,7 @@
 #include "dort/geometry.hpp"
 #include "dort/kd_tree.hpp"
 #include "dort/photon_map.hpp"
+#include "dort/vcm_renderer.hpp"
 
 namespace dort {
   template<class Traits>
@@ -103,4 +104,5 @@ namespace dort {
   }
 
   template class KdTree<PhotonMap::KdTraits>;
+  template class KdTree<VcmRenderer::PhotonKdTraits>;
 }

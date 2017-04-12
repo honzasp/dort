@@ -1,9 +1,9 @@
 local _ENV = require "dort/dsl"
 
+local s = 0.1
 function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
-  geom_kind = geom_kind or "all"
+  geom_kind = geom_kind or "box"
   camera_kind = camera_kind or "pinhole"
-  local s = 0.1
   return define_scene(function()
     local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
     local green = matte_material { color = rgb(0, 0.5, 0) }
@@ -293,7 +293,7 @@ algos = {
   {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
   {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
   --]]
-  ---[[
+  --[[
   {"bdpt", {
     min_depth = 0,
     max_depth = 4,
@@ -301,21 +301,21 @@ algos = {
     iterations = 1,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
-  --[[
-  {"ref", {
-    max_depth = 5,
-    renderer = "sppm",
-    iterations = 2000,
-    initial_radius = 0.5,
-    light_paths = res*res,
-  }},
   --]]
+  {"vcm", {
+    min_depth = 0,
+    max_depth = 2,
+    renderer = "vcm",
+    iterations = 2,
+    initial_radius = s*10,
+    debug_image_dir = out_dir .. "/_vcm_debug",
+  }},
 }
 scenes = {
   --{"point_light", point_light_scene()},
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
+  {"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
   --{"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
@@ -338,7 +338,7 @@ scenes = {
   --{"deltab_box", cornell_box_scene("delta", "beam")},
   --{"cavern", cavern_scene()},
   --{"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
-  {"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
+  --{"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
 }
 
 for scene_i = 1, #scenes do

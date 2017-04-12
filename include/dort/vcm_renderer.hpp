@@ -1,4 +1,10 @@
 #pragma once
+#include <unordered_map>
+#include "dort/bsdf.hpp"
+#include "dort/discrete_distrib_1d.hpp"
+#include "dort/film.hpp"
+#include "dort/kd_tree.hpp"
+#include "dort/light.hpp"
 #include "dort/renderer.hpp"
 
 namespace dort {
@@ -18,6 +24,7 @@ namespace dort {
     std::unordered_map<const Light*, float> light_distrib_pdfs;
 
     mutable std::unordered_map<uint32_t, Film> debug_films;
+    std::unordered_map<uint32_t, std::string> debug_names;
     std::string debug_image_dir;
   public:
     VcmRenderer(std::shared_ptr<Scene> scene,
@@ -87,13 +94,22 @@ namespace dort {
       KdTree<PhotonKdTraits> photon_tree;
     };
 
-    void iteration(uint32_t idx, std::vector<Photon> photons);
-    void iteration(const IterationState& iter_state, Sampler& sampler);
+    std::vector<Photon> iteration(uint32_t idx, std::vector<Photon> prev_photons);
 
     LightPathState light_walk(const IterationState& iter_state,
-        std::vector<PathVertex>& light_vertices, Sampler& sampler);
+        std::vector<PathVertex>& light_vertices,
+        std::vector<Photon>& photons, Sampler& sampler);
     Spectrum camera_walk(const IterationState& iter_state,
         const LightPathState& light_path,
         const std::vector<PathVertex>& light_vertices,
         Vec2 film_pos, Sampler& sampler);
 
+    void init_debug_films();
+    void save_debug_films();
+    void store_debug_weighted_contrib(uint32_t s, uint32_t t, bool is_vm,
+        Vec2 film_pos, const Spectrum& contrib, float weight) const;
+    void store_debug_contrib(uint32_t s, uint32_t t, bool is_vm, bool is_weighted,
+        Vec2 film_pos, const Spectrum& contrib) const;
+    uint32_t debug_image_key(uint32_t s, uint32_t t, bool is_vm, bool is_weighted) const;
+  };
+}

@@ -19,6 +19,7 @@
 #include "dort/random_sampler.hpp"
 #include "dort/sppm_renderer.hpp"
 #include "dort/stats.hpp"
+#include "dort/vcm_renderer.hpp"
 
 namespace dort {
   int lua_open_render(lua_State* l) {
@@ -98,11 +99,33 @@ namespace dort {
       uint32_t min_depth = lua_param_uint32_opt(l, p, "min_depth", 0);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       bool use_t1_paths = lua_param_bool_opt(l, p, "use_t1_paths", true);
-      std::string debug_image_dir = lua_param_string_opt(l, p, "debug_image_dir", "");
+      auto debug_image_dir = lua_param_string_opt(l, p, "debug_image_dir", "");
       renderer = std::make_shared<BdptRenderer>(
           scene, film, sampler, camera,
           iteration_count, min_depth, max_depth,
           use_t1_paths, debug_image_dir);
+    } else if(method == "vcm") {
+      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
+      uint32_t min_length = lua_param_uint32_opt(l, p, "min_depth", 0) + 2;
+      uint32_t max_length = lua_param_uint32_opt(l, p, "max_depth", 5) + 2;
+      float initial_radius = lua_param_float(l, p, "initial_radius");
+      float alpha = lua_param_float_opt(l, p, "alpha", 2.f/3.f);
+      auto debug_image_dir = lua_param_string_opt(l, p, "debug_image_dir", "");
+      auto mode_str = lua_param_string_opt(l, p, "mode", "vcm");
+      VcmRenderer::Mode mode;
+      if(mode_str == "vcm") {
+        mode = VcmRenderer::Mode::VCM;
+      } else if(mode_str == "vc") {
+        mode = VcmRenderer::Mode::VC;
+      } else if(mode_str == "vm") {
+        mode = VcmRenderer::Mode::VM;
+      } else {
+        return luaL_error(l, "Unknown mode '%s'", mode_str.c_str());
+      }
+      renderer = std::make_shared<VcmRenderer>(
+          scene, film, sampler, camera,
+          mode, iteration_count, initial_radius, alpha,
+          min_length, max_length, debug_image_dir);
     } else if(method == "igi") {
       uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);

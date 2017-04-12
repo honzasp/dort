@@ -1,23 +1,32 @@
+#include "dort/camera.hpp"
+#include "dort/lighting.hpp"
+#include "dort/primitive.hpp"
 #include "dort/vcm_renderer.hpp"
 
 namespace dort {
-  void VcmRenderer::render(CtxG& ctx, Progress& progress) {
-    this->light_distrib = compute_light_distrib(scene);
-    this->background_light_distrib = compute_light_distrib(scene, true);
-    for(uint32_t i = 0; i < scene.lights.size(); ++i) {
+  void VcmRenderer::render(CtxG&, Progress& progress) {
+    this->light_distrib = compute_light_distrib(*this->scene);
+    this->background_light_distrib = compute_light_distrib(*this->scene, true);
+    for(uint32_t i = 0; i < scene->lights.size(); ++i) {
       this->light_distrib_pdfs.insert(std::make_pair(
-          scene.lights.at(i).get(), this->light_distrib.pdf(i)));
+          scene->lights.at(i).get(), this->light_distrib.pdf(i)));
     }
+    this->init_debug_films();
 
     std::vector<Photon> photons;
     for(uint32_t i = 0; i < this->iteration_count; ++i) {
-      this->iteration(i, photons);
+      photons = this->iteration(i, std::move(photons));
       progress.set_percent_done(float(i + 1) / float(this->iteration_count));
       if(progress.is_cancelled()) { break; }
+      this->film->splat_scale = 1.f / (float(i + 1));
     }
+
+    this->save_debug_films();
   }
 
-  void VcmRenderer::iteration(uint32_t idx, std::vector<Photon> photons) {
+  std::vector<VcmRenderer::Photon> VcmRenderer::iteration(uint32_t idx,
+      std::vector<Photon> prev_photons) 
+  {
     float radius = this->initial_radius
       * pow(float(idx + 1), 0.5f * (this->alpha - 1.f));
     uint32_t path_count = this->film->x_res * this->film->y_res;
@@ -30,40 +39,39 @@ namespace dort {
     iter_state.mis_vm_weight = this->use_vm ? eta_vcm : 0.f;
     iter_state.mis_vc_weight = this->use_vc ? 1.f / eta_vcm : 0.f;
     iter_state.vm_normalization = 1.f / eta_vcm;
-    iter_state.photon_tree = KdTree<PhotonKdTraits>(std::move(photons));
+    iter_state.photon_tree = KdTree<PhotonKdTraits>(std::move(prev_photons));
 
     if(idx == 0) {
-      assert(photons.empty());
+      assert(prev_photons.empty());
     } else if(idx == 1) {
       iter_state.vm_normalization *= 2.f;
     }
 
-    this->iteration(iter_state, *this->sampler);
-  }
-
-  void VcmRenderer::iteration(const IterationState& iter_state, Sampler& sampler) {
     std::vector<Photon> photons;
     std::vector<PathVertex> light_vertices;
-    for(uint32_t path_idx = 0; path_idx < path_count; ++path_idx) {
-      LightPathState light_path = this->light_walk(iter_state, light_vertices, sampler);
+    for(uint32_t path_idx = 0; path_idx < iter_state.path_count; ++path_idx) {
+      LightPathState light_path = this->light_walk(iter_state,
+          light_vertices, photons, *this->sampler);
       uint32_t film_y = path_idx / this->film->x_res;
       uint32_t film_x = path_idx % this->film->x_res;
-      Vec2 film_pos = Vec2(film_x, film_y) + sampler.random_2d();
-      Spectrum contrib = this->camera_walk(iter_state, light_path, light_vertices, film_pos, sampler);
+      Vec2 film_pos = Vec2(film_x, film_y) + this->sampler->random_2d();
+      Spectrum contrib = this->camera_walk(iter_state, light_path,
+          light_vertices, film_pos, *this->sampler);
       this->film->add_sample(film_pos, contrib);
       light_vertices.clear();
-
     }
 
+    return photons;
   }
 
-  LightPathState VcmRenderer::light_walk(const IterationState& iter_state,
-      std::vector<PathVertex>& light_vertices, Sampler& sampler)
+  VcmRenderer::LightPathState VcmRenderer::light_walk(const IterationState& iter_state,
+      std::vector<PathVertex>& light_vertices,
+      std::vector<Photon>& photons, Sampler& sampler)
   {
     // pick a light and sample the first ray
-    uint32_t light_i = this->light_distrib.sample(rng.uniform_float());
+    uint32_t light_i = this->light_distrib.sample(sampler.random_1d());
     float light_pick_pdf = this->light_distrib.pdf(light_i);
-    const Light& light = *scene.lights.at(light_i);
+    const Light& light = *scene->lights.at(light_i);
 
     Ray light_ray;
     Normal light_nn;
@@ -72,13 +80,14 @@ namespace dort {
         light_ray, light_nn, light_pos_pdf, light_dir_pdf, LightRaySample(sampler.rng));
 
     float light_ray_pdf = light_pos_pdf * light_dir_pdf * light_pick_pdf;
-    if(light_ray_pdf == 0.f) { continue; }
 
-    Spectrum throughput = light_radiance / light_ray_pdf;
+    Spectrum throughput = light_radiance 
+      * (abs_dot(light_nn, light_ray.dir) / light_ray_pdf);
     float fwd_bsdf_dir_pdf = SIGNALING_NAN;
-    std::vector<PathVertex> light_vertices;
 
     for(uint32_t bounces = 0;; ++bounces) {
+      if(light_ray_pdf == 0.f) { break; }
+
       Intersection isect;
       if(!this->scene->intersect(light_ray, isect)) {
         break;
@@ -102,18 +111,20 @@ namespace dort {
           (light_ray_pdf * abs_dot(y.nn, y.w));
         y.d_vm = y.d_vc * iter_state.mis_vm_weight;
       } else {
-        const auto& yp = light_vertices.at(bounces);
+        const auto& yp = light_vertices.at(bounces - 1);
         float bwd_bsdf_dir_pdf = yp.bsdf->light_f_pdf(yp.w, -y.w, BSDF_ALL);
         // equations (34), (35), (36)
         y.d_vcm = length_squared(yp.p - y.p) /
-          (fwd_bsdf_dir_pdf * abs_dot(y.nn * y.w));
+          (fwd_bsdf_dir_pdf * abs_dot(y.nn, y.w));
         y.d_vc = abs_dot(yp.nn, y.w) / (abs_dot(y.nn, y.w) * fwd_bsdf_dir_pdf)
           * (iter_state.mis_vm_weight + yp.d_vcm + bwd_bsdf_dir_pdf * yp.d_vc);
         y.d_vm = abs_dot(yp.nn, y.w) / (abs_dot(y.nn, y.w) * fwd_bsdf_dir_pdf)
           * (1.f + yp.d_vcm * iter_state.mis_vc_weight + bwd_bsdf_dir_pdf * yp.d_vm);
       }
 
-      if(bounces + 2 <= this->max_length && bounces + 2 >= this->min_length) {
+      if(this->use_vc && bounces + 3 <= this->max_length &&
+          bounces + 3 >= this->min_length) 
+      {
         // connect vertex y to camera (VC, s >= 2, t = 1)
         Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
         float path_count = float(iter_state.path_count);
@@ -139,9 +150,13 @@ namespace dort {
           * (iter_state.mis_vm_weight + y.d_vcm + bwd_bsdf_dir_pdf * y.d_vc);
         float weight = 1.f / (1.f + w_light);
 
-        Spectrum contrib = y.throughput * bsdf_f * importance / (camera_p_pdf * path_count);
-        if(!contrib.is_black() && shadow.is_visible(*this->scene)) {
+        float dist = length_squared(y.p - camera_p);
+        Spectrum contrib = y.throughput * bsdf_f * importance 
+          * (abs_dot(y.nn, camera_wi) / (dist * camera_p_pdf));
+        if(!contrib.is_black() && shadow.visible(*this->scene)) {
           this->film->add_splat(film_pos, contrib * weight);
+          this->store_debug_weighted_contrib(bounces + 2, 1, false,
+              film_pos, contrib, weight);
         }
       }
 
@@ -174,12 +189,12 @@ namespace dort {
     }
 
     LightPathState path;
-    path.light = light;
+    path.light = &light;
     path.light_pick_pdf = light_pick_pdf;
     return path;
   }
 
-  void VcmRenderer::camera_walk(const IterationState& iter_state,
+  Spectrum VcmRenderer::camera_walk(const IterationState& iter_state,
       const LightPathState& light_path,
       const std::vector<PathVertex>& light_vertices,
       Vec2 film_pos, Sampler& sampler)
@@ -216,7 +231,8 @@ namespace dort {
       // compute the MIS quantities
       if(bounces == 0) {
         // equations (31), (32), (33)
-        float pivot_area_pdf = this->camera->pivot_importance_pdf(film_res, camera_ray.orig, z.p);
+        float pivot_area_pdf = this->camera->pivot_importance_pdf(film_res,
+            camera_ray.orig, z.p);
         z.d_vcm = pivot_area_pdf * float(iter_state.path_count)
           * length_squared(z.p - camera_ray.orig)
           / (camera_ray_pdf * abs_dot(z.nn, z.w));
@@ -233,7 +249,7 @@ namespace dort {
           * (1.f + zp.d_vcm * iter_state.mis_vc_weight + bwd_bsdf_dir_pdf * zp.d_vm);
       }
 
-      if(bounces + 2 <= this->max_length) {
+      if(this->use_vm && bounces + 2 <= this->max_length) {
         // merge vertex z with photons
         // TODO: the radius from the previous iteration, baked in the photon MIS
         // quantities, is not compatible with the radius from the current
@@ -260,6 +276,13 @@ namespace dort {
               + bwd_camera_dir_pdf * z.d_vm;
             float weight = 1.f / (w_light + w_camera + 1.f);
 
+            if(!this->debug_image_dir.empty()) {
+              Spectrum contrib = photon.throughput * bsdf_f * z.throughput 
+                * iter_state.vm_normalization;
+              this->store_debug_weighted_contrib(photon.bounces + 2, bounces + 2, true,
+                  film_pos, contrib, weight);
+            }
+
             photon_sum += bsdf_f * photon.throughput * weight;
             return radius_square;
           });
@@ -267,11 +290,11 @@ namespace dort {
         film_contrib += photon_sum * z.throughput * iter_state.vm_normalization;
       }
 
-      if(bounces + 3 <= this->max_length) {
+      if(this->use_vc && bounces + 3 <= this->max_length) {
         // connect vertex z to light vertices
         for(uint32_t light_i = 0; light_i < light_vertices.size(); ++light_i) {
-          if(bounces + light_i + 3 < this->min_length) { continue; }
-          if(bounces + light_i + 3 > this->max_length) { break; }
+          if(bounces + light_i + 4 < this->min_length) { continue; }
+          if(bounces + light_i + 4 > this->max_length) { break; }
           const PathVertex& y = light_vertices.at(light_i);
 
           Vector connect_wi = normalize(y.p - z.p);
@@ -297,17 +320,20 @@ namespace dort {
             * (iter_state.mis_vm_weight + z.d_vcm + camera_bwd_dir_pdf * z.d_vc);
           float weight = 1.f / (1.f + w_light + w_camera);
 
-          float geom = abs_dot(y.nn, connect_wi) * abs_dot(z.nn, connect_wi)
           Spectrum contrib = y.throughput * light_bsdf_f * camera_bsdf_f * z.throughput
             * (dot_y * dot_z / dist_squared);
 
-          if(!contrib.is_black() && shadow.is_visible()) {
+          if(!contrib.is_black() && shadow.visible(*this->scene)) {
+            this->store_debug_weighted_contrib(light_i + 2, bounces + 2, false,
+                film_pos, contrib, weight);
             film_contrib += contrib * weight;
           }
         }
       }
 
-      if(bounces + 2 <= this->max_length && bounces + 2 >= this->min_length) {
+      if(this->use_vc && bounces + 3 <= this->max_length &&
+          bounces + 3 >= this->min_length) 
+      {
         // connect vertex z to a new light vertex
         Vector light_wi;
         Point light_p;
@@ -320,9 +346,6 @@ namespace dort {
             light_wi_pdf, shadow, LightSample(sampler.rng));
         Spectrum bsdf_f = z.bsdf->eval_f(light_wi, z.w, BSDF_ALL);
 
-        ShadowTest shadow;
-        shadow.init_point_point(light_p, light_p_epsilon, z.p, z.p_epsilon);
-
         float light_ray_pdf = light_path.light->ray_radiance_pdf(*this->scene,
             light_p, -light_wi, light_nn);
         float fwd_bsdf_dir_pdf = z.bsdf->light_f_pdf(light_wi, z.w, BSDF_ALL);
@@ -332,16 +355,21 @@ namespace dort {
         float w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
         float w_camera = light_ray_pdf * abs_dot(z.nn, light_wi)
           / (light_wi_pdf * abs_dot(light_nn, light_wi))
-          * (iter_state.mis_vm_weight + y.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
+          * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
         float weight = 1.f / (1.f + w_light + w_camera);
 
-        Spectrum contrib = z.throughput * bsdf_f * radiance / light_wi_pdf;
-        if(!contrib.is_black() && shadow.is_visible(*this->scene)) {
+        Spectrum contrib = z.throughput * bsdf_f * radiance 
+          * (abs_dot(z.nn, light_wi) / (light_path.light_pick_pdf * light_wi_pdf));
+        if(!contrib.is_black() && shadow.visible(*this->scene)) {
+          this->store_debug_weighted_contrib(1, bounces + 2, false,
+              film_pos, contrib, weight);
           film_contrib += contrib * weight;
         }
       }
 
-      if(bounces + 1 <= this->max_length && bounces + 1 >= this->min_length) {
+      if(this->use_vc && bounces + 2 <= this->max_length &&
+          bounces + 2 >= this->min_length) 
+      {
         // "connect" vertex z as light (if z is on area light)
         const Light* area_light = isect.get_area_light();
         if(area_light != nullptr) {
@@ -360,6 +388,8 @@ namespace dort {
 
           Spectrum contrib = z.throughput * radiance;
           if(!contrib.is_black()) {
+            this->store_debug_weighted_contrib(0, bounces + 2, false,
+                film_pos, contrib, weight);
             film_contrib += contrib * weight;
           }
         }
@@ -382,5 +412,73 @@ namespace dort {
     }
 
     return film_contrib;
+  }
+
+  void VcmRenderer::init_debug_films() {
+    for(uint32_t s = 0; s <= this->max_length; ++s) {
+      for(uint32_t t = 1; t <= this->max_length; ++t) {
+        for(bool is_vm: {true, false}) {
+          if((is_vm && (s < 2 || t < 2 
+              || s + t > this->max_length + 1 || s + t < this->min_length + 1))
+            || (!is_vm && (s + t > this->max_length || s + t < this->min_length)))
+          { continue; }
+
+          for(bool is_weighted: {true, false}) {
+            uint32_t key = this->debug_image_key(s, t, is_vm, is_weighted);
+            auto name = std::to_string(s) + "_" + std::to_string(t) + 
+              (is_vm ? "_vm" : "_vc") + (is_weighted ? "_w" : "_c");
+            this->debug_names.insert(std::make_pair(key, name));
+            this->debug_films.emplace(std::piecewise_construct,
+                std::forward_as_tuple(key),
+                std::forward_as_tuple(
+                  this->film->x_res, this->film->y_res, this->film->filter));
+          }
+        }
+      }
+    }
+  }
+
+  void VcmRenderer::save_debug_films() {
+    for(const auto& pair: this->debug_names) {
+      uint32_t key = pair.first;
+      auto& name = pair.second;
+      auto& film = this->debug_films.at(key);
+      film.splat_scale = 1.f / float(this->iteration_count);
+      auto image = film.to_image<PixelRgbFloat>();
+
+      auto path = this->debug_image_dir + "/vcm_" + name + ".hdr";
+      FILE* output = std::fopen(path.c_str(), "w");
+      assert(output != nullptr);
+      if(output != nullptr) {
+        write_image_rgbe(output, image);
+        std::fclose(output);
+      }
+    }
+  }
+
+  void VcmRenderer::store_debug_weighted_contrib(uint32_t s, uint32_t t, bool is_vm,
+      Vec2 film_pos, const Spectrum& contrib, float weight) const
+  {
+    if(!this->debug_image_dir.empty()) {
+      this->store_debug_contrib(s, t, is_vm, false, film_pos, contrib);
+      this->store_debug_contrib(s, t, is_vm, true, film_pos, contrib * weight);
+    }
+  }
+
+  void VcmRenderer::store_debug_contrib(uint32_t s, uint32_t t, bool is_vm,
+      bool is_weighted, Vec2 film_pos, const Spectrum& contrib) const
+  {
+    if(this->debug_image_dir.empty()) { return; }
+    uint32_t key = this->debug_image_key(s, t, is_vm, is_weighted);
+    auto iter = this->debug_films.find(key);
+    if(iter != this->debug_films.end()) {
+      iter->second.add_splat(film_pos, contrib);
+    }
+  }
+
+  uint32_t VcmRenderer::debug_image_key(uint32_t s, uint32_t t,
+      bool is_vm, bool is_weighted) const
+  {
+    return is_weighted | (is_vm << 1) | (t << 2) | (s << 6);
   }
 }
