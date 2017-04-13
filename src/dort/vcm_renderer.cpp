@@ -38,8 +38,11 @@ namespace dort {
     iter_state.radius = radius;
     iter_state.mis_vm_weight = this->use_vm ? eta_vcm : 0.f;
     iter_state.mis_vc_weight = this->use_vc ? 1.f / eta_vcm : 0.f;
-    iter_state.vm_normalization = 1.f / eta_vcm;
-    iter_state.photon_tree = KdTree<PhotonKdTraits>(std::move(prev_photons));
+    iter_state.vm_normalization = 1.f / eta_vcm
+      * float(this->iteration_count) / float(this->iteration_count - 1);
+    if(this->use_vm) {
+      iter_state.photon_tree = KdTree<PhotonKdTraits>(std::move(prev_photons));
+    }
 
     if(idx == 0) {
       assert(prev_photons.empty());
@@ -87,6 +90,7 @@ namespace dort {
 
     for(uint32_t bounces = 0;; ++bounces) {
       if(light_ray_pdf == 0.f) { break; }
+      if(throughput.is_black()) { break; }
 
       Intersection isect;
       if(!this->scene->intersect(light_ray, isect)) {
@@ -104,11 +108,23 @@ namespace dort {
       // compute the MIS quantities
       if(bounces == 0) {
         float pivot_dir_pdf = light.pivot_radiance_pdf(y.w, y.p);
-        // equations (31), (32), (33)
-        y.d_vcm = pivot_dir_pdf * abs_dot(light_nn, y.w) /
-          (light_dir_pdf * light_pos_pdf * abs_dot(y.nn, y.w));
-        y.d_vc = abs_dot(light_nn, y.w) /
-          (light_ray_pdf * abs_dot(y.nn, y.w));
+        // equations (31), (32), (33), (49), (50)
+        if(light.flags & LIGHT_DISTANT) {
+          y.d_vcm = pivot_dir_pdf 
+            / (light_dir_pdf * light_pos_pdf * abs_dot(y.nn, y.w));
+        } else {
+          y.d_vcm = pivot_dir_pdf * abs_dot(light_nn, y.w) 
+            / (light_dir_pdf * light_pos_pdf * abs_dot(y.nn, y.w));
+        }
+
+        if(light.flags & LIGHT_DELTA) {
+          y.d_vc = 0.f;
+        } else if(light.flags & LIGHT_DISTANT) {
+          y.d_vc = 1.f / (light_ray_pdf * abs_dot(y.nn, y.w));
+        } else {
+          y.d_vc = abs_dot(light_nn, y.w) /
+            (light_ray_pdf * abs_dot(y.nn, y.w));
+        }
         y.d_vm = y.d_vc * iter_state.mis_vm_weight;
       } else {
         const auto& yp = light_vertices.at(bounces - 1);
@@ -127,7 +143,6 @@ namespace dort {
       {
         // connect vertex y to camera (VC, s >= 2, t = 1)
         Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
-        float path_count = float(iter_state.path_count);
 
         Point camera_p;
         Vec2 film_pos;
@@ -146,7 +161,7 @@ namespace dort {
 
         // equation (46), (37)
         float w_light = camera_ray_pdf * abs_dot(y.nn, camera_wi)
-          / (camera_p_pdf * length_squared(y.p - camera_p) * path_count)
+          / (camera_p_pdf * length_squared(y.p - camera_p))
           * (iter_state.mis_vm_weight + y.d_vcm + bwd_bsdf_dir_pdf * y.d_vc);
         float weight = 1.f / (1.f + w_light);
 
@@ -214,9 +229,38 @@ namespace dort {
     Spectrum film_contrib(0.f);
 
     for(uint32_t bounces = 0;; ++bounces) {
+      if(throughput.is_black()) { break; }
       Intersection isect;
       if(!this->scene->intersect(camera_ray, isect)) {
-        // TODO: handle background lights
+        // "intersect" a background light (VC, s = 0, t >= 2, distant light)
+        uint32_t light_i = this->background_light_distrib.sample(sampler.random_1d());
+        float bg_light_pick_pdf = this->background_light_distrib.pdf(light_i);
+        if(light_i >= this->scene->background_lights.size()) { break; }
+
+        const Light& light = *this->scene->background_lights.at(light_i);
+        assert(light.flags & LIGHT_DISTANT);
+        Spectrum radiance = light.background_radiance(camera_ray);
+        Spectrum contrib = throughput * radiance / bg_light_pick_pdf;
+
+        if(bounces == 0) {
+          // special case for (VC, s = 0, t = 2), no weighting
+          this->store_debug_weighted_contrib(0, bounces + 2, false,
+              film_pos, contrib, 1.f);
+          film_contrib += contrib;
+        } else {
+          float pivot_dir_pdf = light.pivot_radiance_pdf(camera_ray.dir, zp.p);
+          float ray_pdf = light.ray_radiance_pdf(*this->scene,
+              zp.p, -camera_ray.dir, Normal());
+          float light_pick_pdf = this->light_distrib_pdfs.at(&light);
+          float w_camera = pivot_dir_pdf * light_pick_pdf * zp.d_vcm
+            + ray_pdf * light_pick_pdf * zp.d_vc;
+          float weight = 1.f / (w_camera + 1.f);
+
+          this->store_debug_weighted_contrib(0, bounces + 2, false,
+              film_pos, contrib, weight);
+          film_contrib += contrib * weight;
+        }
+
         break;
       }
 
@@ -233,8 +277,7 @@ namespace dort {
         // equations (31), (32), (33)
         float pivot_area_pdf = this->camera->pivot_importance_pdf(film_res,
             camera_ray.orig, z.p);
-        z.d_vcm = pivot_area_pdf * float(iter_state.path_count)
-          * length_squared(z.p - camera_ray.orig)
+        z.d_vcm = pivot_area_pdf * length_squared(z.p - camera_ray.orig)
           / (camera_ray_pdf * abs_dot(z.nn, z.w));
         z.d_vc = 0.f;
         z.d_vm = 0.f;
@@ -250,7 +293,7 @@ namespace dort {
       }
 
       if(this->use_vm && bounces + 2 <= this->max_length) {
-        // merge vertex z with photons
+        // merge vertex z with photons (VM, s >= 2, t >= 2)
         // TODO: the radius from the previous iteration, baked in the photon MIS
         // quantities, is not compatible with the radius from the current
         // iteration!
@@ -291,7 +334,7 @@ namespace dort {
       }
 
       if(this->use_vc && bounces + 3 <= this->max_length) {
-        // connect vertex z to light vertices
+        // connect vertex z to light vertices (VC, s >= 2, t >= 2)
         for(uint32_t light_i = 0; light_i < light_vertices.size(); ++light_i) {
           if(bounces + light_i + 4 < this->min_length) { continue; }
           if(bounces + light_i + 4 > this->max_length) { break; }
@@ -334,7 +377,7 @@ namespace dort {
       if(this->use_vc && bounces + 3 <= this->max_length &&
           bounces + 3 >= this->min_length) 
       {
-        // connect vertex z to a new light vertex
+        // connect vertex z to a new light vertex (VC, s = 1, t >= 2)
         Vector light_wi;
         Point light_p;
         Normal light_nn;
@@ -352,10 +395,17 @@ namespace dort {
         float bwd_bsdf_dir_pdf = z.bsdf->camera_f_pdf(z.w, light_wi, BSDF_ALL);
 
         // equations (44), (45)
-        float w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
-        float w_camera = light_ray_pdf * abs_dot(z.nn, light_wi)
-          / (light_wi_pdf * abs_dot(light_nn, light_wi))
-          * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
+        float w_light, w_camera;
+        if(light_path.light->flags & LIGHT_DISTANT) {
+          w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
+          w_camera = light_ray_pdf * abs_dot(z.nn, light_wi) / light_wi_pdf
+            * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
+        } else {
+          w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
+          w_camera = light_ray_pdf * abs_dot(z.nn, light_wi)
+            / (light_wi_pdf * abs_dot(light_nn, light_wi))
+            * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
+        }
         float weight = 1.f / (1.f + w_light + w_camera);
 
         Spectrum contrib = z.throughput * bsdf_f * radiance 
@@ -370,9 +420,19 @@ namespace dort {
       if(this->use_vc && bounces + 2 <= this->max_length &&
           bounces + 2 >= this->min_length) 
       {
-        // "connect" vertex z as light (if z is on area light)
+        // "connect" vertex z as light (VC, s = 0, t >= 2, area light)
         const Light* area_light = isect.get_area_light();
-        if(area_light != nullptr) {
+        assert(area_light == nullptr || !(area_light->flags & LIGHT_DISTANT));
+        if(area_light != nullptr && bounces == 0) {
+          // special case for (VC, s = 0, t = 2), no weighting is performed
+          Spectrum radiance = area_light->eval_radiance(z.p, z.nn, camera_ray.orig);
+          Spectrum contrib = z.throughput * radiance;
+          if(!contrib.is_black()) {
+            this->store_debug_weighted_contrib(0, bounces + 2, false,
+                film_pos, contrib, 1.f);
+            film_contrib += contrib;
+          }
+        } else if(area_light != nullptr) {
           float light_pick_pdf = this->light_distrib_pdfs.at(area_light);
           float light_ray_pdf = area_light->ray_radiance_pdf(*this->scene,
               z.p, normalize(zp.p - z.p), z.nn);
@@ -418,10 +478,14 @@ namespace dort {
     for(uint32_t s = 0; s <= this->max_length; ++s) {
       for(uint32_t t = 1; t <= this->max_length; ++t) {
         for(bool is_vm: {true, false}) {
-          if((is_vm && (s < 2 || t < 2 
-              || s + t > this->max_length + 1 || s + t < this->min_length + 1))
-            || (!is_vm && (s + t > this->max_length || s + t < this->min_length)))
-          { continue; }
+          bool skip = false;
+          if(is_vm && (s < 2 || t < 2)) { skip = true; }
+          if(is_vm && s + t > this->max_length + 1) { skip = true; }
+          if(is_vm && s + t < this->min_length + 1) { skip = true; }
+          if(!is_vm && s == 1 && t == 1) { skip = true; }
+          if(!is_vm && s + t > this->max_length) { skip = true; }
+          if(!is_vm && s + t < this->min_length) { skip = true; }
+          if(skip) { continue; }
 
           for(bool is_weighted: {true, false}) {
             uint32_t key = this->debug_image_key(s, t, is_vm, is_weighted);

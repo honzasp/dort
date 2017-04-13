@@ -288,7 +288,7 @@ function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
       add_light(beam_light {
         point = point(343*s, (548.8-10)*s, 332*s),
         direction = vector(0, -1, 0),
-        radiance = rgb(32e3),
+        radiance = rgb(32e4 * s),
       })
     else
       error("bad light kind " .. light_kind)

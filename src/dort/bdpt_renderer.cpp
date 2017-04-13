@@ -252,7 +252,7 @@ namespace dort {
 
       Intersection isect;
       if(!scene.intersect(ray, isect)) {
-        uint32_t bg_light_i = this->background_light_distrib.sample(sampler->random_1d());
+        uint32_t bg_light_i = this->background_light_distrib.sample(rng.uniform_float());
         float bg_light_pdf = this->background_light_distrib.pdf(bg_light_i);
         if(bg_light_pdf == 0.f) { break; }
         const Light* bg_light = scene.background_lights.at(bg_light_i).get();

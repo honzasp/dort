@@ -1,6 +1,6 @@
 local _ENV = require "dort/dsl"
 
-local s = 0.1
+local s = 0.01
 function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
   geom_kind = geom_kind or "box"
   camera_kind = camera_kind or "pinhole"
@@ -190,7 +190,7 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
       add_light(beam_light {
         point = point(343*s, (548.8-10)*s, 332*s),
         direction = vector(0, -1, 0),
-        radiance = rgb(32e3),
+        radiance = rgb(32e3 * s),
       })
     else
       error("bad light kind " .. light_kind)
@@ -280,7 +280,7 @@ algos = {
     min_depth = 0,
     max_depth = 4,
     renderer = "pt",
-    iterations = 1,
+    iterations = 5,
   }},
   --]]
   --[[
@@ -293,21 +293,22 @@ algos = {
   {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
   {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
   --]]
-  --[[
+  ---[[
   {"bdpt", {
     min_depth = 0,
     max_depth = 4,
     renderer = "bdpt",
-    iterations = 1,
+    iterations = 4,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --]]
   {"vcm", {
     min_depth = 0,
-    max_depth = 2,
+    max_depth = 4,
     renderer = "vcm",
+    mode = "vcm",
     iterations = 2,
-    initial_radius = s*10,
+    initial_radius = s*1,
     debug_image_dir = out_dir .. "/_vcm_debug",
   }},
 }
@@ -315,7 +316,7 @@ scenes = {
   --{"point_light", point_light_scene()},
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  {"diffuse_box", cornell_box_scene("diffuse", "area")},
+  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
   --{"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
