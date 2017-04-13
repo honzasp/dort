@@ -52,6 +52,7 @@ namespace dort {
     struct LightPathState {
       const Light* light;
       float light_pick_pdf;
+      Ray ray;
     };
 
     struct PathVertex {
@@ -103,6 +104,21 @@ namespace dort {
         const LightPathState& light_path,
         const std::vector<PathVertex>& light_vertices,
         Vec2 film_pos, Sampler& sampler);
+
+    void connect_to_camera(const IterationState& iter_state,
+        const PathVertex& y, uint32_t bounces, Film& film, Sampler& sampler) const;
+    Spectrum connect_to_background_light(const Ray& camera_ray,
+        const PathVertex& zp, Vec2 film_pos, uint32_t bounces, Sampler& sampler) const;
+    Spectrum merge_with_photons(const IterationState& iter_state,
+        const PathVertex& z, Vec2 film_pos, uint32_t bounces) const;
+    Spectrum connect_to_light_vertices(const IterationState& iter_state,
+        const PathVertex& z, const std::vector<PathVertex>& light_vertices,
+        Vec2 film_pos, uint32_t bounces) const;
+    Spectrum connect_to_light(const IterationState& iter_state,
+        const LightPathState& light_path, const PathVertex& z,
+        Vec2 film_pos, uint32_t bounces, Sampler& sampler) const;
+    Spectrum connect_area_light(const PathVertex& zp, const PathVertex& z,
+        const Light* area_light, Vec2 film_pos, uint32_t bounces) const;
 
     void init_debug_films();
     void save_debug_films();

@@ -304,7 +304,7 @@ algos = {
   --]]
   {"vcm", {
     min_depth = 0,
-    max_depth = 1,
+    max_depth = 4,
     renderer = "vcm",
     mode = "vcm",
     iterations = 2,
@@ -316,7 +316,7 @@ scenes = {
   --{"point_light", point_light_scene()},
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
+  {"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
   --{"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
@@ -329,7 +329,7 @@ scenes = {
   --{"diffuse_open", cornell_box_scene("diffuse", "area", "open")},
   --{"diffused_open", cornell_box_scene("diffuse", "direction", "open")},
   --{"diffusei_open", cornell_box_scene("diffuse", "infinite", "open")},
-  {"glossyi_open", cornell_box_scene("glossy", "infinite", "open")},
+  --{"glossyi_open", cornell_box_scene("glossy", "infinite", "open")},
   --{"deltai_open", cornell_box_scene("delta", "infinite", "open")},
   --{"diffusee_open", cornell_box_scene("diffuse", "environment", "open")},
   --{"glossye_open", cornell_box_scene("glossy", "environment", "open")},

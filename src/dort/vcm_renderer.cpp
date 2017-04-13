@@ -141,38 +141,7 @@ namespace dort {
       if(this->use_vc && bounces + 3 <= this->max_length &&
           bounces + 3 >= this->min_length) 
       {
-        // connect vertex y to camera (VC, s >= 2, t = 1)
-        Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
-
-        Point camera_p;
-        Vec2 film_pos;
-        float camera_p_pdf;
-        ShadowTest shadow;
-        Spectrum importance = this->camera->sample_pivot_importance(film_res,
-            y.p, y.p_epsilon, camera_p, film_pos, camera_p_pdf,
-            shadow, CameraSample(sampler.rng));
-
-        Vector camera_wi = normalize(y.p - camera_p);
-        float camera_ray_pdf = this->camera->ray_importance_pdf(film_res,
-          camera_p, camera_wi);
-
-        Spectrum bsdf_f = y.bsdf->eval_f(y.w, -camera_wi, BSDF_ALL);
-        float bwd_bsdf_dir_pdf = y.bsdf->light_f_pdf(y.w, -camera_wi, BSDF_ALL);
-
-        // equation (46), (37)
-        float w_light = camera_ray_pdf * abs_dot(y.nn, camera_wi)
-          / (camera_p_pdf * length_squared(y.p - camera_p))
-          * (iter_state.mis_vm_weight + y.d_vcm + bwd_bsdf_dir_pdf * y.d_vc);
-        float weight = 1.f / (1.f + w_light);
-
-        float dist = length_squared(y.p - camera_p);
-        Spectrum contrib = y.throughput * bsdf_f * importance 
-          * (abs_dot(y.nn, camera_wi) / (dist * camera_p_pdf));
-        if(!contrib.is_black() && shadow.visible(*this->scene)) {
-          this->film->add_splat(film_pos, contrib * weight);
-          this->store_debug_weighted_contrib(bounces + 2, 1, false,
-              film_pos, contrib, weight);
-        }
+        this->connect_to_camera(iter_state, y, bounces, *this->film, sampler);
       }
 
       // the path is too long to be ever accepted
@@ -226,44 +195,19 @@ namespace dort {
     Spectrum throughput = camera_importance / camera_ray_pdf;
     float fwd_bsdf_dir_pdf = SIGNALING_NAN;
     PathVertex zp;
+    zp.p = camera_ray.orig;
+    zp.throughput = throughput;
     Spectrum film_contrib(0.f);
 
     for(uint32_t bounces = 0;; ++bounces) {
       if(throughput.is_black()) { break; }
       Intersection isect;
       if(!this->scene->intersect(camera_ray, isect)) {
-        // "intersect" a background light (VC, s = 0, t >= 2, distant light)
-        if(bounces + 2 < this->min_length || bounces + 2 > this->max_length) {
-          break;
+        if(bounces + 2 >= this->min_length && bounces + 2 <= this->max_length) {
+          // VC, s = 0, t >= 2, background light
+          film_contrib += this->connect_to_background_light(
+            camera_ray, zp, film_pos, bounces, sampler);
         }
-        uint32_t light_i = this->background_light_distrib.sample(sampler.random_1d());
-        float bg_light_pick_pdf = this->background_light_distrib.pdf(light_i);
-        if(light_i >= this->scene->background_lights.size()) { break; }
-
-        const Light& light = *this->scene->background_lights.at(light_i);
-        assert(light.flags & LIGHT_DISTANT);
-        Spectrum radiance = light.background_radiance(camera_ray);
-        Spectrum contrib = throughput * radiance / bg_light_pick_pdf;
-
-        if(bounces == 0) {
-          // special case for (VC, s = 0, t = 2), no weighting
-          this->store_debug_weighted_contrib(0, bounces + 2, false,
-              film_pos, contrib, 1.f);
-          film_contrib += contrib;
-        } else {
-          float pivot_dir_pdf = light.pivot_radiance_pdf(camera_ray.dir, zp.p);
-          float ray_pdf = light.ray_radiance_pdf(*this->scene,
-              zp.p, -camera_ray.dir, Normal());
-          float light_pick_pdf = this->light_distrib_pdfs.at(&light);
-          float w_camera = pivot_dir_pdf * light_pick_pdf * zp.d_vcm
-            + ray_pdf * light_pick_pdf * zp.d_vc;
-          float weight = 1.f / (w_camera + 1.f);
-
-          this->store_debug_weighted_contrib(0, bounces + 2, false,
-              film_pos, contrib, weight);
-          film_contrib += contrib * weight;
-        }
-
         break;
       }
 
@@ -296,170 +240,36 @@ namespace dort {
       }
 
       if(this->use_vm && bounces + 2 <= this->max_length) {
-        // merge vertex z with photons (VM, s >= 2, t >= 2)
-        // TODO: the radius from the previous iteration, baked in the photon MIS
-        // quantities, is not compatible with the radius from the current
-        // iteration!
-        Spectrum photon_sum(0.f);
-        iter_state.photon_tree.lookup(z.p, square(iter_state.radius),
-          [&](const Photon& photon, float, float radius_square) {
-            if(bounces + photon.bounces + 3 < this->min_length ||
-               bounces + photon.bounces + 3 > this->max_length ||
-               dot(photon.nn, z.nn) < 0.7f)
-            {
-              return radius_square;
-            }
-
-            Spectrum bsdf_f = z.bsdf->eval_f(photon.wi, z.w, BSDF_ALL);
-
-            float bwd_light_dir_pdf = z.bsdf->light_f_pdf(photon.wi, -z.w, BSDF_ALL);
-            float bwd_camera_dir_pdf = z.bsdf->camera_f_pdf(z.w, photon.wi, BSDF_ALL);
-
-            // equations (38), (39)
-            float w_light = photon.d_vcm * iter_state.mis_vc_weight
-              + bwd_light_dir_pdf * photon.d_vm;
-            float w_camera = z.d_vcm * iter_state.mis_vc_weight
-              + bwd_camera_dir_pdf * z.d_vm;
-            float weight = 1.f / (w_light + w_camera + 1.f);
-
-            if(!this->debug_image_dir.empty()) {
-              Spectrum contrib = photon.throughput * bsdf_f * z.throughput 
-                * iter_state.vm_normalization;
-              this->store_debug_weighted_contrib(photon.bounces + 2, bounces + 2, true,
-                  film_pos, contrib, weight);
-            }
-
-            photon_sum += bsdf_f * photon.throughput * weight;
-            return radius_square;
-          });
-
-        film_contrib += photon_sum * z.throughput * iter_state.vm_normalization;
+        // VM, s >= 2, t >= 2
+        film_contrib += this->merge_with_photons(iter_state, z, film_pos, bounces);
       }
 
       if(this->use_vc && bounces + 3 <= this->max_length) {
-        // connect vertex z to light vertices (VC, s >= 2, t >= 2)
-        for(uint32_t light_i = 0; light_i < light_vertices.size(); ++light_i) {
-          if(bounces + light_i + 4 < this->min_length) { continue; }
-          if(bounces + light_i + 4 > this->max_length) { break; }
-          const PathVertex& y = light_vertices.at(light_i);
-
-          Vector connect_wi = normalize(y.p - z.p);
-          float light_connect_dir_pdf = z.bsdf->light_f_pdf(connect_wi, z.w, BSDF_ALL);
-          float light_bwd_dir_pdf = y.bsdf->light_f_pdf(y.w, -connect_wi, BSDF_ALL);
-          float camera_connect_dir_pdf = y.bsdf->camera_f_pdf(-connect_wi, y.w, BSDF_ALL);
-          float camera_bwd_dir_pdf = z.bsdf->camera_f_pdf(z.w, connect_wi, BSDF_ALL);
-
-          Spectrum light_bsdf_f = y.bsdf->eval_f(y.w, -connect_wi, BSDF_ALL);
-          Spectrum camera_bsdf_f = z.bsdf->eval_f(connect_wi, z.w, BSDF_ALL);
-
-          ShadowTest shadow;
-          shadow.init_point_point(y.p, y.p_epsilon, z.p, z.p_epsilon);
-
-          float dot_y = abs_dot(y.nn, connect_wi);
-          float dot_z = abs_dot(z.nn, connect_wi);
-          float dist_squared = length_squared(y.p - z.p);
-
-          // equations (40), (41)
-          float w_light = light_connect_dir_pdf * dot_y / dist_squared
-            * (iter_state.mis_vm_weight + y.d_vcm + light_bwd_dir_pdf * y.d_vc);
-          float w_camera = camera_connect_dir_pdf * dot_z / dist_squared
-            * (iter_state.mis_vm_weight + z.d_vcm + camera_bwd_dir_pdf * z.d_vc);
-          float weight = 1.f / (1.f + w_light + w_camera);
-
-          Spectrum contrib = y.throughput * light_bsdf_f * camera_bsdf_f * z.throughput
-            * (dot_y * dot_z / dist_squared);
-
-          if(!contrib.is_black() && shadow.visible(*this->scene)) {
-            this->store_debug_weighted_contrib(light_i + 2, bounces + 2, false,
-                film_pos, contrib, weight);
-            film_contrib += contrib * weight;
-          }
-        }
+        // VC, s >= 2, t >= 2
+        film_contrib += this->connect_to_light_vertices(iter_state, z,
+            light_vertices, film_pos, bounces);
       }
 
       if(this->use_vc && bounces + 3 <= this->max_length &&
           bounces + 3 >= this->min_length) 
       {
-        // connect vertex z to a new light vertex (VC, s = 1, t >= 2)
-        Vector light_wi;
-        Point light_p;
-        Normal light_nn;
-        float light_p_epsilon;
-        float light_wi_pdf;
-        ShadowTest shadow;
-        Spectrum radiance = light_path.light->sample_pivot_radiance(z.p, z.p_epsilon,
-            light_wi, light_p, light_nn, light_p_epsilon,
-            light_wi_pdf, shadow, LightSample(sampler.rng));
-        Spectrum bsdf_f = z.bsdf->eval_f(light_wi, z.w, BSDF_ALL);
-
-        float light_ray_pdf = light_path.light->ray_radiance_pdf(*this->scene,
-            light_p, -light_wi, light_nn);
-        float fwd_bsdf_dir_pdf = z.bsdf->light_f_pdf(light_wi, z.w, BSDF_ALL);
-        float bwd_bsdf_dir_pdf = z.bsdf->camera_f_pdf(z.w, light_wi, BSDF_ALL);
-
-        // equations (44), (45)
-        float w_light, w_camera;
-        if(light_path.light->flags & LIGHT_DISTANT) {
-          w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
-          w_camera = light_ray_pdf * abs_dot(z.nn, light_wi) / light_wi_pdf
-            * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
-        } else {
-          w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
-          w_camera = light_ray_pdf * abs_dot(z.nn, light_wi)
-            / (light_wi_pdf * abs_dot(light_nn, light_wi))
-            * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
-        }
-        float weight = 1.f / (1.f + w_light + w_camera);
-
-        Spectrum contrib = z.throughput * bsdf_f * radiance 
-          * (abs_dot(z.nn, light_wi) / (light_path.light_pick_pdf * light_wi_pdf));
-        if(!contrib.is_black() && shadow.visible(*this->scene)) {
-          this->store_debug_weighted_contrib(1, bounces + 2, false,
-              film_pos, contrib, weight);
-          film_contrib += contrib * weight;
-        }
+        // VC, s = 1, t >= 2
+        film_contrib += this->connect_to_light(
+            iter_state, light_path, z, film_pos, bounces, sampler);
       }
 
       if(this->use_vc && bounces + 2 <= this->max_length &&
           bounces + 2 >= this->min_length) 
       {
-        // "connect" vertex z as light (VC, s = 0, t >= 2, area light)
         const Light* area_light = isect.get_area_light();
-        assert(area_light == nullptr || !(area_light->flags & LIGHT_DISTANT));
-        if(area_light != nullptr && bounces == 0) {
-          // special case for (VC, s = 0, t = 2), no weighting is performed
-          Spectrum radiance = area_light->eval_radiance(z.p, z.nn, camera_ray.orig);
-          Spectrum contrib = z.throughput * radiance;
-          if(!contrib.is_black()) {
-            this->store_debug_weighted_contrib(0, bounces + 2, false,
-                film_pos, contrib, 1.f);
-            film_contrib += contrib;
-          }
-        } else if(area_light != nullptr) {
-          float light_pick_pdf = this->light_distrib_pdfs.at(area_light);
-          float light_ray_pdf = area_light->ray_radiance_pdf(*this->scene,
-              z.p, normalize(zp.p - z.p), z.nn);
-          float pivot_dir_pdf = area_light->pivot_radiance_pdf(-z.w, zp.p);
-
-          Spectrum radiance = area_light->eval_radiance(z.p, z.nn, zp.p);
-
-          // equations (42), (43)
-          float w_camera = light_pick_pdf * (
-            pivot_dir_pdf * abs_dot(z.nn, z.w) * z.d_vcm / length_squared(zp.p - z.p)
-             + light_ray_pdf * z.d_vc);
-          float weight = 1.f / (1.f + w_camera);
-
-          Spectrum contrib = z.throughput * radiance;
-          if(!contrib.is_black()) {
-            this->store_debug_weighted_contrib(0, bounces + 2, false,
-                film_pos, contrib, weight);
-            film_contrib += contrib * weight;
-          }
+        if(area_light != nullptr) {
+          // VC, s = 0, t >= 2, area light
+          film_contrib += this->connect_area_light(zp, z, area_light, film_pos, bounces);
         }
       }
 
       // the path is too long to be ever accepted
-      if(bounces + 1 > this->max_length) { break; }
+      if(bounces + 2 >= this->max_length) { break; }
 
       // bounce
       Vector bsdf_wi;
@@ -476,6 +286,260 @@ namespace dort {
 
     return film_contrib;
   }
+
+  void VcmRenderer::connect_to_camera(const IterationState& iter_state,
+      const PathVertex& y, uint32_t bounces, Film& film, Sampler& sampler) const 
+  {
+    // connect vertex y to camera (VC, s >= 2, t = 1)
+    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+
+    Point camera_p;
+    Vec2 film_pos;
+    float camera_p_pdf;
+    ShadowTest shadow;
+    Spectrum importance = this->camera->sample_pivot_importance(film_res,
+        y.p, y.p_epsilon, camera_p, film_pos, camera_p_pdf,
+        shadow, CameraSample(sampler.rng));
+    if(importance.is_black() || camera_p_pdf == 0.f) { return; }
+
+    Vector camera_wi = normalize(y.p - camera_p);
+    Spectrum bsdf_f = y.bsdf->eval_f(y.w, -camera_wi, BSDF_ALL);
+    if(bsdf_f.is_black()) { return; }
+
+    float camera_ray_pdf = this->camera->ray_importance_pdf(film_res,
+      camera_p, camera_wi);
+    float bwd_bsdf_dir_pdf = y.bsdf->light_f_pdf(y.w, -camera_wi, BSDF_ALL);
+
+    // equation (46), (37)
+    float w_light = camera_ray_pdf * abs_dot(y.nn, camera_wi)
+      / (camera_p_pdf * length_squared(y.p - camera_p))
+      * (iter_state.mis_vm_weight + y.d_vcm + bwd_bsdf_dir_pdf * y.d_vc);
+    float weight = 1.f / (1.f + w_light);
+
+    float dist = length_squared(y.p - camera_p);
+    Spectrum contrib = y.throughput * bsdf_f * importance 
+      * (abs_dot(y.nn, camera_wi) / (dist * camera_p_pdf));
+    if(!contrib.is_black() && shadow.visible(*this->scene)) {
+      film.add_splat(film_pos, contrib * weight);
+      this->store_debug_weighted_contrib(bounces + 2, 1, false,
+          film_pos, contrib, weight);
+    }
+  }
+
+  Spectrum VcmRenderer::connect_to_background_light(const Ray& camera_ray,
+      const PathVertex& zp, Vec2 film_pos, uint32_t bounces, Sampler& sampler) const
+  {
+    // "intersect" a background light (VC, s = 0, t >= 2, distant light)
+    uint32_t light_i = this->background_light_distrib.sample(sampler.random_1d());
+    float bg_light_pick_pdf = this->background_light_distrib.pdf(light_i);
+    if(bg_light_pick_pdf == 0.f) { return Spectrum(0.f); }
+
+    const Light& light = *this->scene->background_lights.at(light_i);
+    assert(light.flags & LIGHT_DISTANT);
+    Spectrum radiance = light.background_radiance(camera_ray);
+    Spectrum contrib = zp.throughput * radiance / bg_light_pick_pdf;
+    if(contrib.is_black()) { return Spectrum(0.f); }
+
+    if(bounces == 0) {
+      // special case for (VC, s = 0, t = 2), no weighting
+      this->store_debug_weighted_contrib(0, bounces + 2, false,
+          film_pos, contrib, 1.f);
+      return contrib;
+    } else {
+      float pivot_dir_pdf = light.pivot_radiance_pdf(camera_ray.dir, zp.p);
+      float ray_pdf = light.ray_radiance_pdf(*this->scene,
+          zp.p, -camera_ray.dir, Normal());
+      float light_pick_pdf = this->light_distrib_pdfs.at(&light);
+      float w_camera = pivot_dir_pdf * light_pick_pdf * zp.d_vcm
+        + ray_pdf * light_pick_pdf * zp.d_vc;
+      float weight = 1.f / (w_camera + 1.f);
+
+      this->store_debug_weighted_contrib(0, bounces + 2, false,
+          film_pos, contrib, weight);
+      return contrib * weight;
+    }
+  }
+
+  Spectrum VcmRenderer::merge_with_photons(const IterationState& iter_state,
+      const PathVertex& z, Vec2 film_pos, uint32_t bounces) const
+  {
+    // merge vertex z with photons (VM, s >= 2, t >= 2)
+    // TODO: the radius from the previous iteration, baked in the photon MIS
+    // quantities, is not compatible with the radius from the current
+    // iteration!
+    Spectrum photon_sum(0.f);
+    iter_state.photon_tree.lookup(z.p, square(iter_state.radius),
+      [&](const Photon& photon, float, float radius_square) {
+        if(bounces + photon.bounces + 3 < this->min_length ||
+            bounces + photon.bounces + 3 > this->max_length ||
+            dot(photon.nn, z.nn) < 0.7f)
+        {
+          return radius_square;
+        }
+
+        Spectrum bsdf_f = z.bsdf->eval_f(photon.wi, z.w, BSDF_ALL);
+        if(bsdf_f.is_black()) { return radius_square; }
+
+        float bwd_light_dir_pdf = z.bsdf->light_f_pdf(photon.wi, -z.w, BSDF_ALL);
+        float bwd_camera_dir_pdf = z.bsdf->camera_f_pdf(z.w, photon.wi, BSDF_ALL);
+
+        // equations (38), (39)
+        float w_light = photon.d_vcm * iter_state.mis_vc_weight
+          + bwd_light_dir_pdf * photon.d_vm;
+        float w_camera = z.d_vcm * iter_state.mis_vc_weight
+          + bwd_camera_dir_pdf * z.d_vm;
+        float weight = 1.f / (w_light + w_camera + 1.f);
+
+        if(!this->debug_image_dir.empty()) {
+          Spectrum contrib = photon.throughput * bsdf_f * z.throughput 
+            * iter_state.vm_normalization;
+          this->store_debug_weighted_contrib(photon.bounces + 2, bounces + 2, true,
+              film_pos, contrib, weight);
+        }
+
+        photon_sum += bsdf_f * photon.throughput * weight;
+        return radius_square;
+      });
+
+    return photon_sum * z.throughput * iter_state.vm_normalization;
+  }
+
+  Spectrum VcmRenderer::connect_to_light_vertices(const IterationState& iter_state,
+      const PathVertex& z, const std::vector<PathVertex>& light_vertices,
+      Vec2 film_pos, uint32_t bounces) const
+  {
+    Spectrum contrib_sum(0.f);
+    // connect vertex z to light vertices (VC, s >= 2, t >= 2)
+    for(uint32_t light_i = 0; light_i < light_vertices.size(); ++light_i) {
+      if(bounces + light_i + 4 < this->min_length) { continue; }
+      if(bounces + light_i + 4 > this->max_length) { break; }
+      const PathVertex& y = light_vertices.at(light_i);
+
+      Vector connect_wi = normalize(y.p - z.p);
+      Spectrum light_bsdf_f = y.bsdf->eval_f(y.w, -connect_wi, BSDF_ALL);
+      if(light_bsdf_f.is_black()) { continue; }
+      Spectrum camera_bsdf_f = z.bsdf->eval_f(connect_wi, z.w, BSDF_ALL);
+      if(camera_bsdf_f.is_black()) { continue; }
+
+      float light_connect_dir_pdf = z.bsdf->light_f_pdf(connect_wi, z.w, BSDF_ALL);
+      float light_bwd_dir_pdf = y.bsdf->light_f_pdf(y.w, -connect_wi, BSDF_ALL);
+      float camera_connect_dir_pdf = y.bsdf->camera_f_pdf(-connect_wi, y.w, BSDF_ALL);
+      float camera_bwd_dir_pdf = z.bsdf->camera_f_pdf(z.w, connect_wi, BSDF_ALL);
+
+      ShadowTest shadow;
+      shadow.init_point_point(y.p, y.p_epsilon, z.p, z.p_epsilon);
+
+      float dot_y = abs_dot(y.nn, connect_wi);
+      float dot_z = abs_dot(z.nn, connect_wi);
+      float dist_squared = length_squared(y.p - z.p);
+
+      // equations (40), (41)
+      float w_light = light_connect_dir_pdf * dot_y / dist_squared
+        * (iter_state.mis_vm_weight + y.d_vcm + light_bwd_dir_pdf * y.d_vc);
+      float w_camera = camera_connect_dir_pdf * dot_z / dist_squared
+        * (iter_state.mis_vm_weight + z.d_vcm + camera_bwd_dir_pdf * z.d_vc);
+      float weight = 1.f / (1.f + w_light + w_camera);
+
+      Spectrum contrib = y.throughput * light_bsdf_f * camera_bsdf_f * z.throughput
+        * (dot_y * dot_z / dist_squared);
+
+      if(!contrib.is_black() && shadow.visible(*this->scene)) {
+        this->store_debug_weighted_contrib(light_i + 2, bounces + 2, false,
+            film_pos, contrib, weight);
+        contrib_sum += contrib * weight;
+      }
+    }
+    return contrib_sum;
+  }
+
+  Spectrum VcmRenderer::connect_to_light(const IterationState& iter_state,
+      const LightPathState& light_path, const PathVertex& z,
+      Vec2 film_pos, uint32_t bounces, Sampler& sampler) const
+  {
+    // connect vertex z to a new light vertex (VC, s = 1, t >= 2)
+    Vector light_wi;
+    Point light_p;
+    Normal light_nn;
+    float light_p_epsilon;
+    float light_wi_pdf;
+    ShadowTest shadow;
+    Spectrum radiance = light_path.light->sample_pivot_radiance(z.p, z.p_epsilon,
+        light_wi, light_p, light_nn, light_p_epsilon,
+        light_wi_pdf, shadow, LightSample(sampler.rng));
+    if(radiance.is_black()) { return Spectrum(0.f); }
+    Spectrum bsdf_f = z.bsdf->eval_f(light_wi, z.w, BSDF_ALL);
+    if(bsdf_f.is_black()) { return Spectrum(0.f); }
+
+    float light_ray_pdf = light_path.light->ray_radiance_pdf(*this->scene,
+        light_p, -light_wi, light_nn);
+    float fwd_bsdf_dir_pdf = z.bsdf->light_f_pdf(light_wi, z.w, BSDF_ALL);
+    float bwd_bsdf_dir_pdf = z.bsdf->camera_f_pdf(z.w, light_wi, BSDF_ALL);
+
+    // equations (44), (45)
+    float w_light, w_camera;
+    if(light_path.light->flags & LIGHT_DISTANT) {
+      w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
+      w_camera = light_ray_pdf * abs_dot(z.nn, light_wi) / light_wi_pdf
+        * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
+    } else {
+      w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
+      w_camera = light_ray_pdf * abs_dot(z.nn, light_wi)
+        / (light_wi_pdf * abs_dot(light_nn, light_wi))
+        * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
+    }
+    float weight = 1.f / (1.f + w_light + w_camera);
+
+    Spectrum contrib = z.throughput * bsdf_f * radiance 
+      * (abs_dot(z.nn, light_wi) / (light_path.light_pick_pdf * light_wi_pdf));
+    if(contrib.is_black() || !shadow.visible(*this->scene)) {
+      return Spectrum(0.f);
+    }
+
+    this->store_debug_weighted_contrib(1, bounces + 2, false,
+        film_pos, contrib, weight);
+    return contrib * weight;
+  }
+
+  Spectrum VcmRenderer::connect_area_light(const PathVertex& zp,
+      const PathVertex& z, const Light* area_light,
+      Vec2 film_pos, uint32_t bounces) const
+  {
+    // "connect" vertex z as light (VC, s = 0, t >= 2, area light)
+    assert(!(area_light->flags & LIGHT_DISTANT));
+    assert(area_light->flags & LIGHT_AREA);
+    if(bounces == 0) {
+      // special case for (VC, s = 0, t = 2), no weighting is performed
+      Spectrum radiance = area_light->eval_radiance(z.p, z.nn, zp.p);
+      Spectrum contrib = z.throughput * radiance;
+      if(!contrib.is_black()) {
+        this->store_debug_weighted_contrib(0, bounces + 2, false,
+            film_pos, contrib, 1.f);
+      }
+      return contrib;
+    } else {
+      Spectrum radiance = area_light->eval_radiance(z.p, z.nn, zp.p);
+      if(radiance.is_black()) { return Spectrum(0.f); }
+
+      float light_pick_pdf = this->light_distrib_pdfs.at(area_light);
+      float light_ray_pdf = area_light->ray_radiance_pdf(*this->scene,
+          z.p, normalize(zp.p - z.p), z.nn);
+      float pivot_dir_pdf = area_light->pivot_radiance_pdf(-z.w, zp.p);
+
+      // equations (42), (43)
+      float w_camera = light_pick_pdf * (
+        pivot_dir_pdf * abs_dot(z.nn, z.w) * z.d_vcm / length_squared(zp.p - z.p)
+          + light_ray_pdf * z.d_vc);
+      float weight = 1.f / (1.f + w_camera);
+
+      Spectrum contrib = z.throughput * radiance;
+      if(!contrib.is_black()) {
+        this->store_debug_weighted_contrib(0, bounces + 2, false,
+            film_pos, contrib, weight);
+      }
+      return contrib * weight;
+    }
+  }
+  
 
   void VcmRenderer::init_debug_films() {
     for(uint32_t s = 0; s <= this->max_length; ++s) {
