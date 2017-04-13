@@ -293,10 +293,10 @@ algos = {
   {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
   {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
   --]]
-  ---[[
+  --[[
   {"bdpt", {
     min_depth = 0,
-    max_depth = 4,
+    max_depth = 1,
     renderer = "bdpt",
     iterations = 4,
     debug_image_dir = out_dir .. "/_bdpt_debug",
@@ -304,7 +304,7 @@ algos = {
   --]]
   {"vcm", {
     min_depth = 0,
-    max_depth = 4,
+    max_depth = 1,
     renderer = "vcm",
     mode = "vcm",
     iterations = 2,
@@ -329,7 +329,7 @@ scenes = {
   --{"diffuse_open", cornell_box_scene("diffuse", "area", "open")},
   --{"diffused_open", cornell_box_scene("diffuse", "direction", "open")},
   --{"diffusei_open", cornell_box_scene("diffuse", "infinite", "open")},
-  --{"glossyi_open", cornell_box_scene("glossy", "infinite", "open")},
+  {"glossyi_open", cornell_box_scene("glossy", "infinite", "open")},
   --{"deltai_open", cornell_box_scene("delta", "infinite", "open")},
   --{"diffusee_open", cornell_box_scene("diffuse", "environment", "open")},
   --{"glossye_open", cornell_box_scene("glossy", "environment", "open")},

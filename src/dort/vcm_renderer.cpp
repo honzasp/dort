@@ -233,6 +233,9 @@ namespace dort {
       Intersection isect;
       if(!this->scene->intersect(camera_ray, isect)) {
         // "intersect" a background light (VC, s = 0, t >= 2, distant light)
+        if(bounces + 2 < this->min_length || bounces + 2 > this->max_length) {
+          break;
+        }
         uint32_t light_i = this->background_light_distrib.sample(sampler.random_1d());
         float bg_light_pick_pdf = this->background_light_distrib.pdf(light_i);
         if(light_i >= this->scene->background_lights.size()) { break; }
@@ -535,6 +538,7 @@ namespace dort {
     if(this->debug_image_dir.empty()) { return; }
     uint32_t key = this->debug_image_key(s, t, is_vm, is_weighted);
     auto iter = this->debug_films.find(key);
+    assert(iter != this->debug_films.end());
     if(iter != this->debug_films.end()) {
       iter->second.add_splat(film_pos, contrib);
     }
