@@ -1,10 +1,11 @@
+#include <shared_mutex>
 #include "dort/camera.hpp"
 #include "dort/film.hpp"
 #include "dort/primitive.hpp"
 #include "dort/vcm_renderer.hpp"
 
 namespace dort {
-  void VcmRenderer::render(CtxG&, Progress& progress) {
+  void VcmRenderer::render(CtxG& ctx, Progress& progress) {
     this->light_distrib = compute_light_distrib(*this->scene);
     this->background_light_distrib = compute_light_distrib(*this->scene, true);
     for(uint32_t i = 0; i < scene->lights.size(); ++i) {
@@ -15,7 +16,7 @@ namespace dort {
 
     std::vector<Photon> photons;
     for(uint32_t i = 0; i < this->iteration_count; ++i) {
-      photons = this->iteration(i, std::move(photons));
+      photons = this->iteration(ctx, i, std::move(photons));
       progress.set_percent_done(float(i + 1) / float(this->iteration_count));
       if(progress.is_cancelled()) { break; }
       this->film->splat_scale = 1.f / (float(i + 1));
@@ -24,8 +25,8 @@ namespace dort {
     this->save_debug_films();
   }
 
-  std::vector<VcmRenderer::Photon> VcmRenderer::iteration(uint32_t idx,
-      std::vector<Photon> prev_photons) 
+  std::vector<VcmRenderer::Photon> VcmRenderer::iteration(CtxG& ctx,
+      uint32_t idx, std::vector<Photon> prev_photons) 
   {
     float radius = this->initial_radius
       * pow(float(idx + 1), 0.5f * (this->alpha - 1.f));
@@ -51,19 +52,51 @@ namespace dort {
     }
 
     std::vector<Photon> photons;
-    std::vector<PathVertex> light_vertices;
-    for(uint32_t path_idx = 0; path_idx < iter_state.path_count; ++path_idx) {
-      LightPathState light_path = this->light_walk(iter_state,
-          light_vertices, photons, *this->sampler);
-      uint32_t film_y = path_idx / this->film->res.x;
-      uint32_t film_x = path_idx % this->film->res.x;
-      Vec2 film_pos = Vec2(film_x, film_y) + this->sampler->random_2d();
-      Spectrum contrib = this->camera_walk(iter_state, light_path,
-          light_vertices, film_pos, *this->sampler);
-      this->film->add_sample(film_pos, contrib);
-      light_vertices.clear();
-    }
+    std::atomic<uint32_t> photon_count(0);
+    std::shared_timed_mutex photons_mutex;
 
+    auto ensure_photons_size = [&](uint32_t min_size) {
+      std::unique_lock<decltype(photons_mutex)> resize_lock(photons_mutex);
+      if(min_size <= photons.size()) { return; }
+      photons.resize(min_size);
+      photons.resize(photons.capacity());
+    };
+
+    auto add_photons = [&](const std::vector<Photon>& block) {
+      std::shared_lock<decltype(photons_mutex)> write_lock(photons_mutex);
+      uint32_t block_size = block.size();
+      uint32_t block_begin = photon_count.fetch_add(block_size);
+      if(block_begin + block_size > photons.size()) {
+        write_lock.unlock();
+        ensure_photons_size(block_begin + block_size);
+        write_lock.lock();
+      }
+
+      for(uint32_t i = 0; i < block_size; ++i) {
+        photons.at(block_begin + i) = block.at(i);
+      }
+    };
+
+    this->iteration_tiled_per_job(ctx,
+      [&](Film& tile, Recti tile_rect, Recti tile_film_rect, Sampler& sampler)
+    {
+      std::vector<Photon> photons_block;
+      std::vector<PathVertex> light_vertices;
+      for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
+        for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
+          LightPathState light_path = this->light_walk(iter_state,
+              light_vertices, photons_block, sampler);
+          Vec2 film_pos = Vec2(x, y) + sampler.random_2d();
+          Spectrum contrib = this->camera_walk(iter_state, light_path,
+              light_vertices, film_pos, sampler);
+          tile.add_sample(film_pos - Vec2(tile_film_rect.p_min), contrib);
+          light_vertices.clear();
+        }
+      }
+      add_photons(photons_block);
+    });
+
+    photons.resize(photon_count.load());
     return photons;
   }
 
@@ -542,6 +575,7 @@ namespace dort {
   
 
   void VcmRenderer::init_debug_films() {
+    if(this->debug_image_dir.empty()) { return; }
     for(uint32_t s = 0; s <= this->max_length; ++s) {
       for(uint32_t t = 1; t <= this->max_length; ++t) {
         for(bool is_vm: {true, false}) {
@@ -570,6 +604,7 @@ namespace dort {
   }
 
   void VcmRenderer::save_debug_films() {
+    if(this->debug_image_dir.empty()) { return; }
     for(const auto& pair: this->debug_names) {
       uint32_t key = pair.first;
       auto& name = pair.second;

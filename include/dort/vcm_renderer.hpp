@@ -95,7 +95,8 @@ namespace dort {
       KdTree<PhotonKdTraits> photon_tree;
     };
 
-    std::vector<Photon> iteration(uint32_t idx, std::vector<Photon> prev_photons);
+    std::vector<Photon> iteration(CtxG& ctx, uint32_t idx,
+        std::vector<Photon> prev_photons);
 
     LightPathState light_walk(const IterationState& iter_state,
         std::vector<PathVertex>& light_vertices,

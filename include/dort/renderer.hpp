@@ -25,6 +25,8 @@ namespace dort {
   protected:
     static Vec2i layout_tiles(const CtxG& ctx, Vec2i film_res);
     void iteration_tiled(CtxG& ctx,
-        std::function<Spectrum(Vec2i, Vec2&, Sampler&)> get_pixel_contrib);
+        std::function<Spectrum(Vec2i, Vec2&, Sampler&)> render_pixel);
+    void iteration_tiled_per_job(CtxG& ctx,
+        std::function<void(Film&, Recti, Recti, Sampler&)> render_tile);
   };
 }

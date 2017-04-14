@@ -26,6 +26,27 @@ namespace dort {
   void Renderer::iteration_tiled(CtxG& ctx,
       std::function<Spectrum(Vec2i, Vec2&, Sampler&)> get_pixel_contrib)
   {
+    this->iteration_tiled_per_job(ctx, 
+      [&](Film& tile_film, Recti tile_rect, Recti tile_film_rect, Sampler& sampler)
+    {
+      for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
+        for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
+          Vec2 film_pos;
+          Spectrum contrib = get_pixel_contrib(Vec2i(x, y), film_pos, sampler);
+          assert(is_finite(contrib));
+          assert(is_nonnegative(contrib));
+          if(is_finite(contrib) && is_nonnegative(contrib)) {
+            Vec2 tile_film_pos = film_pos - Vec2(tile_film_rect.p_min);
+            tile_film.add_sample(tile_film_pos, contrib);
+          }
+        }
+      }
+    });
+  }
+
+  void Renderer::iteration_tiled_per_job(CtxG& ctx,
+      std::function<void(Film&, Recti, Recti, Sampler&)> render_tile)
+  {
     Vec2i layout_tiles = Renderer::layout_tiles(ctx, this->film->res);
     Vec2 tile_size = Vec2(this->film->res) /
       Vec2(float(layout_tiles.x), float(layout_tiles.y));
@@ -37,8 +58,6 @@ namespace dort {
     }
 
     std::mutex film_mutex;
-    std::atomic<uint32_t> jobs_done(0);
-    std::atomic<uint32_t> iters_done(0);
     fork_join(*ctx.pool, tile_count, [&](uint32_t tile_i) {
       uint32_t tile_x = tile_i % layout_tiles.x;
       uint32_t tile_y = tile_i / layout_tiles.x;
@@ -52,18 +71,7 @@ namespace dort {
       Film tile_film(film_size.x, film_size.y, this->film->filter);
 
       Sampler& sampler = *samplers.at(tile_i);
-      for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
-        for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
-          Vec2 film_pos;
-          Spectrum contrib = get_pixel_contrib(Vec2i(x, y), film_pos, sampler);
-          assert(is_finite(contrib));
-          assert(is_nonnegative(contrib));
-          if(is_finite(contrib) && is_nonnegative(contrib)) {
-            Vec2 tile_film_pos = film_pos - Vec2(film_rect.p_min);
-            tile_film.add_sample(tile_film_pos, contrib);
-          }
-        }
-      }
+      render_tile(tile_film, tile_rect, film_rect, sampler);
 
       {
         std::unique_lock<std::mutex> film_lock(film_mutex);
