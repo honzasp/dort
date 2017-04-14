@@ -3,10 +3,8 @@
 
 namespace dort {
   DiffuseLight::DiffuseLight(std::shared_ptr<Shape> shape,
-      const Transform& shape_to_world,
-      Spectrum radiance,
-      uint32_t num_samples):
-    Light(LIGHT_AREA, num_samples),
+      const Transform& shape_to_world, Spectrum radiance):
+    Light(LIGHT_AREA),
     shape(std::move(shape)),
     shape_to_world(shape_to_world),
     radiance(radiance)

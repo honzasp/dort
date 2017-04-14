@@ -4,7 +4,7 @@
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/film.hpp"
 #include "dort/light.hpp"
-#include "dort/sample_renderer.hpp"
+#include "dort/renderer.hpp"
 #include "dort/slice.hpp"
 
 namespace dort {

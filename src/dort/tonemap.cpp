@@ -23,9 +23,9 @@ namespace dort {
 
   template<class F>
   Image<PixelRgb8> tonemap_pixel(const Image<PixelRgbFloat>& image, F pixel_map) {
-    Image<PixelRgb8> out_image(image.x_res, image.y_res);
-    for(uint32_t y = 0; y < image.y_res; ++y) {
-      for(uint32_t x = 0; x < image.x_res; ++x) {
+    Image<PixelRgb8> out_image(image.res.x, image.res.y);
+    for(int32_t y = 0; y < image.res.y; ++y) {
+      for(int32_t x = 0; x < image.res.x; ++x) {
         out_image.set_pixel(x, y, pixel_map(image.get_pixel(x, y)));
       }
     }

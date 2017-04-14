@@ -59,22 +59,20 @@ namespace dort {
     int p = 1;
     auto shape = lua_param_shape(l, p, "shape");
     auto radiance = lua_param_spectrum(l, p, "radiance");
-    auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
     lua_params_check_unused(l, p);
 
     lua_push_light(l, std::make_shared<DiffuseLight>(
-          shape, transform, radiance, num_samples));
+          shape, transform, radiance));
     return 1;
   }
 
   int lua_light_make_infinite(lua_State* l) {
     int p = 1;
     auto radiance = lua_param_spectrum(l, p, "radiance");
-    auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
     lua_params_check_unused(l, p);
 
-    lua_push_light(l, std::make_shared<InfiniteLight>(radiance, num_samples));
+    lua_push_light(l, std::make_shared<InfiniteLight>(radiance));
     return 1;
   }
 
@@ -84,12 +82,11 @@ namespace dort {
     auto up = lua_param_vector(l, p, "up");
     auto forward = lua_param_vector(l, p, "forward");
     auto scale = lua_param_spectrum_opt(l, p, "scale", Spectrum(1.f));
-    auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
     lua_params_check_unused(l, p);
 
     lua_push_light(l, std::make_shared<EnvironmentLight>(image, scale,
-          transform.apply(up), transform.apply(forward), num_samples));
+          transform.apply(up), transform.apply(forward)));
     return 1;
   }
 
@@ -98,12 +95,11 @@ namespace dort {
     auto pt = lua_param_point(l, p, "point");
     auto dir = lua_param_vector(l, p, "direction");
     auto radiance = lua_param_spectrum(l, p, "radiance");
-    auto num_samples = lua_param_uint32_opt(l, p, "num_samples", 1);
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
     lua_params_check_unused(l, p);
 
     lua_push_light(l, std::make_shared<BeamLight>(
-          transform.apply(pt), transform.apply(dir), radiance, num_samples));
+          transform.apply(pt), transform.apply(dir), radiance));
     return 1;
   }
 

@@ -19,7 +19,7 @@ namespace dort {
     assert(x_res >= 0 && y_res >= 0);
     Image<PixelRgb8> img(x_res, y_res);
     std::memcpy(img.storage.data(), data,
-        3 * sizeof(uint8_t) * img.x_res * img.y_res);
+        3 * sizeof(uint8_t) * img.res.x * img.res.y);
 
     stbi_image_free(data);
     return img;
@@ -33,7 +33,7 @@ namespace dort {
     assert(x_res >= 0 && y_res >= 0);
     Image<PixelRgbFloat> img(x_res, y_res);
     std::memcpy(img.storage.data(), data, 
-        3 * sizeof(float) * img.x_res * img.y_res);
+        3 * sizeof(float) * img.res.x * img.res.y);
 
     stbi_image_free(data);
     return img;
@@ -44,15 +44,15 @@ namespace dort {
       std::fwrite(data, size, 1, (FILE*)file);
     };
     int result = stbi_write_png_to_func(write, output, 
-          img.x_res, img.y_res, 3, img.storage.data(), 0);
+          img.res.x, img.res.y, 3, img.storage.data(), 0);
     if(result == 0) {
       throw std::runtime_error("Error writing PNG (stbi_write_png_to_func)");
     }
   }
 
   void write_image_ppm(FILE* output, const Image<PixelRgb8>& img) {
-    std::fprintf(output, "P6 %u %u 255\n", img.x_res, img.y_res);
-    std::fwrite(img.storage.data(), 3, img.x_res * img.y_res, output);
+    std::fprintf(output, "P6 %u %u 255\n", img.res.x, img.res.y);
+    std::fwrite(img.storage.data(), 3, img.res.x * img.res.y, output);
   }
 
   void write_image_rgbe(FILE* output, const Image<PixelRgbFloat>& img) {
@@ -60,7 +60,7 @@ namespace dort {
       std::fwrite(data, size, 1, (FILE*)file);
     };
     int result = stbi_write_hdr_to_func(write, output, 
-          img.x_res, img.y_res, 3, img.storage.data());
+          img.res.x, img.res.y, 3, img.storage.data());
     if(result == 0) {
       throw std::runtime_error("Error writing RGBE (stbi_write_hdr_to_func)");
     }

@@ -1,19 +1,20 @@
 #pragma once
-#include "dort/sample_renderer.hpp"
+#include "dort/renderer.hpp"
 
 namespace dort {
-  class DotRenderer final: public SampleRenderer {
+  class DotRenderer final: public Renderer {
+    uint32_t iteration_count;
   public:
     DotRenderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,
         std::shared_ptr<Sampler> sampler,
-        std::shared_ptr<Camera> camera):
-      SampleRenderer(scene, film, sampler, camera, 1) { }
-
-    virtual Spectrum get_radiance(const Scene& scene, Ray& ray, Vec2,
-        uint32_t depth, Sampler& sampler) const override final;
+        std::shared_ptr<Camera> camera,
+        uint32_t iteration_count):
+      Renderer(scene, film, sampler, camera),
+      iteration_count(iteration_count)
+    { }
+    virtual void render(CtxG& ctx, Progress& progress) override final;
   protected:
-    virtual void preprocess(CtxG& ctx, const Scene& scene,
-        Sampler& sampler) override final;
+    Spectrum get_color(Ray& ray) const;
   };
 }

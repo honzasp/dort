@@ -11,7 +11,7 @@ namespace dort {
     Spectrum scale;
   public:
     EnvironmentLight(std::shared_ptr<Image<PixelRgbFloat>> image,
-        const Spectrum& scale, const Vector& up, const Vector& fwd, uint32_t num_samples);
+        const Spectrum& scale, const Vector& up, const Vector& fwd);
 
     virtual Spectrum sample_ray_radiance(const Scene& scene, 
         Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,

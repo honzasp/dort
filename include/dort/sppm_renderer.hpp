@@ -1,4 +1,5 @@
 #pragma once
+#if 0
 #include "dort/bsdf.hpp"
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/light.hpp"
@@ -61,3 +62,4 @@ namespace dort {
     void shoot_photons(std::vector<Photon>& photons, uint32_t count, Rng& rng) const;
   };
 }
+#endif

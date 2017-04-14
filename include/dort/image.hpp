@@ -2,16 +2,16 @@
 #include <cstdio>
 #include <vector>
 #include "dort/spectrum.hpp"
+#include "dort/vec_2i.hpp"
 
 namespace dort {
   template<class Pixel>
   struct Image {
-    uint32_t x_res;
-    uint32_t y_res;
+    Vec2i res;
     std::vector<typename Pixel::StorageT> storage;
 
     Image(uint32_t x_res, uint32_t y_res):
-      x_res(x_res), y_res(y_res),
+      res(x_res, y_res),
       storage(x_res * y_res * Pixel::storage_size)
     { }
 
@@ -19,8 +19,8 @@ namespace dort {
     Image(Image&&) = default;
 
     uint32_t index(uint32_t x, uint32_t y) const {
-      assert(x < this->x_res && y < this->y_res);
-      return y * this->x_res + x;
+      assert(x < uint32_t(this->res.x) && y < uint32_t(this->res.y));
+      return y * this->res.x + x;
     }
 
     Pixel get_pixel(uint32_t x, uint32_t y) const {

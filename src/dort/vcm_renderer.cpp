@@ -1,5 +1,5 @@
 #include "dort/camera.hpp"
-#include "dort/lighting.hpp"
+#include "dort/film.hpp"
 #include "dort/primitive.hpp"
 #include "dort/vcm_renderer.hpp"
 
@@ -29,7 +29,7 @@ namespace dort {
   {
     float radius = this->initial_radius
       * pow(float(idx + 1), 0.5f * (this->alpha - 1.f));
-    uint32_t path_count = this->film->x_res * this->film->y_res;
+    uint32_t path_count = this->film->res.x * this->film->res.y;
     float eta_vcm = PI * square(radius) * float(path_count);
 
     IterationState iter_state;
@@ -55,8 +55,8 @@ namespace dort {
     for(uint32_t path_idx = 0; path_idx < iter_state.path_count; ++path_idx) {
       LightPathState light_path = this->light_walk(iter_state,
           light_vertices, photons, *this->sampler);
-      uint32_t film_y = path_idx / this->film->x_res;
-      uint32_t film_x = path_idx % this->film->x_res;
+      uint32_t film_y = path_idx / this->film->res.x;
+      uint32_t film_x = path_idx % this->film->res.x;
       Vec2 film_pos = Vec2(film_x, film_y) + this->sampler->random_2d();
       Spectrum contrib = this->camera_walk(iter_state, light_path,
           light_vertices, film_pos, *this->sampler);
@@ -183,7 +183,7 @@ namespace dort {
       const std::vector<PathVertex>& light_vertices,
       Vec2 film_pos, Sampler& sampler)
   {
-    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+    Vec2 film_res(float(this->film->res.x), float(this->film->res.y));
     Ray camera_ray;
     float camera_pos_pdf, camera_dir_pdf;
     Spectrum camera_importance = this->camera->sample_ray_importance(film_res, film_pos,
@@ -291,7 +291,7 @@ namespace dort {
       const PathVertex& y, uint32_t bounces, Film& film, Sampler& sampler) const 
   {
     // connect vertex y to camera (VC, s >= 2, t = 1)
-    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+    Vec2 film_res(float(this->film->res.x), float(this->film->res.y));
 
     Point camera_p;
     Vec2 film_pos;
@@ -562,7 +562,7 @@ namespace dort {
             this->debug_films.emplace(std::piecewise_construct,
                 std::forward_as_tuple(key),
                 std::forward_as_tuple(
-                  this->film->x_res, this->film->y_res, this->film->filter));
+                  this->film->res.x, this->film->res.y, this->film->filter));
           }
         }
       }

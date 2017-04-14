@@ -63,7 +63,7 @@ namespace dort {
   {
     StatTimer t(TIMER_BVH_COMPUTE_BUILD_INFOS);
     std::vector<ElementInfo> build_infos(elems.size());
-    uint32_t jobs = std::min(pool.num_threads(),
+    uint32_t jobs = std::min(pool.thread_count(),
         std::max(1u, uint32_t(elems.size()) / opts.min_elem_infos_per_thread));
 
     // TODO: use small_vector
@@ -105,7 +105,7 @@ namespace dort {
         ? DISTRIB_INT_BVH_BUILD_NODE_PARALLEL_COUNT 
         : DISTRIB_INT_BVH_BUILD_NODE_SERIAL_COUNT, elem_count);
 
-    uint32_t min_para_elems = ctx.pool.num_threads() 
+    uint32_t min_para_elems = ctx.pool.thread_count() 
       * ctx.opts.min_split_elems_per_thread;
     bool parallel_split = elem_count > min_para_elems;
     assert(parallel_split ? parallel : true);
@@ -212,7 +212,7 @@ namespace dort {
     }
 
     uint32_t jobs = !parallel ? 1
-      : std::max(ctx.pool.num_threads(),
+      : std::max(ctx.pool.thread_count(),
           (end - begin) / ctx.opts.min_split_elems_per_thread);
     // TODO: use small_vector (to optimize non-parallel splits)
     std::vector<Box> job_left_bounds(jobs);
@@ -290,7 +290,7 @@ namespace dort {
     uint32_t bucket_count = ctx.opts.sah_bucket_count;
 
     uint32_t jobs = !parallel ? 1
-      : std::max(ctx.pool.num_threads(),
+      : std::max(ctx.pool.thread_count(),
           (end - begin) / ctx.opts.min_split_elems_per_thread);
 
     std::vector<std::vector<BucketInfo>> job_buckets(jobs);

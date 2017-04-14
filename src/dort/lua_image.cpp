@@ -107,12 +107,12 @@ namespace dort {
     uint32_t x_res, y_res;
     if(lua_test_image_8(l, 1)) {
       auto image = lua_check_image_8(l, 1);
-      x_res = image->x_res;
-      y_res = image->y_res;
+      x_res = image->res.x;
+      y_res = image->res.y;
     } else if(lua_test_image_f(l, 1)) {
       auto image = lua_check_image_f(l, 1);
-      x_res = image->x_res;
-      y_res = image->y_res;
+      x_res = image->res.x;
+      y_res = image->res.y;
     } else {
       return luaL_error(l, "Expected an image");
     }
@@ -132,10 +132,10 @@ namespace dort {
     uint32_t y0 = rect.p_min.y;
     uint32_t y1 = rect.p_max.y;
 
-    if(x1 > ref_image->x_res || y1 > ref_image->y_res) {
+    if(x1 > uint32_t(ref_image->res.x) || y1 > uint32_t(ref_image->res.y)) {
       return luaL_error(l, "Rect is out of the ref_image");
     }
-    if(x1 > tested_image->x_res || y1 > tested_image->y_res) {
+    if(x1 > uint32_t(tested_image->res.x) || y1 > uint32_t(tested_image->res.y)) {
       return luaL_error(l, "Rect is out of the tested_image");
     }
 

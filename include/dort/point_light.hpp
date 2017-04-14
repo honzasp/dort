@@ -7,7 +7,7 @@ namespace dort {
     Spectrum intensity;
   public:
     PointLight(const Point& pt, const Spectrum& intensity):
-      Light(LIGHT_DELTA_POS, 1), pt(pt), intensity(intensity) {}
+      Light(LIGHT_DELTA_POS), pt(pt), intensity(intensity) {}
 
     virtual Spectrum sample_ray_radiance(const Scene& scene, 
         Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,

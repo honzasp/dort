@@ -5,8 +5,8 @@ namespace dort {
   class InfiniteLight final: public Light {
     Spectrum radiance;
   public:
-    InfiniteLight(Spectrum radiance, uint32_t num_samples):
-      Light(LightFlags(LIGHT_BACKGROUND | LIGHT_DISTANT), num_samples),
+    InfiniteLight(Spectrum radiance):
+      Light(LightFlags(LIGHT_BACKGROUND | LIGHT_DISTANT)),
       radiance(radiance) { }
 
     virtual Spectrum sample_ray_radiance(const Scene& scene, 

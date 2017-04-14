@@ -31,8 +31,8 @@ namespace dort {
 
     stat_init_global();
 
-    uint32_t num_threads = std::thread::hardware_concurrency();
-    auto pool_g = std::make_shared<ThreadPool>(num_threads == 0 ? 1 : num_threads);
+    uint32_t thread_count = std::thread::hardware_concurrency();
+    auto pool_g = std::make_shared<ThreadPool>(max(thread_count, 1u));
     CtxG ctx_g(pool_g);
 
     int exit_status = 3;

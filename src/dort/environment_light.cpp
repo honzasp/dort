@@ -4,30 +4,30 @@
 
 namespace dort {
   EnvironmentLight::EnvironmentLight(std::shared_ptr<Image<PixelRgbFloat>> image,
-      const Spectrum& scale, const Vector& up, const Vector& fwd, uint32_t num_samples):
-    Light(LightFlags(LIGHT_BACKGROUND | LIGHT_DISTANT), num_samples),
+      const Spectrum& scale, const Vector& up, const Vector& fwd):
+    Light(LightFlags(LIGHT_BACKGROUND | LIGHT_DISTANT)),
     image(image), scale(scale)
   {
     this->up = normalize(up);
     this->t = normalize(cross(up, fwd));
     this->s = cross(this->up, this->t);
 
-    std::vector<float> values(image->x_res * image->y_res);
+    std::vector<float> values(image->res.x * image->res.y);
     Spectrum value_sum(0.f);
     float value_weight = 0.f;
-    for(uint32_t y = 0; y < image->y_res; ++y) {
-      float theta = (float(y) + 0.5f) / float(image->y_res) * PI;
+    for(int32_t y = 0; y < image->res.y; ++y) {
+      float theta = (float(y) + 0.5f) / float(image->res.y) * PI;
       float cos_theta = clamp(cos(theta), 0.f, 1.f);
-      for(uint32_t x = 0; x < image->x_res; ++x) {
+      for(int32_t x = 0; x < image->res.x; ++x) {
         // TODO: once we use bilinear interpolation from images, the pdfs must
         // be blurred a bit (see PBRT page 848)
         Spectrum value = PixelRgbFloat::to_rgb(image->get_pixel(x, y));
-        values.at(y * image->x_res + x) = abs(value.average() * cos_theta);
+        values.at(y * image->res.x + x) = abs(value.average() * cos_theta);
         value_sum += value * cos_theta;
         value_weight += cos_theta;
       }
     }
-    this->distrib = PiecewiseDistrib2d(image->x_res, image->y_res, std::move(values));
+    this->distrib = PiecewiseDistrib2d(image->res.x, image->res.y, std::move(values));
     this->average_radiance = this->scale * value_sum / value_weight;
   }
 
@@ -100,8 +100,8 @@ namespace dort {
       Vec2& out_dir_uv, float& out_dir_pdf) const 
   {
     Vec2 dir_xy = this->distrib.sample(uv);
-    Vec2 dir_uv(dir_xy.x / float(this->image->x_res),
-        dir_xy.y / float(this->image->y_res));
+    Vec2 dir_uv(dir_xy.x / float(this->image->res.x),
+        dir_xy.y / float(this->image->res.y));
     float sin_theta;
     Vector dir = this->dir_uv_to_dir(dir_uv, sin_theta);
     out_dir_uv = dir_uv;
@@ -118,8 +118,8 @@ namespace dort {
   }
 
   float EnvironmentLight::dir_uv_pdf(Vec2 dir_uv) const {
-    float x = dir_uv.x * float(this->image->x_res);
-    float y = dir_uv.y * float(this->image->y_res);
+    float x = dir_uv.x * float(this->image->res.x);
+    float y = dir_uv.y * float(this->image->res.y);
     float xy_pdf = this->distrib.pdf(Vec2(x, y));
     assert(xy_pdf >= 0.f);
     return xy_pdf * float(this->distrib.area());
@@ -151,9 +151,10 @@ namespace dort {
   }
 
   Spectrum EnvironmentLight::get_radiance(Vec2 dir_uv) const {
-    uint32_t x = floor_int32(dir_uv.x * float(this->image->x_res));
-    uint32_t y = floor_int32(dir_uv.y * float(this->image->y_res));
-    if(x >= this->image->x_res || y >= this->image->y_res) { return Spectrum(0.f); }
+    int32_t x = floor_int32(dir_uv.x * float(this->image->res.x));
+    int32_t y = floor_int32(dir_uv.y * float(this->image->res.y));
+    if(x < 0 || y < 0) { return Spectrum(0.f); }
+    if(x >= this->image->res.x || y >= this->image->res.y) { return Spectrum(0.f); }
     return this->scale * PixelRgbFloat::to_rgb(this->image->get_pixel(x, y));
   }
 }

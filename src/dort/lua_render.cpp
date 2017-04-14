@@ -3,11 +3,9 @@
 #include <gio/gio.h>
 #endif
 #include "dort/bdpt_renderer.hpp"
-#include "dort/direct_renderer.hpp"
 #include "dort/dot_renderer.hpp"
 #include "dort/film.hpp"
 #include "dort/filter.hpp"
-#include "dort/igi_renderer.hpp"
 #include "dort/light_renderer.hpp"
 #include "dort/lua.hpp"
 #include "dort/lua_builder.hpp"
@@ -55,7 +53,8 @@ namespace dort {
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
         std::make_shared<RandomSampler>(1, 42))->split();
-    auto method = lua_param_string_opt(l, p, "renderer", "direct");
+    auto method = lua_param_string_opt(l, p, "renderer", "pt");
+    uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
 
     auto film = std::make_shared<Film>(x_res, y_res, filter);
     auto camera = lua_param_camera_opt(l, p, "camera", scene->default_camera);
@@ -64,38 +63,36 @@ namespace dort {
     }
 
     std::shared_ptr<Renderer> renderer;
-    if(method == "direct") {
-      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      auto strategy_str = lua_param_string_opt(l, p, "strategy", "mis");
-      DirectStrategy strategy;
-      if(strategy_str == "mis") {
-        strategy = DirectStrategy::MIS;
-      } else if(strategy_str == "bsdf") {
-        strategy = DirectStrategy::SAMPLE_BSDF;
-      } else if(strategy_str == "light") {
-        strategy = DirectStrategy::SAMPLE_LIGHT;
-      } else {
-        return luaL_error(l, "Unknown strategy '%s'", strategy_str.c_str());
-      }
-      renderer = std::make_shared<DirectRenderer>(
-          scene, film, sampler, camera, iteration_count, max_depth, strategy);
-    } else if(method == "dot") {
-      renderer = std::make_shared<DotRenderer>(scene, film, sampler, camera);
+    if(method == "dot") {
+      renderer = std::make_shared<DotRenderer>(scene, film, sampler,
+          camera, iteration_count);
     } else if(method == "pt" || method == "path") {
-      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t min_depth = lua_param_uint32_opt(l, p, "min_depth", 0);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      bool only_direct = lua_param_bool_opt(l, p, "only_direct", false);
+      bool sample_all_lights = lua_param_bool_opt(l, p, "sample_all_lights", false);
+      auto strategy_str = lua_param_string_opt(l, p, "direct_strategy", "mis");
+
+      PathRenderer::DirectStrategy direct_strategy;
+      if(strategy_str == "mis") {
+        direct_strategy = PathRenderer::DirectStrategy::MIS;
+      } else if(strategy_str == "bsdf") {
+        direct_strategy = PathRenderer::DirectStrategy::SAMPLE_BSDF;
+      } else if(strategy_str == "light") {
+        direct_strategy = PathRenderer::DirectStrategy::SAMPLE_LIGHT;
+      } else {
+        return luaL_error(l, "Unknown direct strategy '%s'", strategy_str.c_str());
+      }
+
       renderer = std::make_shared<PathRenderer>(
-          scene, film, sampler, camera, iteration_count, min_depth, max_depth);
+          scene, film, sampler, camera, iteration_count,
+          min_depth, max_depth, only_direct, sample_all_lights, direct_strategy);
     } else if(method == "lt" || method == "light") {
-      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
-      uint32_t min_depth = lua_param_uint32_opt(l, p, "min_depth", 0);
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
+      uint32_t min_length = lua_param_uint32_opt(l, p, "min_depth", 0) + 2;
+      uint32_t max_length = lua_param_uint32_opt(l, p, "max_depth", 5) + 2;
       renderer = std::make_shared<LightRenderer>(
-          scene, film, sampler, camera, iteration_count, min_depth, max_depth);
+          scene, film, sampler, camera, iteration_count, min_length, max_length);
     } else if(method == "bdpt") {
-      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t min_depth = lua_param_uint32_opt(l, p, "min_depth", 0);
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       bool use_t1_paths = lua_param_bool_opt(l, p, "use_t1_paths", true);
@@ -105,7 +102,6 @@ namespace dort {
           iteration_count, min_depth, max_depth,
           use_t1_paths, debug_image_dir);
     } else if(method == "vcm") {
-      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
       uint32_t min_length = lua_param_uint32_opt(l, p, "min_depth", 0) + 2;
       uint32_t max_length = lua_param_uint32_opt(l, p, "max_depth", 5) + 2;
       float initial_radius = lua_param_float(l, p, "initial_radius");
@@ -126,22 +122,9 @@ namespace dort {
           scene, film, sampler, camera,
           mode, iteration_count, initial_radius, alpha,
           min_length, max_length, debug_image_dir);
-    } else if(method == "igi") {
-      uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
-      uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
-      uint32_t max_light_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
-      uint32_t light_set_count = lua_param_uint32_opt(l, p, "light_sets", 1);
-      uint32_t path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
-      float g_limit = lua_param_float_opt(l, p, "g_limit", 5.f);
-      float roulette_threshold = lua_param_float_opt(l, p, 
-          "roulette_threshold", 0.001f);
-      renderer = std::make_shared<IgiRenderer>(
-          scene, film, sampler, camera, iteration_count,
-          max_depth, max_light_depth, light_set_count, path_count,
-          g_limit, roulette_threshold);
+#if 0
     } else if(method == "sppm") {
       float initial_radius = lua_param_float(l, p, "initial_radius");
-      uint32_t iteration_count = lua_param_uint32(l, p, "iterations");
       uint32_t max_depth = lua_param_uint32_opt(l, p, "max_depth", 5);
       uint32_t max_photon_depth = lua_param_uint32_opt(l, p, "max_light_depth", 5);
       uint32_t photon_path_count = lua_param_uint32_opt(l, p, "light_paths", 32);
@@ -163,6 +146,7 @@ namespace dort {
           scene, film, sampler, camera, initial_radius, iteration_count,
           max_depth, max_photon_depth, photon_path_count, 
           alpha, parallel_mode);
+#endif
     } else {
       return luaL_error(l, "Unrecognized rendering method: %s", method.c_str());
     }
@@ -269,14 +253,14 @@ namespace dort {
 
   int lua_render_image_to_pixbuf(lua_State* l) {
     auto image = lua_check_image_8(l, 1);
-    uint32_t x_res = image->x_res;
-    uint32_t y_res = image->y_res;
+    uint32_t x_res = image->res.x;
+    uint32_t y_res = image->res.y;
     GdkPixbuf* pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, x_res, y_res);
     guchar* pixels = gdk_pixbuf_get_pixels(pixbuf);
     uint32_t rowstride = gdk_pixbuf_get_rowstride(pixbuf);
 
-    for(uint32_t y = 0; y < image->y_res; ++y) {
-      for(uint32_t x = 0; x < image->x_res; ++x) {
+    for(int32_t y = 0; y < image->res.y; ++y) {
+      for(int32_t x = 0; x < image->res.x; ++x) {
         PixelRgb8 pixel = image->get_pixel(x, y);
         guchar* pixel_ptr = pixels + rowstride*y + 3*x;
         pixel_ptr[0] = pixel.r;

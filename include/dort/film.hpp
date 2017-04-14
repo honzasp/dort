@@ -15,8 +15,7 @@ namespace dort {
       AtomicSpectrum splat;
     };
 
-    uint32_t x_res;
-    uint32_t y_res;
+    Vec2i res;
     std::vector<Pixel> pixels;
     SampledFilter filter;
     float splat_scale;
@@ -30,9 +29,9 @@ namespace dort {
     Image<Pix> to_image() const;
 
     uint32_t pixel_idx(int32_t x, int32_t y) const {
-      assert(x >= 0 && x < int32_t(this->x_res));
-      assert(y >= 0 && y < int32_t(this->y_res));
-      return this->x_res * y + x;
+      assert(x >= 0 && x < int32_t(this->res.x));
+      assert(y >= 0 && y < int32_t(this->res.y));
+      return this->res.x * y + x;
     }
 
     Recti get_pixel_rect(Vec2 pos) const;

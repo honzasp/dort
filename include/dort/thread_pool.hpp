@@ -17,13 +17,13 @@ namespace dort {
     std::condition_variable queue_condvar;
     std::atomic<bool> stop_flag;
   public:
-    ThreadPool(uint32_t num_threads = 0);
+    ThreadPool(uint32_t thread_count = 0);
     ~ThreadPool();
     void schedule(std::function<void()> job);
-    void start(uint32_t num_threads);
+    void start(uint32_t thread_count);
     void stop();
     void restart();
-    uint32_t num_threads() const;
+    uint32_t thread_count() const;
   private:
     void thread_body();
   };

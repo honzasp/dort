@@ -8,7 +8,7 @@ namespace dort {
   { }
 
   Film::Film(uint32_t x_res, uint32_t y_res, SampledFilter filter):
-    x_res(x_res), y_res(y_res), pixels(x_res * y_res),
+    res(x_res, y_res), pixels(x_res * y_res),
     filter(std::move(filter)),
     splat_scale(0.f)
   { }
@@ -65,8 +65,8 @@ namespace dort {
 
     uint32_t y_min = max(0, -pos.y);
     uint32_t x_min = max(0, -pos.x);
-    uint32_t y_max = min(tile.y_res, this->y_res - pos.y);
-    uint32_t x_max = min(tile.x_res, this->x_res - pos.x);
+    uint32_t y_max = min(tile.res.y, this->res.y - pos.y);
+    uint32_t x_max = min(tile.res.x, this->res.x - pos.x);
 
     for(uint32_t y = y_min; y < y_max; ++y) {
       for(uint32_t x = x_min; x < x_max; ++x) {
@@ -83,9 +83,9 @@ namespace dort {
 
   template<class Pix>
   Image<Pix> Film::to_image() const {
-    Image<Pix> img(this->x_res, this->y_res);
-    for(uint32_t y = 0; y < this->y_res; ++y) {
-      for(uint32_t x = 0; x < this->x_res; ++x) {
+    Image<Pix> img(this->res.x, this->res.y);
+    for(int32_t y = 0; y < this->res.y; ++y) {
+      for(int32_t x = 0; x < this->res.x; ++x) {
         const Film::Pixel& pixel = this->pixels.at(this->pixel_idx(x, y));
         Spectrum color(0.f);
         if(pixel.weight != 0.f) {
@@ -109,8 +109,8 @@ namespace dort {
 
     int32_t pix_x0 = max(0, x0);
     int32_t pix_y0 = max(0, y0);
-    int32_t pix_x1 = min(int32_t(this->x_res) - 1, x1);
-    int32_t pix_y1 = min(int32_t(this->y_res) - 1, y1);
+    int32_t pix_x1 = min(int32_t(this->res.x) - 1, x1);
+    int32_t pix_y1 = min(int32_t(this->res.y) - 1, y1);
     return Recti(pix_x0, pix_y0, pix_x1, pix_y1);
   }
 

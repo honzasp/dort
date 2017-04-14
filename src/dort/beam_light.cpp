@@ -1,9 +1,8 @@
 #include "dort/beam_light.hpp"
 
 namespace dort {
-  BeamLight::BeamLight(const Point& pt, const Vector& dir,
-      const Spectrum& radiance, uint32_t num_samples):
-    Light(LightFlags(LIGHT_DELTA_POS | LIGHT_DELTA_DIR), num_samples),
+  BeamLight::BeamLight(const Point& pt, const Vector& dir, const Spectrum& radiance):
+    Light(LightFlags(LIGHT_DELTA_POS | LIGHT_DELTA_DIR)),
     pt(pt), dir(normalize(dir)), radiance(radiance)
   { }
 

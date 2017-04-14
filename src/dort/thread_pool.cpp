@@ -3,9 +3,9 @@
 #include "dort/thread_pool.hpp"
 
 namespace dort {
-  ThreadPool::ThreadPool(uint32_t num_threads) {
+  ThreadPool::ThreadPool(uint32_t thread_count) {
     this->main_thread_id = std::this_thread::get_id();
-    this->start(num_threads);
+    this->start(thread_count);
   }
 
   ThreadPool::~ThreadPool() {
@@ -24,11 +24,11 @@ namespace dort {
     this->queue_condvar.notify_one();
   }
 
-  void ThreadPool::start(uint32_t num_threads) {
+  void ThreadPool::start(uint32_t thread_count) {
     assert(this->main_thread_id == std::this_thread::get_id());
     assert(this->threads.empty());
     this->stop_flag.store(false);
-    for(uint32_t i = 0; i < num_threads; ++i) {
+    for(uint32_t i = 0; i < thread_count; ++i) {
       this->threads.push_back(std::thread(&ThreadPool::thread_body, this));
     }
   }
@@ -48,9 +48,9 @@ namespace dort {
   }
 
   void ThreadPool::restart() {
-    uint32_t num_threads = this->num_threads();
+    uint32_t thread_count = this->thread_count();
     this->stop();
-    this->start(num_threads);
+    this->start(thread_count);
   }
 
   void ThreadPool::thread_body() {
@@ -83,7 +83,7 @@ namespace dort {
     stat_finish_thread();
   }
 
-  uint32_t ThreadPool::num_threads() const {
+  uint32_t ThreadPool::thread_count() const {
     return this->threads.size();
   }
 

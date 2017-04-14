@@ -74,10 +74,8 @@ namespace dort {
   class Light {
   public:
     LightFlags flags;
-    uint32_t num_samples;
 
-    Light(LightFlags flags, uint32_t num_samples):
-      flags(flags), num_samples(num_samples) { }
+    Light(LightFlags flags): flags(flags) { }
     virtual ~Light() {}
 
     bool matches(LightFlags test) {

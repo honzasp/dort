@@ -8,7 +8,7 @@ namespace dort {
     Spectrum radiance;
   public:
     BeamLight(const Point& pt, const Vector& dir,
-        const Spectrum& radiance, uint32_t num_samples);
+        const Spectrum& radiance);
 
     virtual Spectrum sample_ray_radiance(const Scene& scene, 
         Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,

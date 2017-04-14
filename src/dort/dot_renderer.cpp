@@ -1,15 +1,34 @@
 #include "dort/bsdf.hpp"
+#include "dort/camera.hpp"
 #include "dort/dot_renderer.hpp"
+#include "dort/film.hpp"
 #include "dort/primitive.hpp"
 #include "dort/scene.hpp"
 #include "dort/spectrum.hpp"
+#include "dort/vec_2i.hpp"
 
 namespace dort {
-  Spectrum DotRenderer::get_radiance(const Scene& scene, Ray& ray, Vec2,
-      uint32_t, Sampler&) const
-  {
+  void DotRenderer::render(CtxG& ctx, Progress&) {
+    bool jitter = this->iteration_count > 1;
+    for(uint32_t i = 0; i < this->iteration_count; ++i) {
+      this->iteration_tiled(ctx, [&](Vec2i pixel, Vec2& film_pos, Sampler& sampler) {
+        Vec2 pixel_pos = jitter ? sampler.random_2d() : Vec2(0.5f, 0.5f);
+        film_pos = Vec2(pixel) + pixel_pos;
+
+        Ray ray;
+        float ray_pos_pdf;
+        float ray_dir_pdf;
+        Spectrum importance = this->camera->sample_ray_importance(Vec2(this->film->res),
+          film_pos, ray, ray_pos_pdf, ray_dir_pdf, CameraSample(sampler.rng));
+        Spectrum color = this->get_color(ray);
+        return color * importance / (ray_pos_pdf * ray_dir_pdf);
+      });
+    }
+  }
+
+  Spectrum DotRenderer::get_color(Ray& ray) const {
     Intersection isect;
-    if(!scene.intersect(ray, isect)) {
+    if(!this->scene->intersect(ray, isect)) {
       return Spectrum(0.f);
     }
 
@@ -26,9 +45,6 @@ namespace dort {
 
     Spectrum color = Spectrum::from_rgb(red, green, blue);
     return color * abs(isect_dot);
-  }
-
-  void DotRenderer::preprocess(CtxG&, const Scene&, Sampler&) {
   }
 }
 

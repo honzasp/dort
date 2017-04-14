@@ -10,9 +10,7 @@ namespace dort {
     float area;
   public:
     DiffuseLight(std::shared_ptr<Shape> shape,
-        const Transform& shape_to_world,
-        Spectrum radiance,
-        uint32_t num_samples);
+        const Transform& shape_to_world, Spectrum radiance);
 
     virtual Spectrum sample_ray_radiance(const Scene& scene, 
         Ray& out_ray, Normal& out_nn, float& out_pos_pdf, float& out_dir_pdf,

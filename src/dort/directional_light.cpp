@@ -3,7 +3,7 @@
 
 namespace dort {
   DirectionalLight::DirectionalLight(const Vector& dir, const Spectrum& radiance):
-    Light(LightFlags(LIGHT_DELTA_DIR | LIGHT_DISTANT), 1),
+    Light(LightFlags(LIGHT_DELTA_DIR | LIGHT_DISTANT)),
     direction(normalize(dir)),
     radiance(radiance) 
   {

@@ -1,3 +1,4 @@
+#if 0
 #include <mutex>
 #include <shared_mutex>
 #include "dort/camera.hpp"
@@ -16,7 +17,7 @@ namespace dort {
 
     auto mode = this->parallel_mode;
     if(mode == ParallelMode::Automatic) {
-      if(ctx.pool->num_threads() <= this->iteration_count) {
+      if(ctx.pool->thread_count() <= this->iteration_count) {
         mode = ParallelMode::ParallelIterations;
       } else {
         mode = ParallelMode::SerialIterations;
@@ -195,7 +196,7 @@ namespace dort {
 
   PhotonMap SppmRenderer::compute_photon_map_parallel(CtxG& ctx, Rng& rng) const {
     uint32_t target_path_count = this->photon_path_count;
-    uint32_t job_count = max(1u, ctx.pool->num_threads());
+    uint32_t job_count = max(1u, ctx.pool->thread_count());
     uint32_t block_size = clamp(target_path_count / (4 * job_count), 128u, 1024u);
 
     std::vector<Rng> rngs;
@@ -324,3 +325,4 @@ namespace dort {
     }
   }
 }
+#endif

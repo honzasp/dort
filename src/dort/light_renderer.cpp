@@ -1,8 +1,8 @@
+#include "dort/bsdf.hpp"
 #include "dort/camera.hpp"
 #include "dort/ctx.hpp"
 #include "dort/film.hpp"
 #include "dort/light_renderer.hpp"
-#include "dort/lighting.hpp"
 #include "dort/primitive.hpp"
 #include "dort/sampler.hpp"
 #include "dort/scene.hpp"
@@ -14,8 +14,8 @@ namespace dort {
     StatTimer t(TIMER_RENDER);
 
     uint64_t path_count = uint64_t(this->iteration_count) *
-      this->film->x_res * this->film->y_res;
-    uint32_t job_count = this->get_job_count(ctx);
+      this->film->res.x * this->film->res.y;
+    uint32_t job_count = ctx.pool->thread_count() * 16;
 
     std::vector<std::shared_ptr<Sampler>> samplers;
     for(uint32_t i = 0; i < job_count; ++i) {
@@ -52,18 +52,10 @@ namespace dort {
     float light_pdf = this->light_distrib.pdf(light_i);
     const Light& light = *this->scene->lights.at(light_i);
     LightRaySample light_sample(sampler.rng);
-    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+    Vec2 film_res(this->film->res);
 
-    Ray ray;
-    Normal prev_nn;
-    float light_pos_pdf, light_dir_pdf;
-    Spectrum light_radiance = light.sample_ray_radiance(
-        *this->scene, ray, prev_nn, light_pos_pdf, light_dir_pdf, light_sample);
-    if(light_radiance.is_black() || light_pdf == 0.f) {
-      return;
-    }
-
-    if(this->min_depth <= 0) {
+    if(this->min_length <= 2 && 2 <= this->max_length) {
+      // connect a point on light directly to camera
       Point light_p;
       float light_epsilon;
       Normal light_nn;
@@ -91,15 +83,27 @@ namespace dort {
           ShadowTest shadow;
           shadow.init_point_point(light_p, light_epsilon, camera_p, 0.f);
           if(shadow.visible(*this->scene)) {
-            this->add_contrib(film_pos, contrib);
+            this->film->add_splat(film_pos, contrib);
           }
         }
       }
     }
 
+    if(this->max_length < 3) { return; }
+
+    Ray ray;
+    Normal prev_nn;
+    float light_pos_pdf, light_dir_pdf;
+    Spectrum light_radiance = light.sample_ray_radiance(
+        *this->scene, ray, prev_nn, light_pos_pdf, light_dir_pdf, light_sample);
+    if(light_radiance.is_black() || light_pdf == 0.f) {
+      return;
+    }
+
+
     Spectrum alpha = light_radiance / (light_pdf * light_pos_pdf);
     float prev_dir_pdf = light_dir_pdf;
-    for(uint32_t bounces = 0; bounces < this->max_depth; ++bounces) {
+    for(uint32_t bounces = 0; bounces + 3 <= this->max_length; ++bounces) {
       Intersection isect;
       if(prev_dir_pdf == 0.f || !this->scene->intersect(ray, isect)) {
         break;
@@ -107,7 +111,8 @@ namespace dort {
       auto bsdf = isect.get_bsdf();
 
       bool has_non_delta = bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs();
-      if(has_non_delta && bounces + 1 >= this->min_depth) {
+      if(has_non_delta && bounces + 3 >= this->min_length) {
+        // connect the intersection to the camera
         Point camera_p;
         float camera_p_pdf;
         ShadowTest shadow;
@@ -126,7 +131,7 @@ namespace dort {
               / ( length_squared(camera_p - isect.world_diff_geom.p)
                 * prev_dir_pdf * camera_p_pdf));
           if(!contrib.is_black() && shadow.visible(*this->scene)) {
-            this->add_contrib(film_pos, contrib);
+            this->film->add_splat(film_pos, contrib);
           }
         }
       }
@@ -143,9 +148,7 @@ namespace dort {
 
       if(bounces >= 2) {
         float rr_prob = min(1.f, bounce_contrib.average()) * 0.9f;
-        if(sampler.random_1d() > rr_prob) {
-          break;
-        }
+        if(sampler.random_1d() > rr_prob) { break; }
         alpha /= rr_prob;
       }
 
@@ -153,13 +156,5 @@ namespace dort {
       prev_dir_pdf = bounce_dir_pdf;
       ray = Ray(isect.world_diff_geom.p, bounce_wo, isect.ray_epsilon);
     }
-  }
-
-  uint32_t LightRenderer::get_job_count(const CtxG& ctx) const {
-    return max(ctx.pool->num_threads() * 16, this->iteration_count);
-  }
-
-  void LightRenderer::add_contrib(Vec2 film_pos, Spectrum contrib) {
-    this->film->add_splat(film_pos, contrib);
   }
 }

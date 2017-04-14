@@ -23,10 +23,8 @@ namespace dort {
     virtual ~Renderer() {}
     virtual void render(CtxG& ctx, Progress& progress) = 0;
   protected:
-    static Vec2i layout_tiles(const CtxG& ctx,
-        const Film& film, const Sampler& sampler);
-    void render_tiled(CtxG& ctx, Progress& progress, uint32_t iteration_count,
-        std::function<void(CtxG&,Recti,Recti,Film&,Sampler&,Progress&)> render_tile,
-        std::function<void(Film&,uint32_t)> iteration_callback);
+    static Vec2i layout_tiles(const CtxG& ctx, Vec2i film_res);
+    void iteration_tiled(CtxG& ctx,
+        std::function<Spectrum(Vec2i, Vec2&, Sampler&)> get_pixel_contrib);
   };
 }

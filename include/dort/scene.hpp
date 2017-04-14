@@ -20,4 +20,7 @@ namespace dort {
     bool intersect(Ray& ray, Intersection& out_isect) const;
     bool intersect_p(const Ray& ray) const;
   };
+
+  DiscreteDistrib1d compute_light_distrib(const Scene& scene,
+      bool only_background = false);
 }

@@ -21,7 +21,6 @@ namespace dort {
   class Rng;
   class SampledFilter;
   class Sampler;
-  class SampleRenderer;
   class Shape;
   class ShapePrimitive;
   class ThreadPool;

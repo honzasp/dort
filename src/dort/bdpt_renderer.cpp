@@ -1,82 +1,39 @@
 #include "dort/bdpt_renderer.hpp"
 #include "dort/camera.hpp"
 #include "dort/film.hpp"
-#include "dort/lighting.hpp"
 #include "dort/primitive.hpp"
 
 namespace dort {
-  void BdptRenderer::render(CtxG& ctx, Progress& progress) {
-    this->preprocess(*this->scene);
-    this->render_tiled(ctx, progress, this->iteration_count,
-        [this](CtxG& ctx, Recti tile_rect, Recti tile_film_res,
-            Film& file_film, Sampler& sampler, Progress& progress) 
-        {
-          this->render_tile(ctx, tile_rect, tile_film_res, file_film, sampler, progress);
-        },
-        [this](Film& film, uint32_t iter) {
-          this->iteration(film, iter);
-        });
-    this->postprocess();
-  }
-
-  void BdptRenderer::preprocess(const Scene& scene) {
-    this->light_distrib = compute_light_distrib(scene);
-    this->background_light_distrib = compute_light_distrib(scene, true);
-    for(uint32_t i = 0; i < scene.lights.size(); ++i) {
+  void BdptRenderer::render(CtxG& ctx, Progress&) {
+    this->light_distrib = compute_light_distrib(*this->scene);
+    this->background_light_distrib = compute_light_distrib(*this->scene, true);
+    for(uint32_t i = 0; i < this->scene->lights.size(); ++i) {
       this->light_distrib_pdfs.insert(std::make_pair(
-          scene.lights.at(i).get(), this->light_distrib.pdf(i)));
+          this->scene->lights.at(i).get(), this->light_distrib.pdf(i)));
     }
 
     if(!this->debug_image_dir.empty()) {
       this->init_debug_films();
     }
-  }
 
-  void BdptRenderer::postprocess() {
+    for(uint32_t i = 0; i < this->iteration_count; ++i) {
+      this->film->splat_scale = 1.f / float(i + 1);
+      this->iteration_tiled(ctx, [&](Vec2i pixel, Vec2& film_pos, Sampler& sampler) {
+        film_pos = Vec2(pixel) + sampler.random_2d();
+        return this->sample_path(*this->scene, film_pos, sampler);
+      });
+    }
+
     if(!this->debug_image_dir.empty()) {
       this->save_debug_films();
     }
-  }
-
-  void BdptRenderer::render_tile(CtxG&, Recti tile_rect, Recti tile_film_rect,
-      Film& tile_film, Sampler& sampler, Progress& progress) const
-  {
-    StatTimer t(TIMER_RENDER_TILE);
-    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
-
-    for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
-      for(int32_t x = tile_rect.p_min.x; x < tile_rect.p_max.x; ++x) {
-        sampler.start_pixel();
-        for(uint32_t s = 0; s < sampler.samples_per_pixel; ++s) {
-          sampler.start_pixel_sample();
-
-          Vec2 pixel_pos = sampler.random_2d();
-          Vec2 film_pos = Vec2(float(x), float(y)) + pixel_pos;
-          Spectrum contrib = this->sample_path(*this->scene, film_pos, sampler);
-          assert(is_finite(contrib));
-          assert(is_nonnegative(contrib));
-          if(is_finite(contrib) && is_nonnegative(contrib)) {
-            Vec2 tile_film_pos = film_pos -
-              Vec2(float(tile_film_rect.p_min.x), float(tile_film_rect.p_min.y));
-            tile_film.add_sample(tile_film_pos, contrib);
-          }
-        }
-      }
-      if(progress.is_cancelled()) { return; }
-    }
-  }
-
-  void BdptRenderer::iteration(Film& film, uint32_t iteration) {
-    film.splat_scale = 1.f / (float(this->sampler->samples_per_pixel) *
-        float(iteration + 1));
   }
 
   Spectrum BdptRenderer::sample_path(const Scene& scene,
       Vec2 film_pos, Sampler& sampler) const 
   {
     // TODO: use sampling patterns
-    // TODO: correctly handle delta distributions in BSDFs
-    Vec2 film_res(float(this->film->x_res), float(this->film->y_res));
+    Vec2 film_res(this->film->res);
     const Camera& camera = *this->camera;
     const Light* light;
     std::vector<Vertex> light_walk = this->random_light_walk(
@@ -218,7 +175,7 @@ namespace dort {
     float ray_pos_pdf;
     float ray_dir_pdf;
     Spectrum importance = this->camera->sample_ray_importance(
-        Vec2(float(this->film->x_res), float(this->film->y_res)), film_pos,
+        Vec2(this->film->res), film_pos,
         ray, ray_pos_pdf, ray_dir_pdf, CameraSample(rng));
 
     std::vector<Vertex> walk;
@@ -335,7 +292,6 @@ namespace dort {
         if(camera_p_pdf == 0.f) { return Spectrum(0.f); }
 
         Vector wi;
-        Normal light_nn;
         float wi_dir_pdf;
         ShadowTest shadow;
         Spectrum radiance = light.sample_pivot_radiance(camera_p, 0.f,
@@ -718,7 +674,7 @@ namespace dort {
           this->debug_films.emplace(std::piecewise_construct,
               std::forward_as_tuple(weighted | (s << 1) | (t << 9)),
               std::forward_as_tuple(
-                this->film->x_res, this->film->y_res, this->film->filter));
+                this->film->res.x, this->film->res.y, this->film->filter));
         }
       }
     }
