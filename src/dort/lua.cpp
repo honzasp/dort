@@ -36,6 +36,14 @@ namespace dort {
     }
 #endif
 
+    if(library_name == "dort") {
+      lua_pushcfunction(l, [](lua_State* l) {
+        lua_getglobal(l, "dort");
+        return 1;
+      });
+      return 1;
+    }
+
     for(char& ch: library_name) {
       if(ch == '.') { ch = '/'; }
     }

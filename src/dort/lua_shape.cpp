@@ -31,6 +31,7 @@ namespace dort {
     };
 
     const luaL_Reg shape_funs[] = {
+      {"get_area", lua_shape_get_area},
       {"make_sphere", lua_shape_make_sphere},
       {"make_disk", lua_shape_make_disk},
       {"make_cylinder", lua_shape_make_cylinder},
@@ -45,6 +46,12 @@ namespace dort {
     lua_register_type(l, MESH_TNAME, mesh_methods);
     lua_register_type(l, PLY_MESH_TNAME, ply_mesh_methods);
     luaL_newlib(l, shape_funs);
+    return 1;
+  }
+
+  int lua_shape_get_area(lua_State* l) {
+    auto shape = lua_check_shape(l, 1);
+    lua_pushnumber(l, shape->area());
     return 1;
   }
 

@@ -256,21 +256,12 @@ namespace dort {
     uint32_t index = luaL_checkinteger(l, 3);
 
     auto material = builder->state.material;
-    auto transform = builder->state.local_to_frame;
     if(!material) {
       luaL_error(l, "no material is set");
       return 0;
     }
 
-    std::unique_ptr<Primitive> prim;
-    if(transform == identity()) {
-      prim = std::make_unique<TriangleShapePrimitive>(mesh.get(), index, material);
-    } else {
-      prim = std::make_unique<ShapePrimitive>(
-           std::make_shared<TriangleShape>(mesh.get(), index),
-           material, nullptr, transform);
-    }
-
+    auto prim = std::make_unique<TriangleShapePrimitive>(mesh.get(), index, material);
     builder->frame.prims.push_back(std::move(prim));
     builder->meshes.insert(mesh);
     return 0;
