@@ -45,14 +45,14 @@ namespace dort {
     };
 
     Spectrum sample(Vec2 film_pos, Sampler& sampler) const;
-    Spectrum sample_direct_lighting(const LightingGeom& geom,
-        const Bsdf& bsdf, Sampler& sampler) const;
+    Spectrum sample_lighting(const LightingGeom& geom,
+        const Bsdf& bsdf, Sampler& sampler, bool is_direct) const;
+
     Spectrum estimate_direct(const LightingGeom& geom,
         const Light& light, const Bsdf& bsdf, Sampler& sampler) const;
-
-    Spectrum estimate_direct_bsdf(const LightingGeom& geom,
+    Spectrum estimate_direct_from_bsdf(const LightingGeom& geom,
         const Light& light, const Bsdf& bsdf, Sampler& sampler, bool use_mis) const;
-    Spectrum estimate_direct_light(const LightingGeom& geom,
+    Spectrum estimate_direct_from_light(const LightingGeom& geom,
         const Light& light, const Bsdf& bsdf, Sampler& sampler, bool use_mis) const;
   };
 }

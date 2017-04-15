@@ -5,6 +5,8 @@
 
 namespace dort {
   void BdptRenderer::render(CtxG& ctx, Progress&) {
+    if(this->scene->lights.empty()) { return; }
+
     this->light_distrib = compute_light_distrib(*this->scene);
     this->background_light_distrib = compute_light_distrib(*this->scene, true);
     for(uint32_t i = 0; i < this->scene->lights.size(); ++i) {
@@ -642,6 +644,7 @@ namespace dort {
 
       if(r_light == 0.f) { break; }
       if(vertex_at(s + j - 1).is_delta) { continue; }
+      if(s + j < s + t && vertex_at(s + j).is_delta) { continue; }
       inv_weight_sum += r_light;
     }
 
@@ -658,6 +661,7 @@ namespace dort {
 
       if(r_camera == 0.f) { break; }
       if(vertex_at(s - j).is_delta) { continue; }
+      if(j < s && vertex_at(s - j - 1).is_delta) { continue; }
       inv_weight_sum += r_camera;
     }
 

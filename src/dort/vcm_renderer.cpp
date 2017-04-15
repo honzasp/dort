@@ -6,6 +6,8 @@
 
 namespace dort {
   void VcmRenderer::render(CtxG& ctx, Progress& progress) {
+    if(this->scene->lights.empty()) { return; }
+
     this->light_distrib = compute_light_distrib(*this->scene);
     this->background_light_distrib = compute_light_distrib(*this->scene, true);
     for(uint32_t i = 0; i < scene->lights.size(); ++i) {
@@ -120,6 +122,7 @@ namespace dort {
     Spectrum throughput = light_radiance 
       * (abs_dot(light_nn, normalize(light_ray.dir)) / light_ray_pdf);
     float fwd_bsdf_dir_pdf = SIGNALING_NAN;
+    bool fwd_bsdf_delta = false;
 
     for(uint32_t bounces = 0;; ++bounces) {
       if(light_ray_pdf == 0.f) { break; }
@@ -159,6 +162,12 @@ namespace dort {
             (light_ray_pdf * abs_dot(y.nn, y.w));
         }
         y.d_vm = y.d_vc * iter_state.mis_vm_weight;
+      } else if(fwd_bsdf_delta) {
+        // equations (53), (54), (55)
+        const auto& yp = light_vertices.at(bounces - 1);
+        y.d_vcm = 0.f;
+        y.d_vc = abs_dot(yp.nn, y.w) / abs_dot(y.nn, y.w) * yp.d_vc;
+        y.d_vm = abs_dot(yp.nn, y.w) / abs_dot(y.nn, y.w) * yp.d_vm;
       } else {
         const auto& yp = light_vertices.at(bounces - 1);
         float bwd_bsdf_dir_pdf = yp.bsdf->light_f_pdf(yp.w, -y.w, BSDF_ALL);
@@ -201,6 +210,7 @@ namespace dort {
 
       light_ray = Ray(y.p, bsdf_wo, y.p_epsilon);
       fwd_bsdf_dir_pdf = bsdf_wo_pdf;
+      fwd_bsdf_delta = bsdf_flags & BSDF_DELTA;
       throughput *= bsdf_f * (abs_dot(y.nn, bsdf_wo) / bsdf_wo_pdf);
       light_vertices.push_back(std::move(y));
     }
@@ -227,6 +237,7 @@ namespace dort {
 
     Spectrum throughput = camera_importance / camera_ray_pdf;
     float fwd_bsdf_dir_pdf = SIGNALING_NAN;
+    bool fwd_bsdf_delta = false;
     PathVertex zp;
     zp.p = camera_ray.orig;
     zp.throughput = throughput;
@@ -239,7 +250,7 @@ namespace dort {
         if(bounces + 2 >= this->min_length && bounces + 2 <= this->max_length) {
           // VC, s = 0, t >= 2, background light
           film_contrib += this->connect_to_background_light(
-            camera_ray, zp, film_pos, bounces, sampler);
+            camera_ray, zp, throughput, film_pos, bounces, sampler);
         }
         break;
       }
@@ -261,6 +272,11 @@ namespace dort {
           / (camera_ray_pdf * abs_dot(z.nn, z.w));
         z.d_vc = 0.f;
         z.d_vm = 0.f;
+      } else if(fwd_bsdf_delta) {
+        // equations (53), (54), (55)
+        z.d_vcm = 0.f;
+        z.d_vc = abs_dot(zp.nn, z.w) / abs_dot(z.nn, z.w) * zp.d_vc;
+        z.d_vm = abs_dot(zp.nn, z.w) / abs_dot(z.nn, z.w) * zp.d_vm;
       } else {
         float bwd_bsdf_dir_pdf = zp.bsdf->camera_f_pdf(zp.w, -z.w, BSDF_ALL);
         // equations (34), (35), (36)
@@ -313,6 +329,7 @@ namespace dort {
 
       camera_ray = Ray(z.p, bsdf_wi, isect.ray_epsilon);
       fwd_bsdf_dir_pdf = bsdf_wi_pdf;
+      fwd_bsdf_delta = bsdf_flags & BSDF_DELTA;
       throughput *= bsdf_f * (abs_dot(z.nn, bsdf_wi) / bsdf_wi_pdf);
       zp = std::move(z);
     }
@@ -360,7 +377,8 @@ namespace dort {
   }
 
   Spectrum VcmRenderer::connect_to_background_light(const Ray& camera_ray,
-      const PathVertex& zp, Vec2 film_pos, uint32_t bounces, Sampler& sampler) const
+      const PathVertex& zp, Spectrum throughput,
+      Vec2 film_pos, uint32_t bounces, Sampler& sampler) const
   {
     // "intersect" a background light (VC, s = 0, t >= 2, distant light)
     uint32_t light_i = this->background_light_distrib.sample(sampler.random_1d());
@@ -370,7 +388,7 @@ namespace dort {
     const Light& light = *this->scene->background_lights.at(light_i);
     assert(light.flags & LIGHT_DISTANT);
     Spectrum radiance = light.background_radiance(camera_ray);
-    Spectrum contrib = zp.throughput * radiance / bg_light_pick_pdf;
+    Spectrum contrib = throughput * radiance / bg_light_pick_pdf;
     if(contrib.is_black()) { return Spectrum(0.f); }
 
     if(bounces == 0) {

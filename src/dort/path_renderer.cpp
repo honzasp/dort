@@ -26,28 +26,24 @@ namespace dort {
     float ray_pdf = ray_pos_pdf * ray_dir_pdf;
     if(ray_pdf == 0.f || importance.is_black()) { return Spectrum(0.f); }
 
-    Spectrum radiance(0.f);
+    Spectrum radiance_sum(0.f);
     Spectrum throughput(1.f);
-    bool last_bxdf_was_specular = false;
 
     uint32_t bounces = 0;
     for(;;) {
       Intersection isect;
       bool isected = this->scene->intersect(next_ray, isect);
 
-      if(bounces >= this->min_depth && (bounces == 0 || last_bxdf_was_specular)) {
+      if(bounces >= this->min_depth && bounces <= this->max_depth) {
         if(isected) {
-          radiance += throughput * isect.eval_radiance(next_ray.orig);
+          radiance_sum += throughput * isect.eval_radiance(next_ray.orig);
         } else {
           for(const auto& light: this->scene->background_lights) {
-            radiance += throughput * light->background_radiance(next_ray);
+            radiance_sum += throughput * light->background_radiance(next_ray);
           }
         }
       }
-
-      if(!isected || bounces >= this->max_depth) {
-        break;
-      }
+      if(!isected || bounces >= this->max_depth) { break; }
       ++bounces;
 
       LightingGeom geom;
@@ -57,11 +53,13 @@ namespace dort {
       geom.wo_camera = normalize(-next_ray.dir);
       auto bsdf = isect.get_bsdf();
 
-      if(bounces >= this->min_depth) {
-        Spectrum direct = this->sample_direct_lighting(geom, *bsdf, sampler);
-        assert(is_finite(direct) && is_nonnegative(direct));
-        radiance += direct * throughput;
+      bool is_direct = bounces == this->max_depth;
+      if(bounces >= this->min_depth && (!this->only_direct || is_direct)) {
+        Spectrum radiance = this->sample_lighting(geom, *bsdf, sampler, is_direct);
+        assert(is_finite(radiance) && is_nonnegative(radiance));
+        radiance_sum += radiance * throughput;
       }
+      if(is_direct) { break; }
 
       Vector bsdf_wi;
       float bsdf_pdf;
@@ -75,27 +73,32 @@ namespace dort {
       assert(is_finite(throughput) && is_nonnegative(throughput));
 
       next_ray = Ray(geom.p, bsdf_wi, geom.p_epsilon);
-      last_bxdf_was_specular = bsdf_flags & BSDF_DELTA;
 
-      if(bounces > this->max_depth / 2 && bounces > this->min_depth) {
-        float term_prob = max(0.05f, 1.f - throughput.average());
-        if(sampler.random_1d() < term_prob) {
-          break;
-        }
-        throughput = throughput / term_prob;
+      if(bounces >= 2 && bounces > this->min_depth) {
+        float survive_prob = max(0.1f, min(1.f, throughput.average()));
+        if(sampler.random_1d() > survive_prob) { break; }
+        throughput = throughput / survive_prob;
       }
     }
 
-    return radiance * importance / ray_pdf;
+    return radiance_sum * importance / ray_pdf;
   }
 
-  Spectrum PathRenderer::sample_direct_lighting(const LightingGeom& geom,
-      const Bsdf& bsdf, Sampler& sampler) const
+  Spectrum PathRenderer::sample_lighting(const LightingGeom& geom,
+      const Bsdf& bsdf, Sampler& sampler, bool is_direct) const
   {
+    if((!is_direct || this->direct_strategy == DirectStrategy::SAMPLE_LIGHT)) {
+      if(bsdf.num_bxdfs(BSDF_ALL & (~BSDF_DELTA)) == 0) {
+        return Spectrum(0.f);
+      }
+    }
+
     if(this->sample_all_lights) {
       Spectrum radiance_sum(0.f);
       for(const auto& light: this->scene->lights) {
-        radiance_sum += this->estimate_direct(geom, *light, bsdf, sampler);
+        radiance_sum += is_direct
+          ? this->estimate_direct(geom, *light, bsdf, sampler)
+          : this->estimate_direct_from_light(geom, *light, bsdf, sampler, true);
       }
       return radiance_sum;
     } else {
@@ -103,9 +106,13 @@ namespace dort {
       float light_pick_pdf = this->light_distrib.pdf(light_i);
       if(light_pick_pdf == 0.f) { return Spectrum(0.f); }
       const Light& light = *this->scene->lights.at(light_i);
-      return this->estimate_direct(geom, light, bsdf, sampler) / light_pick_pdf;
+      Spectrum radiance = is_direct
+        ? this->estimate_direct(geom, light, bsdf, sampler)
+        : this->estimate_direct_from_light(geom, light, bsdf, sampler, true);
+      return radiance / light_pick_pdf;
     }
   }
+
 
   Spectrum PathRenderer::estimate_direct(const LightingGeom& geom,
       const Light& light, const Bsdf& bsdf, Sampler& sampler) const
@@ -113,18 +120,18 @@ namespace dort {
     bool use_bsdf = this->direct_strategy != DirectStrategy::SAMPLE_LIGHT
       && !(light.flags & LIGHT_DELTA) && (light.flags & (LIGHT_AREA | LIGHT_BACKGROUND));
     bool use_light = this->direct_strategy != DirectStrategy::SAMPLE_BSDF
-      && bsdf.num_bxdfs(BSDF_DELTA) < bsdf.num_bxdfs();
+      && bsdf.num_bxdfs(BSDF_ALL & (~BSDF_DELTA)) != 0;
 
     Spectrum bsdf_contrib = use_bsdf
-      ? this->estimate_direct_bsdf(geom, light, bsdf, sampler, use_light)
+      ? this->estimate_direct_from_bsdf(geom, light, bsdf, sampler, use_light)
       : Spectrum(0.f);
     Spectrum light_contrib = use_light
-      ? this->estimate_direct_light(geom, light, bsdf, sampler, use_bsdf)
+      ? this->estimate_direct_from_light(geom, light, bsdf, sampler, use_bsdf)
       : Spectrum(0.f);
     return bsdf_contrib + light_contrib;
   }
 
-  Spectrum PathRenderer::estimate_direct_bsdf(const LightingGeom& geom,
+  Spectrum PathRenderer::estimate_direct_from_bsdf(const LightingGeom& geom,
       const Light& light, const Bsdf& bsdf, Sampler& sampler, bool use_mis) const
   {
     Vector wi_light;
@@ -150,7 +157,7 @@ namespace dort {
     if(radiance.is_black()) { return Spectrum(0.f); }
 
     float weight = 1.f;
-    if(use_mis) {
+    if(use_mis && !(bsdf_flags & BSDF_DELTA)) {
       float wi_light_dir_pdf = light.pivot_radiance_pdf(wi_light, geom.p);
       weight = wi_dir_pdf / (wi_dir_pdf + wi_light_dir_pdf);
     }
@@ -158,7 +165,7 @@ namespace dort {
     return bsdf_f * radiance * (weight * abs_dot(geom.nn, wi_light) / wi_dir_pdf);
   }
 
-  Spectrum PathRenderer::estimate_direct_light(const LightingGeom& geom,
+  Spectrum PathRenderer::estimate_direct_from_light(const LightingGeom& geom,
       const Light& light, const Bsdf& bsdf, Sampler& sampler, bool use_mis) const
   {
     Vector wi_light;

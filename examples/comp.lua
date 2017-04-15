@@ -240,6 +240,21 @@ function cavern_scene()
   end)
 end
 
+function ball_scene()
+  return define_scene(function()
+    material(matte_material { color = rgb(0.5) })
+    add_shape(sphere { radius = 1 })
+    add_light(infinite_light { radiance = rgb(1) })
+    camera(pinhole_camera {
+      transform = look_at(
+        point(0, 0, -3),
+        point(0, 0, 0),
+        vector(0, 1, 0)),
+      fov = pi * 0.5,
+    })
+  end)
+end
+
 out_dir = "comp"
 
 local res = 512
@@ -282,7 +297,6 @@ algos = {
     renderer = "pt",
     iterations = 10,
   }},
-  --]]
   --[[
   {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 2}},
   {"lt_1", {renderer = "lt", min_depth = 1, max_depth = 1, iterations = 2}},
@@ -293,7 +307,7 @@ algos = {
   {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
   {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
   --]]
-  ---[[
+  --[[
   {"bdpt", {
     min_depth = 1,
     max_depth = 1,
@@ -339,7 +353,8 @@ scenes = {
   --{"deltab_box", cornell_box_scene("delta", "beam")},
   --{"cavern", cavern_scene()},
   --{"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
-  {"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
+  --{"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
+  {"ball", ball_scene()},
 }
 
 for scene_i = 1, #scenes do
