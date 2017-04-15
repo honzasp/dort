@@ -326,6 +326,7 @@ namespace dort {
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = z.bsdf->sample_light_f(z.w, BSDF_ALL,
           bsdf_wi, bsdf_wi_pdf, bsdf_flags, BsdfSample(sampler.rng));
+      if(bsdf_wi_pdf == 0.f) { break; }
 
       camera_ray = Ray(z.p, bsdf_wi, isect.ray_epsilon);
       fwd_bsdf_dir_pdf = bsdf_wi_pdf;
