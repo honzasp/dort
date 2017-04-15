@@ -113,7 +113,7 @@ namespace dort {
     y0.fwd_pdf = light_pos_pdf;
     y0.bwd_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
-    y0.is_delta = light.flags & LIGHT_DELTA;
+    y0.is_delta = false;
     walk.push_back(std::move(y0));
 
     Spectrum prev_bsdf_f(1.f);
@@ -383,7 +383,7 @@ namespace dort {
       out_first_light.area_light = nullptr;
       out_first_light.background_light = nullptr;
       out_first_light.alpha = Spectrum(SIGNALING_NAN);
-      out_first_light.is_delta = light.flags & LIGHT_DELTA;
+      out_first_light.is_delta = light.flags & LIGHT_DELTA_DIR;
       out_first_light.bwd_pdf = last_camera.bsdf->light_f_pdf(wi, bsdf_wo, BSDF_ALL);
 
       return last_camera.alpha * bsdf_f * light_radiance

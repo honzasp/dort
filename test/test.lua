@@ -99,9 +99,10 @@ function run_test(name, scene, render_optss)
   return count, errs, time_s
 end
 
+local cornell_scale = 0.01
 function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
   local _ENV = require "dort/dsl"
-  local s = 0.1
+  local s = cornell_scale
   return define_scene(function()
     local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
     local green = matte_material { color = rgb(0, 0.5, 0) }
@@ -297,29 +298,33 @@ function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
 end
 
 local cornell_scenes = {
-  {"box", "diff", "area", "pin", {"pt", "lt", "bdpt"}},
-  {"box", "glos", "area", "pin", {"pt", "bdpt"}},
-  {"box", "delt", "area", "pin", {"bdpt"}},
-  {"box", "diff", "sphe", "pin", {"pt", "bdpt"}},
-  {"box", "glos", "sphe", "pin", {"pt", "bdpt"}},
-  {"box", "delt", "sphe", "pin", {"pt", "bdpt"}},
-  {"box", "diff", "poin", "pin", {"pt_min_1", "lt_min_1", "bdpt_min_1"}},
-  {"box", "glos", "poin", "pin", {"pt_min_1", "bdpt_min_1"}},
-  {"box", "delt", "poin", "pin", {"bdpt_min_1"}},
-  {"box", "diff", "dire", "pin", {"pt", "lt", "bdpt"}},
-  {"box", "glos", "dire", "pin", {"pt", "bdpt"}},
-  {"box", "delt", "dire", "pin", {"pt", "bdpt"}},
-  {"box", "diff", "beam", "pin", {"bdpt"}},
-  {"box", "glos", "beam", "pin", {"bdpt"}},
-  {"box", "delt", "beam", "pin", {"bdpt"}},
-  {"openbox", "diff", "infi", "pin", {"pt", "bdpt"}},
-  {"openbox", "glos", "infi", "pin", {"pt", "bdpt"}},
-  {"openbox", "delt", "infi", "pin", {"pt", "bdpt"}},
-  {"openbox", "diff", "envi", "pin", {"pt", "bdpt"}},
-  {"openbox", "glos", "envi", "pin", {"pt", "bdpt"}},
-  {"openbox", "delt", "envi", "pin", {"pt", "bdpt"}},
-  {"box", "diff", "area", "orth", {"pt", "bdpt"}},
-  {"box", "diff", "area", "thin", {"pt", "lt", "bdpt"}},
+  --[[
+  {"box", "diff", "area", "pin", {"pt", "lt", "bdpt", "vcm"}},
+  {"box", "glos", "area", "pin", {"pt", "bdpt", "vcm"}},
+  {"box", "delt", "area", "pin", {"bdpt", "vcm"}},
+  {"box", "diff", "sphe", "pin", {"pt", "bdpt", "vcm"}},
+  {"box", "glos", "sphe", "pin", {"pt", "bdpt", "vcm"}},
+  {"box", "delt", "sphe", "pin", {"pt", "bdpt", "vcm"}},
+  {"box", "diff", "poin", "pin", {"pt_min_1", "lt_min_1", "bdpt_min_1", "vcm"}},
+  {"box", "glos", "poin", "pin", {"pt_min_1", "bdpt_min_1", "vcm"}},
+  {"box", "delt", "poin", "pin", {"bdpt_min_1", "vcm"}},
+  {"box", "diff", "dire", "pin", {"pt", "lt", "bdpt", "vcm"}},
+  {"box", "glos", "dire", "pin", {"pt", "bdpt", "vcm"}},
+  {"box", "delt", "dire", "pin", {"pt", "bdpt", "vcm"}},
+  {"box", "diff", "beam", "pin", {"bdpt", "vcm"}},
+  {"box", "glos", "beam", "pin", {"bdpt", "vcm"}},
+  {"box", "delt", "beam", "pin", {"bdpt", "vcm"}},
+  --]]
+  {"openbox", "diff", "infi", "pin", {"pt", "bdpt", "vcm"}},
+  {"openbox", "glos", "infi", "pin", {"pt", "bdpt", "vcm"}},
+  {"openbox", "delt", "infi", "pin", {"pt", "bdpt", "vcm"}},
+  {"openbox", "diff", "envi", "pin", {"pt", "bdpt", "vcm"}},
+  {"openbox", "glos", "envi", "pin", {"pt", "bdpt", "vcm"}},
+  {"openbox", "delt", "envi", "pin", {"pt", "bdpt", "vcm"}},
+  --[[
+  {"box", "diff", "area", "orth", {"pt", "bdpt", "vcm"}},
+  {"box", "diff", "area", "thin", {"pt", "lt", "bdpt", "vcm"}},
+  --]]
 }
 
 local cornell_renderers = {
@@ -376,7 +381,19 @@ local cornell_renderers = {
     x_res = 512, y_res = 512,
     sampler = dort.sampler.make_random { samples_per_pixel = 1},
     filter = dort.filter.make_box { radius = 0.5 },
-    debug_image_dir = "test/_bdpt_debug",
+    --debug_image_dir = "test/_bdpt_debug",
+  },
+  vcm = {
+    renderer = "vcm",
+    min_depth = 0,
+    max_depth = 4,
+    iterations = 5,
+    initial_radius = 1*cornell_scale,
+    alpha = 0.7,
+    x_res = 512, y_res = 512,
+    sampler = dort.sampler.make_random { samples_per_pixel = 1},
+    filter = dort.filter.make_box { radius = 0.5 },
+    debug_image_dir = "test/_vcm_debug",
   },
 }
 

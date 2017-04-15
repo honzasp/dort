@@ -241,13 +241,23 @@ function cavern_scene()
 end
 
 function ball_scene()
+  local s = 1
   return define_scene(function()
     material(matte_material { color = rgb(0.5) })
-    add_shape(sphere { radius = 1 })
-    add_light(infinite_light { radiance = rgb(1) })
+    add_shape(disk { radius = 2*s })
+    --[[
+    add_light(point_light {
+      point = point(0, 0, -3*s),
+      intensity = rgb(20),
+    })--]]
+    ---[[
+    add_light(directional_light {
+      direction = vector(0, 0, 1),
+      radiance = rgb(1),
+    }) --]]
     camera(pinhole_camera {
       transform = look_at(
-        point(0, 0, -3),
+        point(0, 0, -3*s),
         point(0, 0, 0),
         vector(0, 1, 0)),
       fov = pi * 0.5,
@@ -273,6 +283,7 @@ algos = {
   --[[
   {"dot", {
     renderer = "dot",
+    iterations = 1,
   }},
   --]]
   --[[
@@ -282,18 +293,18 @@ algos = {
     iterations = 4,
   }},
   --]]
-  --[[
+  ---[[
   {"lt", {
-    min_depth = 1,
-    max_depth = 1,
+    min_depth = 0,
+    max_depth = 3,
     renderer = "lt",
     iterations = 10,
   }},
   --]]
-  --[[
+  ---[[
   {"pt", {
-    min_depth = 1,
-    max_depth = 1,
+    min_depth = 0,
+    max_depth = 3,
     renderer = "pt",
     iterations = 10,
   }},
@@ -316,23 +327,25 @@ algos = {
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --]]
+  --[[
   {"vcm", {
     min_depth = 1,
     max_depth = 1,
     renderer = "vcm",
     mode = "vcm",
     iterations = 8,
-    initial_radius = s*1,
+    initial_radius = s*0.01,
     debug_image_dir = out_dir .. "/_vcm_debug",
   }},
+  --]]
 }
 scenes = {
   --{"point_light", point_light_scene()},
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
-  --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
-  --{"diffused_box", cornell_box_scene("diffuse", "direction")},
+  {"diffuse_box", cornell_box_scene("diffuse", "area")},
+  {"diffuses_box", cornell_box_scene("diffuse", "sphere")},
+  {"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
   --{"glossyd_box", cornell_box_scene("glossy", "direction")},
   --{"deltad_box", cornell_box_scene("delta", "direction")},
@@ -354,7 +367,7 @@ scenes = {
   --{"cavern", cavern_scene()},
   --{"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
   --{"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
-  {"ball", ball_scene()},
+  --{"ball", ball_scene()},
 }
 
 for scene_i = 1, #scenes do

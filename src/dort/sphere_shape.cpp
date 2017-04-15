@@ -123,7 +123,7 @@ namespace dort {
   bool SphereShape::solve_hit_t(const Ray& ray, float& out_t_hit) const {
     float a = dot(ray.dir.v, ray.dir.v);
     float b = 2.f * dot(ray.orig.v, ray.dir.v);
-    float c = dot(ray.orig.v, ray.orig.v) - this->radius * this->radius;
+    float c = dot(ray.orig.v, ray.orig.v) - square(this->radius);
     float t0, t1;
     if(!solve_quadratic(a, b, c, t0, t1)) {
       return false;

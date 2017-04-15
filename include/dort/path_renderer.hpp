@@ -45,8 +45,8 @@ namespace dort {
     };
 
     Spectrum sample(Vec2 film_pos, Sampler& sampler) const;
-    Spectrum sample_lighting(const LightingGeom& geom,
-        const Bsdf& bsdf, Sampler& sampler, bool is_direct) const;
+    Spectrum sample_direct_lighting(const LightingGeom& geom,
+        const Bsdf& bsdf, Sampler& sampler) const;
 
     Spectrum estimate_direct(const LightingGeom& geom,
         const Light& light, const Bsdf& bsdf, Sampler& sampler) const;

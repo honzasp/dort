@@ -47,12 +47,6 @@ namespace dort {
       iter_state.photon_tree = KdTree<PhotonKdTraits>(std::move(prev_photons));
     }
 
-    if(idx == 0) {
-      assert(prev_photons.empty());
-    } else if(idx == 1) {
-      iter_state.vm_normalization *= 2.f;
-    }
-
     std::vector<Photon> photons;
     std::atomic<uint32_t> photon_count(0);
     std::shared_timed_mutex photons_mutex;
