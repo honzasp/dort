@@ -118,7 +118,7 @@ namespace dort {
     float light_ray_pdf = light_pos_pdf * light_dir_pdf * light_pick_pdf;
 
     Spectrum throughput = light_radiance 
-      * (abs_dot(light_nn, light_ray.dir) / light_ray_pdf);
+      * (abs_dot(light_nn, normalize(light_ray.dir)) / light_ray_pdf);
     float fwd_bsdf_dir_pdf = SIGNALING_NAN;
 
     for(uint32_t bounces = 0;; ++bounces) {
@@ -133,7 +133,7 @@ namespace dort {
       PathVertex y;
       y.p = isect.world_diff_geom.p;
       y.p_epsilon = isect.ray_epsilon;
-      y.w = -light_ray.dir;
+      y.w = -normalize(light_ray.dir);
       y.nn = isect.world_diff_geom.nn;
       y.throughput = throughput;
       y.bsdf = isect.get_bsdf();
@@ -216,7 +216,7 @@ namespace dort {
       const std::vector<PathVertex>& light_vertices,
       Vec2 film_pos, Sampler& sampler)
   {
-    Vec2 film_res(float(this->film->res.x), float(this->film->res.y));
+    Vec2 film_res(this->film->res);
     Ray camera_ray;
     float camera_pos_pdf, camera_dir_pdf;
     Spectrum camera_importance = this->camera->sample_ray_importance(film_res, film_pos,
@@ -247,7 +247,7 @@ namespace dort {
       PathVertex z;
       z.p = isect.world_diff_geom.p;
       z.p_epsilon = isect.ray_epsilon;
-      z.w = -camera_ray.dir;
+      z.w = -normalize(camera_ray.dir);
       z.nn = isect.world_diff_geom.nn;
       z.throughput = throughput;
       z.bsdf = isect.get_bsdf();
@@ -342,16 +342,16 @@ namespace dort {
     float camera_ray_pdf = this->camera->ray_importance_pdf(film_res,
       camera_p, camera_wi);
     float bwd_bsdf_dir_pdf = y.bsdf->light_f_pdf(y.w, -camera_wi, BSDF_ALL);
+    float dist_squared = length_squared(y.p - camera_p);
 
     // equation (46), (37)
     float w_light = camera_ray_pdf * abs_dot(y.nn, camera_wi)
-      / (camera_p_pdf * length_squared(y.p - camera_p))
+      / (camera_p_pdf * dist_squared)
       * (iter_state.mis_vm_weight + y.d_vcm + bwd_bsdf_dir_pdf * y.d_vc);
     float weight = 1.f / (1.f + w_light);
 
-    float dist = length_squared(y.p - camera_p);
     Spectrum contrib = y.throughput * bsdf_f * importance 
-      * (abs_dot(y.nn, camera_wi) / (dist * camera_p_pdf));
+      * (abs_dot(y.nn, camera_wi) / (dist_squared * camera_p_pdf));
     if(!contrib.is_black() && shadow.visible(*this->scene)) {
       film.add_splat(film_pos, contrib * weight);
       this->store_debug_weighted_contrib(bounces + 2, 1, false,
@@ -379,9 +379,9 @@ namespace dort {
           film_pos, contrib, 1.f);
       return contrib;
     } else {
-      float pivot_dir_pdf = light.pivot_radiance_pdf(camera_ray.dir, zp.p);
-      float ray_pdf = light.ray_radiance_pdf(*this->scene,
-          zp.p, -camera_ray.dir, Normal());
+      Vector light_wi = normalize(camera_ray.dir);
+      float pivot_dir_pdf = light.pivot_radiance_pdf(light_wi, zp.p);
+      float ray_pdf = light.ray_radiance_pdf(*this->scene, zp.p, -light_wi, Normal());
       float light_pick_pdf = this->light_distrib_pdfs.at(&light);
       float w_camera = pivot_dir_pdf * light_pick_pdf * zp.d_vcm
         + ray_pdf * light_pick_pdf * zp.d_vc;

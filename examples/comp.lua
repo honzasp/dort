@@ -269,18 +269,18 @@ algos = {
   --]]
   --[[
   {"lt", {
-    min_depth = 0,
-    max_depth = 4,
+    min_depth = 1,
+    max_depth = 1,
     renderer = "lt",
-    iterations = 1,
+    iterations = 10,
   }},
   --]]
   --[[
   {"pt", {
-    min_depth = 0,
-    max_depth = 4,
+    min_depth = 1,
+    max_depth = 1,
     renderer = "pt",
-    iterations = 5,
+    iterations = 10,
   }},
   --]]
   --[[
@@ -293,21 +293,21 @@ algos = {
   {"pt_2", {renderer = "pt", min_depth = 2, max_depth = 2, iterations = 2}},
   {"pt_3", {renderer = "pt", min_depth = 3, max_depth = 3, iterations = 2}},
   --]]
-  --[[
+  ---[[
   {"bdpt", {
-    min_depth = 0,
+    min_depth = 1,
     max_depth = 1,
     renderer = "bdpt",
-    iterations = 4,
+    iterations = 10,
     debug_image_dir = out_dir .. "/_bdpt_debug",
   }},
   --]]
   {"vcm", {
-    min_depth = 0,
-    max_depth = 4,
+    min_depth = 1,
+    max_depth = 1,
     renderer = "vcm",
     mode = "vcm",
-    iterations = 2,
+    iterations = 8,
     initial_radius = s*1,
     debug_image_dir = out_dir .. "/_vcm_debug",
   }},
@@ -316,7 +316,7 @@ scenes = {
   --{"point_light", point_light_scene()},
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
-  {"diffuse_box", cornell_box_scene("diffuse", "area")},
+  --{"diffuse_box", cornell_box_scene("diffuse", "area")},
   --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
   --{"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
@@ -339,7 +339,7 @@ scenes = {
   --{"deltab_box", cornell_box_scene("delta", "beam")},
   --{"cavern", cavern_scene()},
   --{"diffuse_box_ortho", cornell_box_scene("diffuse", "area", "box", "ortho")},
-  --{"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
+  {"diffuse_box_thin", cornell_box_scene("diffuse", "area", "box", "thin")},
 }
 
 for scene_i = 1, #scenes do

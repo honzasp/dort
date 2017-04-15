@@ -18,8 +18,9 @@ namespace dort {
   {
     Vec3 focus_point = this->get_focus_point(film_res, film_pos);
     Vec3 lens_point = this->sample_lens_point(sample.uv_lens);
+    Vec3 segment = focus_point - lens_point;
+    float cos_theta = segment.z / length(segment);
     float area = this->get_image_plane_area(film_res);
-    float cos_theta = focus_point.z / length(focus_point);
 
     Point world_focus_point = this->camera_to_world.apply(Point(focus_point));
     Point world_lens_point = this->camera_to_world.apply(Point(lens_point));
@@ -78,14 +79,19 @@ namespace dort {
   }
 
   float ThinLensCamera::ray_importance_pdf(Vec2 film_res,
-      const Point&, const Vector& wi_gen) const
+      const Point& orig, const Vector& wi_gen) const
   {
+    Vec3 lens_point = this->camera_to_world.apply_inv(orig).v;
     Vec3 camera_wi = this->camera_to_world.apply_inv(wi_gen).v;
-    float cos_theta = camera_wi.z / length(camera_wi);
+    Vec2 film_pos;
+    if(!this->get_film_pos(film_res, lens_point, lens_point + camera_wi, film_pos)) {
+      return 0.f;
+    }
+    Vec3 focus_point = this->get_focus_point(film_res, film_pos);
+    Vec3 segment = focus_point - lens_point;
+    float cos_theta = segment.z / length(segment);
     float area = this->get_image_plane_area(film_res);
-    float inv_pos_pdf = PI * square(this->lens_radius);
-    float inv_dir_pdf = area * cube(cos_theta);
-    return 1.f / (inv_pos_pdf * inv_dir_pdf);
+    return INV_PI / (square(this->lens_radius) * area * cube(cos_theta));
   }
 
   float ThinLensCamera::pivot_importance_pdf(Vec2, const Point&, const Point&) const {
