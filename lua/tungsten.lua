@@ -144,7 +144,19 @@ local function read_bsdf(ctx, json)
   if not bsdf_types[json["type"]] then
     error("unknown bsdf type: " .. json["type"])
   end
-  return bsdf_types[json["type"]](ctx, json)
+
+  local material = bsdf_types[json["type"]](ctx, json)
+  if json["bump"] then
+    local bump_path = ctx.scene_dir .. "/" .. json["bump"]
+    local bump_image = dort.image.read(bump_path, { hdr = false })
+    local bump_texture = dort.texture.make_image(bump_image)
+    material = dort.material.make_bump {
+      bump = dort.texture.make_average()
+        .. bump_texture .. dort.texture.make_map_uv(),
+      material = material,
+    }
+  end
+  return material
 end
 
 
@@ -283,7 +295,8 @@ end
 
 
 
-local function read(scene_dir)
+local function read(scene_dir, opts)
+  local opts = opts or {}
   local scene_file = io.open(scene_dir .. "/scene.json", "r")
   local scene_text = scene_file:read("a")
   if not scene_text then
@@ -302,6 +315,12 @@ local function read(scene_dir)
     bsdfs = {},
     scene_dir = scene_dir,
   }
+
+  if opts.bsdfs then
+    for name, bsdf in pairs(opts.bsdfs) do
+      ctx.bsdfs[name] = bsdf
+    end
+  end
 
   for _, bsdf_json in ipairs(scene_json["bsdfs"]) do
     ctx.bsdfs[bsdf_json["name"]] = read_bsdf(ctx, bsdf_json)

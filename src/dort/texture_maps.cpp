@@ -3,7 +3,7 @@
 namespace dort {
   std::shared_ptr<TextureGeom<Vec2>> uv_texture_map() {
     return make_texture<Vec2, const DiffGeom&>([=](const DiffGeom& geom) {
-      return Vec2(geom.u, geom.v);
+      return geom.uv;
     });
   }
 

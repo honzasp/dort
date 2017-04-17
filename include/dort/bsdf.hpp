@@ -96,18 +96,23 @@ namespace dort {
   class Bsdf final {
     // TODO: use a small_vector
     std::vector<std::unique_ptr<Bxdf>> bxdfs;
-    Vector nn;
+    Vector nn_geom;
+    Vector nn_shading;
     Vector sn;
     Vector tn;
-    Normal nn_geom;
   public:
-    Bsdf(const DiffGeom& diff_geom, const Normal& nn_geom);
+    Bsdf(const DiffGeom& diff_geom);
     void add(std::unique_ptr<Bxdf> bxdf);
 
     /// Evaluates the BSDF for the pair of directions.
     /// Vector wi_light points to the light, while wo_camera points to the
     /// camera. Compontents that do not match flags are ignored. Delta
     /// components are ignored (even if the two directions match exactly).
+    ///
+    /// The returned value is expected to be used in the light scattering
+    /// equation using the geometric normal, the conversion from shading to
+    /// geometric normal is done in the Bsdf methods and should not be done by
+    /// callers.
     Spectrum eval_f(const Vector& wi_light, const Vector& wo_camera,
         BxdfFlags flags) const;
 
@@ -147,10 +152,10 @@ namespace dort {
     uint32_t num_bxdfs() const { return this->bxdfs.size(); }
 
     Vector local_to_world(const Vector& vec) const {
-      return this->sn * vec.v.x + this->tn * vec.v.y + this->nn * vec.v.z;
+      return this->sn * vec.v.x + this->tn * vec.v.y + this->nn_shading * vec.v.z;
     }
     Vector world_to_local(const Vector& vec) const {
-      return Vector(dot(this->sn, vec), dot(this->tn, vec), dot(this->nn, vec));
+      return Vector(dot(this->sn, vec), dot(this->tn, vec), dot(this->nn_shading, vec));
     }
 
     static bool same_hemisphere(const Vector& w1, const Vector& w2) {
@@ -193,5 +198,7 @@ namespace dort {
 
     template<bool FIX_IS_CAMERA>
     float f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags flags) const;
+
+    float shading_to_geom(const Vector& wi_light) const;
   };
 }

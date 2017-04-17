@@ -5,13 +5,11 @@
 #include "dort/texture.hpp"
 
 namespace dort {
-  std::unique_ptr<Bsdf> PhongMaterial::get_bsdf(
-      const DiffGeom& shading_geom, const Normal& nn_geom) const 
-  {
-    auto bsdf = std::make_unique<Bsdf>(shading_geom, nn_geom);
-    Spectrum k_diffuse = this->k_diffuse->evaluate(shading_geom);
-    Spectrum k_glossy = this->k_diffuse->evaluate(shading_geom);
-    float exponent = this->exponent->evaluate(shading_geom);
+  std::unique_ptr<Bsdf> PhongMaterial::get_bsdf(const DiffGeom& geom) const {
+    auto bsdf = std::make_unique<Bsdf>(geom);
+    Spectrum k_diffuse = this->k_diffuse->evaluate(geom);
+    Spectrum k_glossy = this->k_diffuse->evaluate(geom);
+    float exponent = this->exponent->evaluate(geom);
     if(!k_glossy.is_black()) {
       bsdf->add(std::make_unique<PhongBrdf>(k_diffuse, k_glossy, exponent));
     } else {

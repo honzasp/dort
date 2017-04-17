@@ -149,8 +149,10 @@ namespace dort {
     out_ray_epsilon = abs(1e-3f * t);
     out_diff_geom.p = b0 * p[0] + b1 * p[1] + b2 * p[2];
     out_diff_geom.nn = normalize(Normal(cross(e2, e1)));
-    out_diff_geom.u = u;
-    out_diff_geom.v = v;
+    out_diff_geom.uv = Vec2(u, v);
+    out_diff_geom.nn_shading = out_diff_geom.nn;
+    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
     return true;
   }
 }

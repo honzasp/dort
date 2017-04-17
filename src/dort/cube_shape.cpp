@@ -42,22 +42,22 @@ namespace dort {
     out_diff_geom.nn = Normal(Vec3::axis(hit_axis, hit_negative ? 1.f : -1.f));
 
     if(hit_axis == 0) {
-      out_diff_geom.u = p.v.y;
-      out_diff_geom.v = p.v.z;
+      out_diff_geom.uv = Vec2(p.v.y, p.v.z);
       out_diff_geom.dpdu = Vector(0.f, 1.f, 0.f);
       out_diff_geom.dpdv = Vector(0.f, 0.f, 1.f);
     } else if(hit_axis == 1) {
-      out_diff_geom.u = p.v.x;
-      out_diff_geom.v = p.v.z;
+      out_diff_geom.uv = Vec2(p.v.x, p.v.z);
       out_diff_geom.dpdu = Vector(1.f, 0.f, 0.f);
       out_diff_geom.dpdv = Vector(0.f, 0.f, 1.f);
     } else if(hit_axis == 2) {
-      out_diff_geom.u = p.v.x;
-      out_diff_geom.v = p.v.y;
+      out_diff_geom.uv = Vec2(p.v.x, p.v.y);
       out_diff_geom.dpdu = Vector(1.f, 0.f, 0.f);
       out_diff_geom.dpdv = Vector(0.f, 1.f, 0.f);
     }
 
+    out_diff_geom.nn_shading = out_diff_geom.nn;
+    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
     return true;
   }
 

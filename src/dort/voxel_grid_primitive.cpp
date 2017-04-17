@@ -57,14 +57,12 @@ namespace dort {
         if(entry.on_surface) {
           voxel_geom.nn.v[entry.surface_axis] = entry.surface_neg ? 1.f : -1.f;
           // TODO
-          voxel_geom.u = 0.5f;
-          voxel_geom.v = 0.5f;
+          voxel_geom.uv = Vec2(0.5f, 0.5f);
           voxel_geom.dpdu = Vector();
           voxel_geom.dpdv = Vector();
         } else {
           voxel_geom.nn = normalize(Normal(-ray.dir));
-          voxel_geom.u = 0.5f;
-          voxel_geom.v = 0.5f;
+          voxel_geom.uv = Vec2(0.5f, 0.5f);
           voxel_geom.dpdu = Vector();
           voxel_geom.dpdv = Vector();
         }
@@ -110,18 +108,15 @@ namespace dort {
     return this->voxel_to_frame.apply(box);
   }
 
-  std::unique_ptr<Bsdf> VoxelGridPrimitive::get_bsdf(const Intersection& isect) const {
+  const Material* VoxelGridPrimitive::get_material(const Intersection& isect) const {
     Voxel voxel = isect.aux_int32[0];
     uint32_t face = isect.aux_uint32[1];
     assert(voxel != VOXEL_EMPTY);
     assert(voxel > 0);
-    assert(face <= 6);
+    assert(face < 6);
 
-    if(face == 6) {
-      return std::make_unique<Bsdf>(isect.world_diff_geom, isect.frame_diff_geom.nn);
-    }
     const auto& cube_material = this->voxel_materials.cube_voxels.at(voxel);
-    return cube_material.faces.at(face)->get_bsdf(isect.frame_diff_geom);
+    return cube_material.faces.at(face).get();
   }
 
   const Light* VoxelGridPrimitive::get_area_light(const DiffGeom&) const {

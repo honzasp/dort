@@ -11,8 +11,7 @@ namespace dort {
         std::shared_ptr<Material> material):
       displac(displac), material(material)
     { }
-    virtual std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& shading_geom,
-        const Normal& nn_geom) const override final;
+    virtual std::unique_ptr<Bsdf> get_bsdf(const DiffGeom& geom) const override final;
   };
 }
 

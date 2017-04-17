@@ -44,6 +44,13 @@ namespace dort {
         int32_t(v.z * inv_check_size)) % 2 == 0;
   }
 
-  std::shared_ptr<Texture<float, float>> gain_texture(float g);
-  std::shared_ptr<Texture<float, float>> bias_texture(float b);
+  inline std::shared_ptr<Texture<float, float>> gain_texture(float g) {
+    return make_texture<float, float>([=](float x) { return gain(g, x); });
+  }
+  inline std::shared_ptr<Texture<float, float>> bias_texture(float b) {
+    return make_texture<float, float>([=](float x) { return bias(b, x); });
+  }
+  inline std::shared_ptr<Texture<float, Spectrum>> average_texture() {
+    return make_texture<float, Spectrum>([](Spectrum x) { return x.average(); });
+  }
 }

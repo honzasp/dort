@@ -19,6 +19,7 @@ namespace dort {
 
   int lua_texture_make_gain(lua_State* l);
   int lua_texture_make_bias(lua_State* l);
+  int lua_texture_make_average(lua_State* l);
 
   int lua_texture_map_make_uv(lua_State* l);
   int lua_texture_map_make_xy(lua_State* l);
@@ -44,6 +45,7 @@ namespace dort {
     Float,
     Vec2,
     Vec3,
+    Spectrum,
   };
 
   struct LuaTexture {

@@ -45,17 +45,17 @@ namespace dort {
     return this->symmetric_f_pdf(wo_camera_gen, wi_light_fix);
   }
 
-  Bsdf::Bsdf(const DiffGeom& diff_geom, const Normal& nn_geom):
-    nn(diff_geom.nn.v),
-    nn_geom(nn_geom)
+  Bsdf::Bsdf(const DiffGeom& diff_geom):
+    nn_geom(diff_geom.nn.v),
+    nn_shading(diff_geom.nn_shading.v)
   {
-    float len = length(diff_geom.dpdu);
+    float len = length(diff_geom.dpdu_shading);
     if(len < 1e-9) {
-      coordinate_system(this->nn, this->sn, this->tn);
+      coordinate_system(this->nn_shading, this->sn, this->tn);
     } else {
-      this->sn = diff_geom.dpdu / len;
-      assert(abs_dot(this->sn, this->nn) < 1e-3);
-      this->tn = cross(this->nn, this->sn);
+      this->sn = diff_geom.dpdu_shading / len;
+      assert(abs_dot(this->sn, this->nn_shading) < 1e-3);
+      this->tn = cross(this->nn_shading, this->sn);
     }
   }
 
@@ -83,15 +83,17 @@ namespace dort {
         f_sum += f;
       }
     }
-    return f_sum;
+
+    return f_sum * this->shading_to_geom(wi_light);
   }
 
   Spectrum Bsdf::sample_light_f(const Vector& wo_camera, BxdfFlags flags,
       Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
-    return this->sample_f<true>(wo_camera, flags, out_wi_light, out_dir_pdf,
+    Spectrum bsdf_f = this->sample_f<true>(wo_camera, flags, out_wi_light, out_dir_pdf,
         out_flags, sample);
+    return bsdf_f * this->shading_to_geom(out_wi_light);
   }
 
   Spectrum Bsdf::sample_camera_f(const Vector& wi_light, BxdfFlags flags,
@@ -99,7 +101,7 @@ namespace dort {
       BsdfSample sample) const
   {
     return this->sample_f<false>(wi_light, flags, out_wo_camera, out_dir_pdf,
-        out_flags, sample);
+        out_flags, sample) * this->shading_to_geom(wi_light);
   }
 
   template<bool FIX_IS_CAMERA>
@@ -210,5 +212,12 @@ namespace dort {
       }
     }
     return count;
+  }
+
+  float Bsdf::shading_to_geom(const Vector& wi_light) const {
+    float dot_shading = abs_dot(this->nn_shading, wi_light);
+    float dot_geom = abs_dot(this->nn_geom, wi_light);
+    if(dot_shading * dot_geom == 0.f) { return 0.f; }
+    return dot_shading / dot_geom;
   }
 }

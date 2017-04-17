@@ -28,10 +28,12 @@ namespace dort {
     out_ray_epsilon = t_hit * 1e-3f;
     out_diff_geom.p = p;
     out_diff_geom.nn = Normal(0.f, 0.f, 1.f);
-    out_diff_geom.u = theta * INV_TWO_PI;
-    out_diff_geom.v = dist * this->inv_radius;
+    out_diff_geom.uv = Vec2(theta * INV_TWO_PI, dist * this->inv_radius);
     out_diff_geom.dpdu = Vector(-TWO_PI * p.v.y, TWO_PI * p.v.x, 0.f);
     out_diff_geom.dpdv = Vector(p.v.x * inv_v, p.v.y * inv_v, 0.f);
+    out_diff_geom.nn_shading = out_diff_geom.nn;
+    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
     return true;
   }
 

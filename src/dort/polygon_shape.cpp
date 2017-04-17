@@ -29,10 +29,12 @@ namespace dort {
     out_ray_epsilon = 1e-3f;
     out_diff_geom.p = Point(p_hit.x, p_hit.y, 0.f);
     out_diff_geom.nn = Normal(0.f, 0.f, 1.f);
-    out_diff_geom.u = p_hit.x;
-    out_diff_geom.v = p_hit.y;
+    out_diff_geom.uv = p_hit;
     out_diff_geom.dpdu = Vector(1.f, 0.f, 0.f);
     out_diff_geom.dpdv = Vector(0.f, 1.f, 0.f);
+    out_diff_geom.nn_shading = out_diff_geom.nn;
+    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
     return true;
   }
 

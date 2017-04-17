@@ -4,40 +4,41 @@
 #include "dort/texture.hpp"
 
 namespace dort {
-  std::unique_ptr<Bsdf> BumpMaterial::get_bsdf(
-      const DiffGeom& shading_geom, const Normal& nn_geom) const
+  std::unique_ptr<Bsdf> BumpMaterial::get_bsdf(const DiffGeom& geom) const
   {
     // TODO: base the deltas on image-space distances!
     float delta_u = 0.1f;
     float delta_v = 0.1f;
 
-    float displac = this->displac->evaluate(shading_geom);
+    float displac = this->displac->evaluate(geom);
 
-    DiffGeom tmp_geom(shading_geom);
-    tmp_geom.u = shading_geom.u + delta_u;
-    tmp_geom.v = shading_geom.v;
-    tmp_geom.p = shading_geom.p + delta_u * shading_geom.dpdu;
+    DiffGeom tmp_geom(geom);
+    tmp_geom.uv = geom.uv + Vec2(delta_u, 0.f);
+    tmp_geom.p = geom.p + delta_u * geom.dpdu_shading;
     // TODO: shift the normal by delta_u * dndu!
-    tmp_geom.nn = shading_geom.nn; 
+    tmp_geom.nn = geom.nn_shading; 
     float displac_u = this->displac->evaluate(tmp_geom);
 
-    tmp_geom.u = shading_geom.u;
-    tmp_geom.v = shading_geom.v + delta_v;
-    tmp_geom.p = shading_geom.p + delta_u * shading_geom.dpdu;
+    tmp_geom.uv = geom.uv + Vec2(0.f, delta_v);
+    tmp_geom.p = geom.p + delta_u * geom.dpdu_shading;
+    tmp_geom.nn = geom.nn_shading;
     float displac_v = this->displac->evaluate(tmp_geom);
 
     float dddu = (displac_u - displac) / delta_u;
     float dddv = (displac_v - displac) / delta_v;
 
-    DiffGeom bump_geom(shading_geom);
+    DiffGeom bump_geom(geom);
     // TODO: add dndu * displac!
-    bump_geom.dpdu = shading_geom.dpdu + dddu * Vector(shading_geom.nn); 
-    bump_geom.dpdv = shading_geom.dpdv + dddv * Vector(shading_geom.nn);
-    bump_geom.nn = Normal(normalize(cross(bump_geom.dpdu, bump_geom.dpdv)));
-    if(dot(bump_geom.nn, shading_geom.nn) < 0.f) {
-      bump_geom.nn = -bump_geom.nn;
+    bump_geom.dpdu_shading = geom.dpdu_shading 
+      + dddu * Vector(geom.nn_shading); 
+    bump_geom.dpdv_shading = geom.dpdv_shading
+      + dddv * Vector(geom.nn_shading);
+    bump_geom.nn_shading = Normal(normalize(cross(
+      bump_geom.dpdu_shading, bump_geom.dpdv_shading)));
+    if(dot(bump_geom.nn_shading, bump_geom.nn) < 0.f) {
+      bump_geom.nn_shading = -bump_geom.nn_shading;
     }
 
-    return this->material->get_bsdf(bump_geom, nn_geom);
+    return this->material->get_bsdf(bump_geom);
   }
 }

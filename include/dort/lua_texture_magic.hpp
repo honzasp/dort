@@ -21,6 +21,8 @@ namespace dort {
     <Vec2>() { return LuaTextureIn::Vec2; };
   template<> constexpr LuaTextureIn lua_texture_in_v
     <Vec3>() { return LuaTextureIn::Vec3; };
+  template<> constexpr LuaTextureIn lua_texture_in_v
+    <Spectrum>() { return LuaTextureIn::Spectrum; };
 
   template<template<class Out, class In> class Fun,
     class Out, class In, class... Args>
@@ -44,6 +46,7 @@ namespace dort {
       lua_texture_handle_out_in<Fun, Spectrum, const DiffGeom&>(out_type, in_type, args...) ||
       lua_texture_handle_out_in<Fun, Vec2, const DiffGeom&>(out_type, in_type, args...) ||
       lua_texture_handle_out_in<Fun, Vec3, const DiffGeom&>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec3, const DiffGeom&>(out_type, in_type, args...) ||
 
       lua_texture_handle_out_in<Fun, float, float>(out_type, in_type, args...) ||
       lua_texture_handle_out_in<Fun, Spectrum, float>(out_type, in_type, args...) ||
@@ -59,6 +62,11 @@ namespace dort {
       lua_texture_handle_out_in<Fun, Spectrum, Vec3>(out_type, in_type, args...) ||
       lua_texture_handle_out_in<Fun, Vec2, Vec3>(out_type, in_type, args...) ||
       lua_texture_handle_out_in<Fun, Vec3, Vec3>(out_type, in_type, args...) ||
+
+      lua_texture_handle_out_in<Fun, float, Spectrum>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Spectrum, Spectrum>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec2, Spectrum>(out_type, in_type, args...) ||
+      lua_texture_handle_out_in<Fun, Vec3, Spectrum>(out_type, in_type, args...) ||
 
       false;
     assert(handled); (void)handled;
@@ -101,6 +109,7 @@ namespace dort {
       lua_texture_handle_in<Fun, const DiffGeom&>(in_type, args...) ||
       lua_texture_handle_in<Fun, Vec2>(in_type, args...) ||
       lua_texture_handle_in<Fun, Vec3>(in_type, args...);
+      lua_texture_handle_in<Fun, Spectrum>(in_type, args...);
     assert(handled); (void)handled;
   }
 

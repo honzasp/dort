@@ -48,6 +48,7 @@ namespace dort {
       {"make_value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
       {"make_gain", lua_texture_make_gain},
       {"make_bias", lua_texture_make_bias},
+      {"make_average", lua_texture_make_average},
       {"make_image", lua_texture_make_image},
       {"make_map_uv", lua_texture_map_make_uv},
       {"make_map_xy", lua_texture_map_make_xy},
@@ -104,6 +105,12 @@ namespace dort {
         lua_tex_2.out_type == LuaTextureOut::Vec3) 
     {
       lua_texture_dispatch_out_in<LuaTextureComposeLambda<Vec3>::template L>(
+          lua_tex.out_type, lua_tex.in_type,
+          lua_tex, lua_tex_1, lua_tex_2);
+    } else if(lua_tex_1.in_type == LuaTextureIn::Spectrum &&
+        lua_tex_2.out_type == LuaTextureOut::Spectrum) 
+    {
+      lua_texture_dispatch_out_in<LuaTextureComposeLambda<Spectrum>::template L>(
           lua_tex.out_type, lua_tex.in_type,
           lua_tex, lua_tex_1, lua_tex_2);
     } else {
@@ -255,9 +262,7 @@ namespace dort {
   }
 
   int lua_texture_make_image(lua_State* l) {
-    int p = 1;
-    auto image = lua_param_image_8(l, p, "image");
-    lua_params_check_unused(l, p);
+    auto image = lua_check_image_8(l, 1);
 
     LuaTexture lua_tex;
     lua_tex.in_type = LuaTextureIn::Vec2;
@@ -368,6 +373,11 @@ namespace dort {
   int lua_texture_make_bias(lua_State* l) {
     float b = luaL_checknumber(l, 1);
     lua_push_texture(l, bias_texture(b));
+    return 1;
+  }
+
+  int lua_texture_make_average(lua_State* l) {
+    lua_push_texture(l, average_texture());
     return 1;
   }
 

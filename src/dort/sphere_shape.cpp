@@ -31,13 +31,15 @@ namespace dort {
 
     out_diff_geom.p = p_hit;
     out_diff_geom.nn = Normal(x, y, z) / this->radius;
-    out_diff_geom.u = phi * INV_TWO_PI;
-    out_diff_geom.v = theta * INV_PI;
+    out_diff_geom.uv = Vec2(phi * INV_TWO_PI, theta * INV_PI);
     out_diff_geom.dpdu = Vector(-TWO_PI * y, TWO_PI * x, 0.f);
     out_diff_geom.dpdv = Vector(
         PI * z * x * inv_r_sin_theta,
         PI * z * y * inv_r_sin_theta,
         -r_sin_theta);
+    out_diff_geom.nn_shading = out_diff_geom.nn;
+    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
     out_t_hit = t_hit;
     out_ray_epsilon = 5e-3f * abs(t_hit);
     return true;

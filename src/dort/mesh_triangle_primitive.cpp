@@ -25,8 +25,8 @@ namespace dort {
     return Triangle(this->prim_mesh->mesh, this->index).bounds();
   }
 
-  std::unique_ptr<Bsdf> MeshTrianglePrimitive::get_bsdf(const Intersection& isect) const {
-    return this->prim_mesh->material->get_bsdf(isect.world_diff_geom);
+  const Material* MeshTrianglePrimitive::get_material(const Intersection&) const {
+    return this->prim_mesh->material.get();
   }
 
   const Light* MeshTrianglePrimitive::get_area_light(const DiffGeom&) const {

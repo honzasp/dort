@@ -6,6 +6,7 @@ comp/
 comp_ref/
 test/out/
 test/_bdpt_debug/
+test/_vcm_debug/
 .doxy/
 .tup/
 output.ppm

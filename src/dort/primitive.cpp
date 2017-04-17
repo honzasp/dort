@@ -5,7 +5,11 @@
 
 namespace dort {
   std::unique_ptr<Bsdf> Intersection::get_bsdf() const {
-    return this->primitive->get_bsdf(*this);
+    const Material* material = this->primitive->get_material(*this);
+    // TODO: how to decide whether to use the frame or world diff geom?
+    // there should probably be a flag in the Material instance, so that the
+    // user can choose, as both choices are reasonable
+    return material->get_bsdf(this->world_diff_geom);
   }
 
   const Light* Intersection::get_area_light() const {
@@ -44,8 +48,8 @@ namespace dort {
     return this->shape_to_frame.apply(this->shape->bounds());
   }
 
-  std::unique_ptr<Bsdf> ShapePrimitive::get_bsdf(const Intersection& isect) const {
-    return this->material->get_bsdf(isect.world_diff_geom);
+  const Material* ShapePrimitive::get_material(const Intersection&) const {
+    return this->material.get();
   }
 
   const Light* ShapePrimitive::get_area_light(const DiffGeom&) const {

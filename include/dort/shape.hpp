@@ -6,9 +6,13 @@
 namespace dort {
   struct DiffGeom {
     Point p;
+    Vec2 uv;
     Normal nn;
-    float u, v;
-    Vector dpdu, dpdv;
+    Vector dpdu;
+    Vector dpdv;
+    Normal nn_shading;
+    Vector dpdu_shading;
+    Vector dpdv_shading;
   };
 
   class Shape {

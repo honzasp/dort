@@ -25,12 +25,17 @@ namespace dort {
       phi = phi + TWO_PI;
     }
 
+    float u = phi * INV_TWO_PI;
+    float v = (z - this->z_min) / (this->z_max - this->z_min);
+
     out_diff_geom.p = p_hit;
+    out_diff_geom.uv = Vec2(u, v);
     out_diff_geom.nn = Normal(x, y, 0.f) / this->radius;
-    out_diff_geom.u = phi * INV_TWO_PI;
-    out_diff_geom.v = (z - this->z_min) / (this->z_max - this->z_min);
     out_diff_geom.dpdu = Vector(-TWO_PI * y, TWO_PI * x, 0.f);
     out_diff_geom.dpdv = Vector(0.f, 0.f, this->z_max - this->z_min);
+    out_diff_geom.nn_shading = out_diff_geom.nn;
+    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
     out_t_hit = t_hit;
     out_ray_epsilon = 5e-3f * abs(t_hit);
     return true;
