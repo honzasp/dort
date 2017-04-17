@@ -91,6 +91,12 @@ namespace dort {
       this->uv[1] = Vec2(1.f, 0.f);
       this->uv[2] = Vec2(0.f, 1.f);
     }
+
+    if((this->has_shading_normals = !mesh.normals.empty())) {
+      this->n[0] = mesh.normals.at(mesh.vertices.at(index));
+      this->n[1] = mesh.normals.at(mesh.vertices.at(index + 1));
+      this->n[2] = mesh.normals.at(mesh.vertices.at(index + 2));
+    }
   }
 
   bool TriangleUv::hit(const Ray& ray, float& out_t_hit,
@@ -150,9 +156,19 @@ namespace dort {
     out_diff_geom.p = b0 * p[0] + b1 * p[1] + b2 * p[2];
     out_diff_geom.nn = normalize(Normal(cross(e2, e1)));
     out_diff_geom.uv = Vec2(u, v);
-    out_diff_geom.nn_shading = out_diff_geom.nn;
-    out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
-    out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
+
+    if(this->has_shading_normals) {
+      Normal nn_shading = normalize(b0*this->n[0] + b1*this->n[1] + b2*this->n[2]);
+      Vector dpdv_shading = cross(out_diff_geom.dpdu, Vector(nn_shading));
+      Vector dpdu_shading = cross(dpdv_shading, Vector(nn_shading));
+      out_diff_geom.nn_shading = nn_shading;
+      out_diff_geom.dpdv_shading = dpdv_shading;
+      out_diff_geom.dpdu_shading = dpdu_shading;
+    } else {
+      out_diff_geom.nn_shading = out_diff_geom.nn;
+      out_diff_geom.dpdu_shading = out_diff_geom.dpdu;
+      out_diff_geom.dpdv_shading = out_diff_geom.dpdv;
+    }
     return true;
   }
 }

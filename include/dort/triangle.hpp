@@ -17,6 +17,8 @@ namespace dort {
 
   struct TriangleUv: public Triangle {
     std::array<Vec2, 3> uv;
+    std::array<Normal, 3> n;
+    bool has_shading_normals;
 
     TriangleUv(const Mesh& mesh, uint32_t index);
     bool hit(const Ray& ray, float& out_t_hit,

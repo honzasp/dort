@@ -174,10 +174,16 @@ local primitive_types = {
     local vertex_count = string.unpack("I8", wo3_file:read(8))
     local points = {}
     local uvs = {}
+    local normals = nil
+    if json["smooth"] then normals = {} end
+
     for i = 1, vertex_count do
       local x, y, z, nx, ny, nz, u, v = string.unpack("fff fff ff", wo3_file:read(32))
       points[i] = dort.geometry.point(x, y, z)
       uvs[i] = dort.geometry.vec2(u, v)
+      if json["smooth"] then
+        normals[i] = dort.geometry.normal(nx, ny, nz)
+      end
     end
 
     local triangle_count = string.unpack("I8", wo3_file:read(8))
@@ -193,10 +199,15 @@ local primitive_types = {
 
     wo3_file:close()
 
+    if json["recompute_normals"] then
+      error("mesh recompute_normals not yet implemented")
+    end
+    
     local mesh = dort.shape.make_mesh {
       transform = dort.builder.get_transform(ctx.b),
       points = points,
       uvs = uvs,
+      normals = normals,
       vertices = vertices,
     }
 

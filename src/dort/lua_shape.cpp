@@ -118,27 +118,37 @@ namespace dort {
 
     std::vector<Point> points;
     std::vector<Vec2> uvs; 
+    std::vector<Normal> normals;
     {
       lua_getfield(l, p, "points");
       uint32_t point_count = lua_rawlen(l, -1);
       bool has_uvs = lua_getfield(l, p, "uvs") != LUA_TNIL;
+      bool has_normals = lua_getfield(l, p, "normals") != LUA_TNIL;
       for(uint32_t i = 1; i <= point_count; ++i) {
-        lua_rawgeti(l, -2, i);
+        lua_rawgeti(l, -3, i);
         points.push_back(transform.apply(lua_check_point(l, -1)));
         lua_pop(l, 1);
 
         if(has_uvs) {
-          lua_rawgeti(l, -1, i);
+          lua_rawgeti(l, -2, i);
           uvs.push_back(lua_check_vec2(l, -1));
           lua_pop(l, 1);
         }
+
+        if(has_normals) {
+          lua_rawgeti(l, -1, i);
+          normals.push_back(lua_check_normal(l, -1));
+          lua_pop(l, 1);
+        }
       }
-      lua_pop(l, 2);
+      lua_pop(l, 3);
 
       lua_pushnil(l);
       lua_setfield(l, p, "points");
       lua_pushnil(l);
       lua_setfield(l, p, "uvs");
+      lua_pushnil(l);
+      lua_setfield(l, p, "normals");
     }
 
     std::vector<uint32_t> vertices; {
@@ -159,6 +169,7 @@ namespace dort {
     auto mesh = std::make_shared<Mesh>();
     mesh->points = std::move(points);
     mesh->uvs = std::move(uvs);
+    mesh->normals = std::move(normals);
     mesh->vertices = std::move(vertices);
     lua_push_mesh(l, mesh);
     return 1;

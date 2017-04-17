@@ -57,6 +57,9 @@ namespace dort {
   inline Vector operator-(const Point& pt1, const Point& pt2) {
     return Vector(pt1.v - pt2.v);
   }
+  inline Normal operator-(const Normal& n1, const Normal& n2) {
+    return Normal(n1.v - n2.v);
+  }
   inline Vector operator-(const Vector& vec) {
     return Vector(-vec.v);
   }

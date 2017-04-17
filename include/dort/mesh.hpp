@@ -6,6 +6,7 @@ namespace dort {
   struct Mesh final {
     std::vector<Point> points;
     std::vector<Vec2> uvs;
+    std::vector<Normal> normals;
     std::vector<uint32_t> vertices;
   };
 

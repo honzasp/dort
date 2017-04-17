@@ -5,6 +5,7 @@
 namespace dort {
   constexpr const char VECTOR_TNAME[] = "dort.Vector";
   constexpr const char POINT_TNAME[] = "dort.Point";
+  constexpr const char NORMAL_TNAME[] = "dort.Normal";
   constexpr const char TRANSFORM_TNAME[] = "dort.Transform";
   constexpr const char VEC3I_TNAME[] = "dort.Vec3i";
   constexpr const char VEC2I_TNAME[] = "dort.Vec2i";
@@ -32,6 +33,12 @@ namespace dort {
   int lua_point_get_y(lua_State* l);
   int lua_point_get_z(lua_State* l);
   int lua_point_tostring(lua_State* l);
+
+  int lua_normal_make(lua_State* l);
+  int lua_normal_get_x(lua_State* l);
+  int lua_normal_get_y(lua_State* l);
+  int lua_normal_get_z(lua_State* l);
+  int lua_normal_tostring(lua_State* l);
 
   int lua_transform_identity(lua_State* l);
   int lua_transform_translate(lua_State* l);
@@ -83,6 +90,10 @@ namespace dort {
   const Point& lua_check_point(lua_State* l, int idx);
   bool lua_test_point(lua_State* l, int idx);
   void lua_push_point(lua_State* l, const Point& pt);
+
+  const Normal& lua_check_normal(lua_State* l, int idx);
+  bool lua_test_normal(lua_State* l, int idx);
+  void lua_push_normal(lua_State* l, const Normal& n);
 
   const Transform& lua_check_transform(lua_State* l, int idx);
   bool lua_test_transform(lua_State* l, int idx);
