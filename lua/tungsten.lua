@@ -103,28 +103,23 @@ end
 
 local bsdf_types = {
   lambert = function(ctx, json)
-    return dort.material.make_matte {
-      color = read_texture(json["albedo"], "geom", "spectrum"),
-      sigma = 0,
+    return dort.material.make_lambert {
+      albedo = read_texture(json["albedo"], "geom", "spectrum"),
     }
   end,
   dielectric = function(ctx, json)
     if json["enable_refraction"] then
-      return dort.material.make_glass {
-        color = read_texture(json["albedo"], "geom", "spectrum"),
-        eta = read_texture(json["ior"], "geom", "float"),
-      }
+      error("glass not implemented")
     else
       return dort.material.make_mirror {
-        color = read_texture(json["albedo"], "geom", "spectrum"),
+        albedo = read_texture(json["albedo"], "geom", "spectrum"),
       }
     end
   end,
   rough_conductor = function(ctx, json)
     -- TODO
-    return dort.material.make_matte {
-      color = read_texture(json["albedo"], "geom", "spectrum"),
-      sigma = 0,
+    return dort.material.make_lambert {
+      albedo = read_texture(json["albedo"], "geom", "spectrum"),
     }
   end,
   smooth_coat = function(ctx, json)
@@ -133,7 +128,7 @@ local bsdf_types = {
   end,
   null = function(ctx, json)
     -- TODO
-    return dort.material.make_matte { color = dort.spectrum.rgb(0) }
+    return dort.material.make_lambert { albedo = dort.spectrum.rgb(0) }
   end,
 }
 

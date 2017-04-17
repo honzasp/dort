@@ -130,9 +130,8 @@ function dsl.beam_light(params)
 end
 dsl.infinite_light = dort.light.make_infinite
 
-dsl.matte_material = dort.material.make_matte
+dsl.lambert_material = dort.material.make_lambert
 dsl.mirror_material = dort.material.make_mirror
-dsl.glass_material = dort.material.make_glass
 dsl.phong_material = dort.material.make_phong
 dsl.bump_material = dort.material.make_bump
 

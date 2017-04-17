@@ -20,6 +20,9 @@ namespace dort {
     float average() const {
       return (1.f / 3.f) * (this->rgb.x + this->rgb.y + this->rgb.z); 
     }
+    float max() const {
+      return dort::max(this->rgb.x, dort::max(this->rgb.y, this->rgb.z));
+    }
     bool is_black() const { return this->rgb == Vec3(0.f, 0.f, 0.f); }
   };
 
