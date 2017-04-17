@@ -115,18 +115,32 @@ namespace dort {
   int lua_shape_make_mesh(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
-    std::vector<Point> points; {
+
+    std::vector<Point> points;
+    std::vector<Vec2> uvs; 
+    {
       lua_getfield(l, p, "points");
       uint32_t point_count = lua_rawlen(l, -1);
+      bool has_uvs = lua_getfield(l, p, "uvs") != LUA_TNIL;
       for(uint32_t i = 1; i <= point_count; ++i) {
-        lua_rawgeti(l, -1, i);
+        lua_rawgeti(l, -2, i);
         points.push_back(transform.apply(lua_check_point(l, -1)));
         lua_pop(l, 1);
+
+        if(has_uvs) {
+          lua_rawgeti(l, -1, i);
+          uvs.push_back(lua_check_vec2(l, -1));
+          lua_pop(l, 1);
+        }
       }
+      lua_pop(l, 2);
+
       lua_pushnil(l);
       lua_setfield(l, p, "points");
-      lua_pop(l, 1);
+      lua_pushnil(l);
+      lua_setfield(l, p, "uvs");
     }
+
     std::vector<uint32_t> vertices; {
       lua_getfield(l, p, "vertices");
       uint32_t vertex_count = lua_rawlen(l, -1);
@@ -139,10 +153,12 @@ namespace dort {
       lua_setfield(l, p, "vertices");
       lua_pop(l, 1);
     }
+
     lua_params_check_unused(l, p);
 
     auto mesh = std::make_shared<Mesh>();
     mesh->points = std::move(points);
+    mesh->uvs = std::move(uvs);
     mesh->vertices = std::move(vertices);
     lua_push_mesh(l, mesh);
     return 1;

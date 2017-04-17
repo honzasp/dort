@@ -82,9 +82,15 @@ namespace dort {
   TriangleUv::TriangleUv(const Mesh& mesh, uint32_t index):
     Triangle(mesh, index)
   {
-    this->uv[0] = Vec2(0.f, 0.f);
-    this->uv[1] = Vec2(1.f, 0.f);
-    this->uv[2] = Vec2(0.f, 1.f);
+    if(!mesh.uvs.empty()) {
+      this->uv[0] = mesh.uvs.at(mesh.vertices.at(index));
+      this->uv[1] = mesh.uvs.at(mesh.vertices.at(index + 1));
+      this->uv[2] = mesh.uvs.at(mesh.vertices.at(index + 2));
+    } else {
+      this->uv[0] = Vec2(0.f, 0.f);
+      this->uv[1] = Vec2(1.f, 0.f);
+      this->uv[2] = Vec2(0.f, 1.f);
+    }
   }
 
   bool TriangleUv::hit(const Ray& ray, float& out_t_hit,

@@ -37,7 +37,11 @@ local function read_transform(json)
     translate = dort.geometry.translate(read_vector(json["position"]))
   end
   if json["scale"] then
-    scale = dort.geometry.scale(json["scale"][1], json["scale"][2], json["scale"][3])
+    if type(json["scale"]) == "number" then
+      scale = dort.geometry.scale(json["scale"])
+    else
+      scale = dort.geometry.scale(json["scale"][1], json["scale"][2], json["scale"][3])
+    end
   end
   if json["rotation"] then
     rotate = 
@@ -47,48 +51,100 @@ local function read_transform(json)
   end
 
   return translate * look_at * scale * rotate
-  --return rotate * scale * look_at * translate
 end
 
-local function read_texture_spectrum(json)
-  return dort.texture.make_const_geom(read_spectrum(json))
-end
+local read_texture
+local texture_types = {
+  checker = function(json, input, output)
+    if input ~= "geom" then
+      error("Unimplemented checker input type")
+    end
 
-local function read_texture_float(json)
-  return dort.texture.make_const_geom(json)
+    local map = dort.texture.make_map_uv()
+    local checker = dort.texture.make_checkerboard_2d {
+      even = read_texture(json["on_color"], "2d", output),
+      odd = read_texture(json["off_color"], "2d", output),
+      check_size = 1/json["res_u"],
+    }
+    return checker .. map
+  end,
+}
+
+function read_texture(json, input, output)
+  if type(json) == "table" and json["type"] then
+    if not texture_types[json["type"]] then
+      error("Unknown texture type: " .. json["type"])
+    end
+    return texture_types[json["type"]](json, input, output)
+  end
+
+  local const_value
+  if output == "spectrum" then
+    const_value = read_spectrum(json)
+  elseif output == "float" then
+    const_value = json
+  else
+    error(output)
+  end
+
+  if input == "geom" then
+    return dort.texture.make_const_geom(const_value)
+  elseif input == "1d" then
+    return dort.texture.make_const_1d(const_value)
+  elseif input == "2d" then
+    return dort.texture.make_const_2d(const_value)
+  elseif input == "3d" then
+    return dort.texture.make_const_3d(const_value)
+  else
+    error(input)
+  end
 end
 
 
 local bsdf_types = {
-  lambert = function(json)
+  lambert = function(ctx, json)
     return dort.material.make_matte {
-      color = read_texture_spectrum(json["albedo"]),
+      color = read_texture(json["albedo"], "geom", "spectrum"),
       sigma = 0,
     }
   end,
-  dielectric = function(json)
+  dielectric = function(ctx, json)
     if json["enable_refraction"] then
       return dort.material.make_glass {
-        color = read_texture_spectrum(json["albedo"]),
-        eta = read_texture_float(json["ior"]),
+        color = read_texture(json["albedo"], "geom", "spectrum"),
+        eta = read_texture(json["ior"], "geom", "float"),
       }
     else
-      error "dielectric bsdf without refraction?"
+      return dort.material.make_mirror {
+        color = read_texture(json["albedo"], "geom", "spectrum"),
+      }
     end
   end,
-  rough_conductor = function(json)
+  rough_conductor = function(ctx, json)
+    -- TODO
     return dort.material.make_matte {
-      color = read_texture_spectrum(json["albedo"]),
+      color = read_texture(json["albedo"], "geom", "spectrum"),
       sigma = 0,
     }
+  end,
+  smooth_coat = function(ctx, json)
+    -- TODO
+    return ctx.bsdfs[json["substrate"]]
+  end,
+  null = function(ctx, json)
+    -- TODO
+    return dort.material.make_matte { color = dort.spectrum.rgb(0) }
   end,
 }
 
-local function read_bsdf(json)
+local function read_bsdf(ctx, json)
+  if type(json) == "string" then
+    return ctx.bsdfs[json]
+  end
   if not bsdf_types[json["type"]] then
     error("unknown bsdf type: " .. json["type"])
   end
-  return bsdf_types[json["type"]](json)
+  return bsdf_types[json["type"]](ctx, json)
 end
 
 
@@ -105,9 +161,11 @@ local primitive_types = {
 
     local vertex_count = string.unpack("I8", wo3_file:read(8))
     local points = {}
+    local uvs = {}
     for i = 1, vertex_count do
       local x, y, z, nx, ny, nz, u, v = string.unpack("fff fff ff", wo3_file:read(32))
       points[i] = dort.geometry.point(x, y, z)
+      uvs[i] = dort.geometry.vec2(u, v)
     end
 
     local triangle_count = string.unpack("I8", wo3_file:read(8))
@@ -126,6 +184,7 @@ local primitive_types = {
     local mesh = dort.shape.make_mesh {
       transform = dort.builder.get_transform(ctx.b),
       points = points,
+      uvs = uvs,
       vertices = vertices,
     }
 
@@ -141,6 +200,12 @@ local primitive_types = {
         dort.geometry.point( 0.5, 0, -0.5),
         dort.geometry.point( 0.5, 0,  0.5),
         dort.geometry.point(-0.5, 0,  0.5),
+      },
+      uvs = {
+        dort.geometry.vec2(0, 0),
+        dort.geometry.vec2(1, 0),
+        dort.geometry.vec2(1, 1),
+        dort.geometry.vec2(0, 1),
       },
       vertices = {
         0, 1, 2,
@@ -170,6 +235,20 @@ local primitive_types = {
       })
     end
   end,
+  infinite_sphere = function(ctx, json)
+    if not json["emission"] then
+      error("primitive inifinite_sphere without emission")
+    end
+    local image_path = ctx.scene_dir .. "/" .. json["emission"]
+    local image = dort.image.read(image_path, { hdr = true })
+    dort.builder.add_light(ctx.b, dort.light.make_environment {
+      image = image,
+      up = dort.geometry.vector(0, 1, 0),
+      forward = dort.geometry.vector(0, 0, 1),
+      scale = dort.spectrum.rgb(1),
+      transform = dort.builder.get_transform(ctx.b),
+    })
+  end,
 }
 
 local function read_primitive(ctx, json)
@@ -177,12 +256,8 @@ local function read_primitive(ctx, json)
     error("unknown primitive type: " .. json["type"])
   end
 
-  if not ctx.bsdfs[json["bsdf"]] then
-    error("undefined bsdf: " .. json["bsdf"])
-  end
-
   dort.builder.push_state(ctx.b)
-  dort.builder.set_material(ctx.b, ctx.bsdfs[json["bsdf"]])
+  dort.builder.set_material(ctx.b, read_bsdf(ctx, json["bsdf"]))
   dort.builder.set_transform(ctx.b, read_transform(json["transform"]))
   primitive_types[json["type"]](ctx, json)
   dort.builder.pop_state(ctx.b)
@@ -221,17 +296,17 @@ local function read(scene_dir)
     error("Could not decode scene JSON: " .. err)
   end
 
-  local bsdfs = {}
-  for _, bsdf_json in ipairs(scene_json["bsdfs"]) do
-    bsdfs[bsdf_json["name"]] = read_bsdf(bsdf_json)
-  end
-
   local b = dort.builder.make()
   local ctx = {
     b = b,
-    bsdfs = bsdfs,
+    bsdfs = {},
     scene_dir = scene_dir,
   }
+
+  for _, bsdf_json in ipairs(scene_json["bsdfs"]) do
+    ctx.bsdfs[bsdf_json["name"]] = read_bsdf(ctx, bsdf_json)
+  end
+
   for _, prim_json in ipairs(scene_json["primitives"]) do
     read_primitive(ctx, prim_json)
   end
