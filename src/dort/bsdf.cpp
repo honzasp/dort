@@ -68,16 +68,12 @@ namespace dort {
   {
     Vector wi_local = this->world_to_local(wi_light);
     Vector wo_local = this->world_to_local(wo_camera);
-
-    if(Bsdf::same_hemisphere(wo_local, wi_local)) {
-      flags = flags & ~BSDF_TRANSMISSION;
-    } else {
-      flags = flags & ~BSDF_REFLECTION;
-    }
+    bool reflection = Bsdf::same_hemisphere(wo_local, wi_local);
 
     Spectrum f_sum;
     for(const auto& bxdf: this->bxdfs) {
-      if(bxdf->matches(flags)) {
+      if(!bxdf->matches(flags)) { continue; }
+      if(bxdf->flags & (reflection ? BSDF_REFLECTION : BSDF_TRANSMISSION)) {
         Spectrum f = bxdf->eval_f(wi_local, wo_local);
         assert(is_finite(f) && is_nonnegative(f));
         f_sum += f;
@@ -91,8 +87,8 @@ namespace dort {
       Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
-    Spectrum bsdf_f = this->sample_f<true>(wo_camera, flags, out_wi_light, out_dir_pdf,
-        out_flags, sample);
+    Spectrum bsdf_f = this->sample_f<true>(wo_camera, flags, out_wi_light,
+        out_dir_pdf, out_flags, sample);
     return bsdf_f * this->shading_to_geom(out_wi_light);
   }
 
@@ -100,8 +96,9 @@ namespace dort {
       Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
-    return this->sample_f<false>(wi_light, flags, out_wo_camera, out_dir_pdf,
-        out_flags, sample) * this->shading_to_geom(wi_light);
+    Spectrum bsdf_f = this->sample_f<false>(wi_light, flags, out_wo_camera,
+        out_dir_pdf, out_flags, sample);
+    return bsdf_f * this->shading_to_geom(wi_light);
   }
 
   template<bool FIX_IS_CAMERA>
@@ -132,8 +129,10 @@ namespace dort {
           sampled_dir_pdf, sample.uv_pos)
       : sampled_bxdf->sample_camera_f(w_fix_local, w_gen_local,
           sampled_dir_pdf, sample.uv_pos);
+    assert(is_finite(sampled_f) && is_nonnegative(sampled_f));
 
     if(sampled_dir_pdf == 0.f) { return Spectrum(0.f); }
+    assert(is_finite(sampled_dir_pdf) && sampled_dir_pdf >= 0.f);
     out_flags = sampled_bxdf->flags;
     out_w_gen = this->local_to_world(w_gen_local);
 

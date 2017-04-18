@@ -14,11 +14,13 @@ local scene = tungsten.read("data/material-testball", {
     },
     --]]
     Material = dort.material.make_mirror { albedo = dort.spectrum.rgb(1) },
+    --Material = dort.material.make_dielectric { },
   }
 })
 
 write_rgbe_image("comp/tungsten/testball.hdr", render(scene, {
   x_res = 600, y_res = 338, hdr = true,
   renderer = "pt",
-  iterations = 2,
+  iterations = 10,
+  min_depth = 1, max_depth = 1,
 }))

@@ -18,7 +18,8 @@ namespace dort {
     {
       out_w_gen = Vector(-w_fix.v.x, -w_fix.v.y, w_fix.v.z);
       out_dir_pdf = 1.f;
-      return this->albedo;
+      if(w_fix.v.z == 0.f) { return Spectrum(0.f); }
+      return this->albedo / abs(w_fix.v.z);
     }
 
     virtual float symmetric_f_pdf(const Vector&, const Vector&) const override final {

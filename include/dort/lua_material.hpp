@@ -9,6 +9,7 @@ namespace dort {
 
   int lua_material_make_lambert(lua_State* l);
   int lua_material_make_mirror(lua_State* l);
+  int lua_material_make_dielectric(lua_State* l);
   int lua_material_make_phong(lua_State* l);
   int lua_material_make_bump(lua_State* l);
 

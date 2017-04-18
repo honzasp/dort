@@ -1,5 +1,6 @@
 #include "dort/basic_textures.hpp"
 #include "dort/bump_material.hpp"
+#include "dort/dielectric_material.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_material.hpp"
 #include "dort/lua_params.hpp"
@@ -19,6 +20,7 @@ namespace dort {
     const luaL_Reg material_funs[] = {
       {"make_lambert", lua_material_make_lambert},
       {"make_mirror", lua_material_make_mirror},
+      {"make_dielectric", lua_material_make_dielectric},
       {"make_phong", lua_material_make_phong},
       {"make_bump", lua_material_make_bump},
       {0, 0},
@@ -45,6 +47,23 @@ namespace dort {
     lua_params_check_unused(l, p);
 
     lua_push_material(l, std::make_shared<MirrorMaterial>(albedo));
+    return 1;
+  }
+
+  int lua_material_make_dielectric(lua_State* l) {
+    int p = 1;
+    auto reflect = lua_param_texture_opt(l, p, "reflect_tint",
+        const_texture(Spectrum(1.f))).check<Spectrum>(l);
+    auto transmit = lua_param_texture_opt(l, p, "transmit_tint",
+        const_texture(Spectrum(1.f))).check<Spectrum>(l);
+    auto ior_inside = lua_param_texture_opt(l, p, "ior_inside",
+        const_texture(1.3f)).check<float>(l);
+    auto ior_outside = lua_param_texture_opt(l, p, "ior_outside",
+        const_texture(1.3f)).check<float>(l);
+    lua_params_check_unused(l, p);
+
+    lua_push_material(l, std::make_shared<DielectricMaterial>(
+          reflect, transmit, ior_inside, ior_outside));
     return 1;
   }
 

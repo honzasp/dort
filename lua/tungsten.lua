@@ -262,7 +262,7 @@ local primitive_types = {
     dort.builder.add_light(ctx.b, dort.light.make_environment {
       image = image,
       up = dort.geometry.vector(0, 1, 0),
-      forward = dort.geometry.vector(0, 0, 1),
+      forward = dort.geometry.vector(1, 0, 0),
       scale = dort.spectrum.rgb(1),
       transform = dort.builder.get_transform(ctx.b),
     })
