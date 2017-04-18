@@ -60,10 +60,11 @@ namespace dort {
         const_texture(1.3f)).check<float>(l);
     auto ior_outside = lua_param_texture_opt(l, p, "ior_outside",
         const_texture(1.3f)).check<float>(l);
+    bool is_thin = lua_param_bool_opt(l, p, "is_thin", false);
     lua_params_check_unused(l, p);
 
     lua_push_material(l, std::make_shared<DielectricMaterial>(
-          reflect, transmit, ior_inside, ior_outside));
+          reflect, transmit, ior_inside, ior_outside, is_thin));
     return 1;
   }
 

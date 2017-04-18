@@ -8,12 +8,13 @@ namespace dort {
     Spectrum transmit_tint;
     float ior_inside;
     float ior_outside;
+    bool is_thin;
   public:
     DielectricBxdf(const Spectrum& reflect_tint, const Spectrum& transmit_tint,
-        float ior_inside, float ior_outside):
+        float ior_inside, float ior_outside, bool is_thin):
       Bxdf(BSDF_DELTA | BSDF_REFLECTION | BSDF_TRANSMISSION),
       reflect_tint(reflect_tint), transmit_tint(transmit_tint),
-      ior_inside(ior_inside), ior_outside(ior_outside)
+      ior_inside(ior_inside), ior_outside(ior_outside), is_thin(is_thin)
     { }
 
     virtual Spectrum eval_f(const Vector&, const Vector&) const override final;
@@ -27,9 +28,6 @@ namespace dort {
     Spectrum sample_f(const Vector& w_fix, Vector& out_w_gen,
         float& out_dir_pdf, float u, bool fix_is_light) const;
     void get_iors(const Vector& w, float& out_ior_refl, float& out_ior_trans) const;
-    Vector transmit_w(const Vector& w, float ior_refl, float ior_trans) const;
-    Vector reflect_w(const Vector& w) const;
-    float fresnel(float cos_refl, float ior_refl, float ior_trans) const;
   };
 
   class DielectricMaterial final: public Material {
@@ -37,14 +35,16 @@ namespace dort {
     std::shared_ptr<TextureGeom<Spectrum>> transmit_tint;
     std::shared_ptr<TextureGeom<float>> ior_inside;
     std::shared_ptr<TextureGeom<float>> ior_outside;
+    bool is_thin;
   public:
     DielectricMaterial(
         std::shared_ptr<TextureGeom<Spectrum>> reflect_tint,
         std::shared_ptr<TextureGeom<Spectrum>> transmit_tint,
         std::shared_ptr<TextureGeom<float>> ior_inside,
-        std::shared_ptr<TextureGeom<float>> ior_outside):
+        std::shared_ptr<TextureGeom<float>> ior_outside,
+        bool is_thin):
       reflect_tint(reflect_tint), transmit_tint(transmit_tint),
-      ior_inside(ior_inside), ior_outside(ior_outside)
+      ior_inside(ior_inside), ior_outside(ior_outside), is_thin(is_thin)
     { }
 
     virtual void add_bxdfs(const DiffGeom& geom,
