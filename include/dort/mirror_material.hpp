@@ -1,4 +1,5 @@
 #pragma once
+#include "dort/bsdf.hpp"
 #include "dort/material.hpp"
 
 namespace dort {
@@ -9,22 +10,10 @@ namespace dort {
       SymmetricBxdf(BSDF_DELTA | BSDF_REFLECTION),
       albedo(albedo) { }
 
-    virtual Spectrum eval_f(const Vector&, const Vector&) const override final {
-      return Spectrum(0.f);
-    }
-
+    virtual Spectrum eval_f(const Vector&, const Vector&) const override final;
     virtual Spectrum sample_symmetric_f(const Vector& w_fix,
-        Vector& out_w_gen, float& out_dir_pdf, Vec2) const override final
-    {
-      out_w_gen = Vector(-w_fix.v.x, -w_fix.v.y, w_fix.v.z);
-      out_dir_pdf = 1.f;
-      if(w_fix.v.z == 0.f) { return Spectrum(0.f); }
-      return this->albedo / abs(w_fix.v.z);
-    }
-
-    virtual float symmetric_f_pdf(const Vector&, const Vector&) const override final {
-      return 0.f;
-    }
+        Vector& out_w_gen, float& out_dir_pdf, Vec2) const override final;
+    virtual float symmetric_f_pdf(const Vector&, const Vector&) const override final;
   };
 
   class MirrorMaterial final: public Material {
@@ -32,14 +21,7 @@ namespace dort {
   public:
     MirrorMaterial(std::shared_ptr<TextureGeom<Spectrum>> albedo):
       albedo(albedo) { }
-
     virtual void add_bxdfs(const DiffGeom& geom,
-        Spectrum scale, Bsdf& bsdf) const override final
-    {
-      Spectrum albedo = this->albedo->evaluate(geom);
-      if(!albedo.is_black()) {
-        bsdf.add(std::make_unique<MirrorBrdf>(albedo * scale));
-      }
-    }
+        Spectrum scale, Bsdf& bsdf) const override final;
   };
 }

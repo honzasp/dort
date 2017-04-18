@@ -1,5 +1,5 @@
 #pragma once
-#include "dort/dort.hpp"
+#include "dort/bsdf.hpp"
 
 namespace dort {
   class Material {

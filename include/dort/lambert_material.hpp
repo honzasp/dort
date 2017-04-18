@@ -13,25 +13,11 @@ namespace dort {
       albedo(albedo)
     { }
 
-    virtual Spectrum eval_f(const Vector&, const Vector&) const override final {
-      return this->albedo * INV_PI;
-    }
-
+    virtual Spectrum eval_f(const Vector&, const Vector&) const override final;
     virtual Spectrum sample_symmetric_f(const Vector& w_fix,
-        Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const override final
-    {
-      out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
-      out_dir_pdf = cosine_hemisphere_pdf(out_w_gen.v.z);
-      out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
-      return this->albedo * INV_PI;
-    }
-
+        Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const override final;
     virtual float symmetric_f_pdf(const Vector& w_gen,
-        const Vector& w_fix) const override final
-    {
-      if(!Bsdf::same_hemisphere(w_gen, w_fix)) { return 0.f; }
-      return cosine_hemisphere_pdf(w_gen.v.z);
-    }
+        const Vector& w_fix) const override final;
   };
 
   class LambertMaterial final: public Material {
@@ -39,14 +25,7 @@ namespace dort {
   public:
     LambertMaterial(std::shared_ptr<TextureGeom<Spectrum>> albedo):
       albedo(albedo) { }
-
     virtual void add_bxdfs(const DiffGeom& geom,
-        Spectrum scale, Bsdf& bsdf) const override final
-    {
-      Spectrum albedo = this->albedo->evaluate(geom);
-      if(!albedo.is_black()) {
-        bsdf.add(std::make_unique<LambertBrdf>(albedo * scale));
-      }
-    }
+        Spectrum scale, Bsdf& bsdf) const override final;
   };
 }
