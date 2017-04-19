@@ -7,6 +7,7 @@
 #include "dort/lua_texture_magic.hpp"
 #include "dort/lambert_material.hpp"
 #include "dort/mirror_material.hpp"
+#include "dort/oren_nayar_material.hpp"
 #include "dort/phong_material.hpp"
 #include "dort/spectrum.hpp"
 
@@ -19,6 +20,7 @@ namespace dort {
 
     const luaL_Reg material_funs[] = {
       {"make_lambert", lua_material_make_lambert},
+      {"make_oren_nayar", lua_material_make_oren_nayar},
       {"make_mirror", lua_material_make_mirror},
       {"make_dielectric", lua_material_make_dielectric},
       {"make_phong", lua_material_make_phong},
@@ -37,6 +39,17 @@ namespace dort {
         const_texture<Spectrum>(Spectrum(1.f))).check<Spectrum>(l);
     lua_params_check_unused(l, p);
     lua_push_material(l, std::make_shared<LambertMaterial>(albedo));
+    return 1;
+  }
+
+  int lua_material_make_oren_nayar(lua_State* l) {
+    int p = 1;
+    auto albedo = lua_param_texture_opt(l, p, "albedo", 
+        const_texture<Spectrum>(Spectrum(1.f))).check<Spectrum>(l);
+    auto sigma = lua_param_texture_opt(l, p, "sigma",
+        const_texture<float>(0.1f)).check<float>(l);
+    lua_params_check_unused(l, p);
+    lua_push_material(l, std::make_shared<OrenNayarMaterial>(albedo, sigma));
     return 1;
   }
 
