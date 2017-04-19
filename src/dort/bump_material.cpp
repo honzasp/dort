@@ -17,7 +17,7 @@ namespace dort {
     float displac_u = this->displac->evaluate(tmp_geom);
 
     tmp_geom.uv = geom.uv + Vec2(0.f, delta_v);
-    tmp_geom.p = geom.p + delta_u * geom.dpdu_shading;
+    tmp_geom.p = geom.p + delta_v * geom.dpdv_shading;
     tmp_geom.nn = geom.nn_shading;
     float displac_v = this->displac->evaluate(tmp_geom);
 
@@ -26,12 +26,10 @@ namespace dort {
 
     DiffGeom bump_geom(geom);
     // TODO: add dndu * displac!
-    bump_geom.dpdu_shading = geom.dpdu_shading 
-      + dddu * Vector(geom.nn_shading); 
-    bump_geom.dpdv_shading = geom.dpdv_shading
-      + dddv * Vector(geom.nn_shading);
-    bump_geom.nn_shading = Normal(normalize(cross(
-      bump_geom.dpdu_shading, bump_geom.dpdv_shading)));
+    bump_geom.dpdu_shading = bump_geom.dpdu_shading + dddu * Vector(geom.nn_shading); 
+    bump_geom.dpdv_shading = bump_geom.dpdv_shading + dddv * Vector(geom.nn_shading);
+    bump_geom.nn_shading = Normal(normalize(
+        cross(bump_geom.dpdu_shading, bump_geom.dpdv_shading)));
     if(dot(bump_geom.nn_shading, bump_geom.nn) < 0.f) {
       bump_geom.nn_shading = -bump_geom.nn_shading;
     }

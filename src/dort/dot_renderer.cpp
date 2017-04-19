@@ -36,7 +36,7 @@ namespace dort {
     float isect_dot = dot(-ray.dir, isect.world_diff_geom.nn);
 
     bool emittor = !isect.eval_radiance(ray.orig).is_black();
-    bool specular = bsdf->num_bxdfs(BSDF_DELTA) > 0;
+    bool specular = bsdf->bxdf_count(BSDF_MODES | BSDF_DELTA) > 0;
     bool backside = isect_dot < 0.f;
 
     float red = backside ? 0.8f : 0.5f;

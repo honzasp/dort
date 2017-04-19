@@ -162,8 +162,8 @@ namespace dort {
       Vector dpdv_shading = cross(out_diff_geom.dpdu, Vector(nn_shading));
       Vector dpdu_shading = cross(dpdv_shading, Vector(nn_shading));
       out_diff_geom.nn_shading = nn_shading;
-      out_diff_geom.dpdv_shading = dpdv_shading;
       out_diff_geom.dpdu_shading = dpdu_shading;
+      out_diff_geom.dpdv_shading = dpdv_shading;
     } else {
       out_diff_geom.nn_shading = out_diff_geom.nn;
       out_diff_geom.dpdu_shading = out_diff_geom.dpdu;

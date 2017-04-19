@@ -7,6 +7,7 @@
 namespace dort {
   struct Intersection {
     float ray_epsilon;
+    // TODO: rename to something shorter
     DiffGeom frame_diff_geom;
     DiffGeom world_diff_geom;
     const GeometricPrimitive* primitive;

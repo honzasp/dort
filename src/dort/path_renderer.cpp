@@ -65,7 +65,7 @@ namespace dort {
       float bsdf_pdf;
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = bsdf->sample_light_f(geom.wo_camera,
-          this->only_direct ? BSDF_ALL_HEMISPHERES | BSDF_DELTA : BSDF_ALL,
+          this->only_direct ? BSDF_MODES | BSDF_DELTA : BSDF_ALL,
           bsdf_wi, bsdf_pdf, bsdf_flags, BsdfSample(sampler.rng));
 
       if(bsdf_f.is_black() || bsdf_pdf == 0.f) { break; }
@@ -88,7 +88,7 @@ namespace dort {
       const Bsdf& bsdf, Sampler& sampler, bool is_direct) const
   {
     if((!is_direct || this->direct_strategy == DirectStrategy::SAMPLE_LIGHT)) {
-      if(bsdf.num_bxdfs(BSDF_ALL & (~BSDF_DELTA)) == 0) {
+      if(bsdf.bxdf_count(BSDF_ALL & (~BSDF_DELTA)) == 0) {
         return Spectrum(0.f);
       }
     }
@@ -120,7 +120,7 @@ namespace dort {
     bool use_bsdf = this->direct_strategy != DirectStrategy::SAMPLE_LIGHT
       && !(light.flags & LIGHT_DELTA) && (light.flags & (LIGHT_AREA | LIGHT_BACKGROUND));
     bool use_light = this->direct_strategy != DirectStrategy::SAMPLE_BSDF
-      && bsdf.num_bxdfs(BSDF_ALL & (~BSDF_DELTA)) != 0;
+      && bsdf.bxdf_count(BSDF_ALL & (~BSDF_DELTA)) != 0;
 
     Spectrum bsdf_contrib = use_bsdf
       ? this->estimate_direct_from_bsdf(geom, light, bsdf, sampler, use_light)

@@ -10,10 +10,13 @@ namespace dort {
       SymmetricBxdf(BSDF_DELTA | BSDF_REFLECTION),
       albedo(albedo) { }
 
-    virtual Spectrum eval_f(const Vector&, const Vector&) const override final;
-    virtual Spectrum sample_symmetric_f(const Vector& w_fix,
-        Vector& out_w_gen, float& out_dir_pdf, Vec2) const override final;
-    virtual float symmetric_f_pdf(const Vector&, const Vector&) const override final;
+    virtual Spectrum eval_f(const Vector&, const Vector&,
+        BxdfFlags request) const override final;
+    virtual Spectrum sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
+        Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2) const override final;
+    virtual float symmetric_f_pdf(const Vector&, const Vector&,
+        BxdfFlags request) const override final;
   };
 
   class MirrorMaterial final: public Material {

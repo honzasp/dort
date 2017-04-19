@@ -110,7 +110,7 @@ namespace dort {
       }
       auto bsdf = isect.get_bsdf();
 
-      bool has_non_delta = bsdf->num_bxdfs(BSDF_DELTA) < bsdf->num_bxdfs();
+      bool has_non_delta = bsdf->bxdf_count(BSDF_ALL & (~BSDF_DELTA));
       if(has_non_delta && bounces + 3 >= this->min_length) {
         // connect the intersection to the camera
         Point camera_p;

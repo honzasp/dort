@@ -21,28 +21,30 @@ namespace dort {
     return idxs;
   }
 
-  Spectrum SymmetricBxdf::sample_light_f(const Vector& wo_camera,
-      Vector& out_wi_light, float& out_dir_pdf, Vec2 uv) const
+  Spectrum SymmetricBxdf::sample_light_f(const Vector& wo_camera, BxdfFlags request,
+      Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
   {
-    return this->sample_symmetric_f(wo_camera, out_wi_light, out_dir_pdf, uv);
+    return this->sample_symmetric_f(wo_camera, request,
+        out_wi_light, out_dir_pdf, out_flags, uv);
   }
 
-  Spectrum SymmetricBxdf::sample_camera_f(const Vector& wi_light,
-      Vector& out_wo_camera, float& out_dir_pdf, Vec2 uv) const
+  Spectrum SymmetricBxdf::sample_camera_f(const Vector& wi_light, BxdfFlags request,
+      Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
   {
-    return this->sample_symmetric_f(wi_light, out_wo_camera, out_dir_pdf, uv);
+    return this->sample_symmetric_f(wi_light, request,
+        out_wo_camera, out_dir_pdf, out_flags, uv);
   }
 
   float SymmetricBxdf::light_f_pdf(const Vector& wi_light_gen,
-      const Vector& wo_camera_fix) const
+      const Vector& wo_camera_fix, BxdfFlags request) const
   {
-    return this->symmetric_f_pdf(wi_light_gen, wo_camera_fix);
+    return this->symmetric_f_pdf(wi_light_gen, wo_camera_fix, request);
   }
 
   float SymmetricBxdf::camera_f_pdf(const Vector& wo_camera_gen,
-      const Vector& wi_light_fix) const
+      const Vector& wi_light_fix, BxdfFlags request) const
   {
-    return this->symmetric_f_pdf(wo_camera_gen, wi_light_fix);
+    return this->symmetric_f_pdf(wo_camera_gen, wi_light_fix, request);
   }
 
   Bsdf::Bsdf(const DiffGeom& diff_geom):
@@ -64,17 +66,19 @@ namespace dort {
   }
 
   Spectrum Bsdf::eval_f(const Vector& wi_light, const Vector& wo_camera,
-      BxdfFlags flags) const
+      BxdfFlags request) const
   {
     Vector wi_local = this->world_to_local(wi_light);
     Vector wo_local = this->world_to_local(wo_camera);
     bool reflection = Bsdf::same_hemisphere(wo_local, wi_local);
+    BxdfFlags eval_request = request & ((BSDF_LOBES & (~BSDF_DELTA)) |
+         (reflection ? BSDF_REFLECTION : BSDF_TRANSMISSION));
+    if(!(eval_request & BSDF_MODES)) { return Spectrum(0.f); }
 
     Spectrum f_sum;
     for(const auto& bxdf: this->bxdfs) {
-      if(!bxdf->matches(flags)) { continue; }
-      if(bxdf->flags & (reflection ? BSDF_REFLECTION : BSDF_TRANSMISSION)) {
-        Spectrum f = bxdf->eval_f(wi_local, wo_local);
+      if(bxdf->matches_request(eval_request)) {
+        Spectrum f = bxdf->eval_f(wi_local, wo_local, eval_request);
         assert(is_finite(f) && is_nonnegative(f));
         f_sum += f;
       }
@@ -83,39 +87,39 @@ namespace dort {
     return f_sum * this->shading_to_geom(wi_light);
   }
 
-  Spectrum Bsdf::sample_light_f(const Vector& wo_camera, BxdfFlags flags,
+  Spectrum Bsdf::sample_light_f(const Vector& wo_camera, BxdfFlags request,
       Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
-    Spectrum bsdf_f = this->sample_f<true>(wo_camera, flags, out_wi_light,
-        out_dir_pdf, out_flags, sample);
+    Spectrum bsdf_f = this->sample_f<true>(wo_camera, request,
+        out_wi_light, out_dir_pdf, out_flags, sample);
     return bsdf_f * this->shading_to_geom(out_wi_light);
   }
 
-  Spectrum Bsdf::sample_camera_f(const Vector& wi_light, BxdfFlags flags,
+  Spectrum Bsdf::sample_camera_f(const Vector& wi_light, BxdfFlags request,
       Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
-    Spectrum bsdf_f = this->sample_f<false>(wi_light, flags, out_wo_camera,
-        out_dir_pdf, out_flags, sample);
+    Spectrum bsdf_f = this->sample_f<false>(wi_light, request,
+        out_wo_camera, out_dir_pdf, out_flags, sample);
     return bsdf_f * this->shading_to_geom(wi_light);
   }
 
   template<bool FIX_IS_CAMERA>
-  Spectrum Bsdf::sample_f(const Vector& w_fix, BxdfFlags flags,
+  Spectrum Bsdf::sample_f(const Vector& w_fix, BxdfFlags request,
       Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
     out_dir_pdf = 0.f;
     out_flags = BxdfFlags(0);
 
-    uint32_t num_bxdfs = this->num_bxdfs(flags);
-    if(num_bxdfs == 0) { return Spectrum(0.f); }
+    uint32_t bxdf_count = this->bxdf_count(request);
+    if(bxdf_count == 0) { return Spectrum(0.f); }
 
-    uint32_t bxdf_idx = floor_int32(float(num_bxdfs) * sample.u_component);
+    uint32_t bxdf_idx = floor_int32(float(bxdf_count) * sample.u_component);
     const Bxdf* sampled_bxdf = this->bxdfs.at(0).get();
     for(const auto& bxdf: this->bxdfs) {
-      if(bxdf->matches(flags) && (bxdf_idx--) == 0) {
+      if(bxdf->matches_request(request) && (bxdf_idx--) == 0) {
         sampled_bxdf = bxdf.get();
         break;
       }
@@ -124,89 +128,96 @@ namespace dort {
     Vector w_fix_local = this->world_to_local(w_fix);
     Vector w_gen_local;
     float sampled_dir_pdf;
+    BxdfFlags sampled_flags;
     Spectrum sampled_f = FIX_IS_CAMERA
-      ? sampled_bxdf->sample_light_f(w_fix_local, w_gen_local,
-          sampled_dir_pdf, sample.uv_pos)
-      : sampled_bxdf->sample_camera_f(w_fix_local, w_gen_local,
-          sampled_dir_pdf, sample.uv_pos);
-    assert(is_finite(sampled_f) && is_nonnegative(sampled_f));
+      ? sampled_bxdf->sample_light_f(w_fix_local, request,
+          w_gen_local, sampled_dir_pdf, sampled_flags, sample.uv_pos)
+      : sampled_bxdf->sample_camera_f(w_fix_local, request,
+          w_gen_local, sampled_dir_pdf, sampled_flags, sample.uv_pos);
 
+    assert(is_finite(sampled_f) && is_nonnegative(sampled_f));
     if(sampled_dir_pdf == 0.f) { return Spectrum(0.f); }
     assert(is_finite(sampled_dir_pdf) && sampled_dir_pdf >= 0.f);
-    out_flags = sampled_bxdf->flags;
+    assert((sampled_flags & BSDF_MODES) && (sampled_flags & BSDF_LOBES));
+
+    out_flags = sampled_flags;
     out_w_gen = this->local_to_world(w_gen_local);
 
-    if(num_bxdfs == 1) {
+    if(bxdf_count == 1) {
       out_dir_pdf = sampled_dir_pdf;
       return sampled_f;
-    } else if(sampled_bxdf->flags & BSDF_DELTA) {
-      out_dir_pdf = sampled_dir_pdf / float(num_bxdfs);
+    } else if(sampled_flags & BSDF_DELTA) {
+      out_dir_pdf = sampled_dir_pdf / float(bxdf_count);
       return sampled_f;
     }
 
     bool reflection = Bsdf::same_hemisphere(w_fix_local, w_gen_local);
+    BxdfFlags eval_request = request & ((BSDF_LOBES & (~BSDF_DELTA)) |
+      (reflection ? BSDF_REFLECTION : BSDF_TRANSMISSION));
 
     float sum_dir_pdfs = sampled_dir_pdf;
     Spectrum sum_f = sampled_f;
     for(const auto& bxdf: this->bxdfs) {
-      if(bxdf.get() == sampled_bxdf || !bxdf->matches(flags)) {
+      if(bxdf.get() == sampled_bxdf || !bxdf->matches_request(request)) {
         continue;
       }
-      if(bxdf->flags & (reflection ? BSDF_REFLECTION : BSDF_TRANSMISSION)) {
+
+      if(bxdf->matches_request(eval_request)) {
         Spectrum f = bxdf->eval_f(
             FIX_IS_CAMERA ? w_gen_local : w_fix_local,
-            FIX_IS_CAMERA ? w_fix_local : w_gen_local);
+            FIX_IS_CAMERA ? w_fix_local : w_gen_local,
+            eval_request);
         assert(is_finite(f) && is_nonnegative(f));
         sum_f += f;
       }
 
       float pdf = FIX_IS_CAMERA
-        ? bxdf->light_f_pdf(w_gen_local, w_fix_local)
-        : bxdf->camera_f_pdf(w_gen_local, w_fix_local);
+        ? bxdf->light_f_pdf(w_gen_local, w_fix_local, request)
+        : bxdf->camera_f_pdf(w_gen_local, w_fix_local, request);
       assert(is_finite(pdf) && pdf >= 0.f);
       sum_dir_pdfs += pdf;
     }
 
-    out_dir_pdf = sum_dir_pdfs / float(num_bxdfs);
+    out_dir_pdf = sum_dir_pdfs / float(bxdf_count);
     return sum_f;
   }
 
   float Bsdf::light_f_pdf(const Vector& wi_light_gen, const Vector& wo_camera_fix,
-      BxdfFlags flags) const
+      BxdfFlags request) const
   {
-    return this->f_pdf<true>(wi_light_gen, wo_camera_fix, flags);
+    return this->f_pdf<true>(wi_light_gen, wo_camera_fix, request);
   }
 
   float Bsdf::camera_f_pdf(const Vector& wo_camera_gen, const Vector& wi_light_fix,
-      BxdfFlags flags) const
+      BxdfFlags request) const
   {
-    return this->f_pdf<false>(wo_camera_gen, wi_light_fix, flags);
+    return this->f_pdf<false>(wo_camera_gen, wi_light_fix, request);
   }
 
   template<bool FIX_IS_CAMERA>
-  float Bsdf::f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags flags) const {
+  float Bsdf::f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags request) const {
     Vector w_gen_local = this->world_to_local(w_gen);
     Vector w_fix_local = this->world_to_local(w_fix);
 
     float sum_dir_pdfs = 0.f;
-    uint32_t num_bxdfs = 0;
+    uint32_t bxdf_count = 0;
     for(const auto& bxdf: this->bxdfs) {
-      if(bxdf->matches(flags)) {
+      if(bxdf->matches_request(request)) {
         float dir_pdf = FIX_IS_CAMERA 
-          ? bxdf->light_f_pdf(w_gen_local, w_fix_local)
-          : bxdf->camera_f_pdf(w_gen_local, w_fix_local);
+          ? bxdf->light_f_pdf(w_gen_local, w_fix_local, request)
+          : bxdf->camera_f_pdf(w_gen_local, w_fix_local, request);
         sum_dir_pdfs += dir_pdf;
-        num_bxdfs += 1;
+        bxdf_count += 1;
       }
     }
 
-    return num_bxdfs > 0 ? (sum_dir_pdfs / float(num_bxdfs)) : 0.f;
+    return bxdf_count > 0 ? (sum_dir_pdfs / float(bxdf_count)) : 0.f;
   }
 
-  uint32_t Bsdf::num_bxdfs(BxdfFlags flags) const {
+  uint32_t Bsdf::bxdf_count(BxdfFlags request) const {
     uint32_t count = 0;
     for(const auto& bxdf: this->bxdfs) {
-      if(bxdf->matches(flags)) {
+      if(bxdf->matches_request(request)) {
         count = count + 1;
       }
     }

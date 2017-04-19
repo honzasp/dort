@@ -17,16 +17,22 @@ namespace dort {
       ior_inside(ior_inside), ior_outside(ior_outside), is_thin(is_thin)
     { }
 
-    virtual Spectrum eval_f(const Vector&, const Vector&) const override final;
-    virtual Spectrum sample_light_f(const Vector& wo_camera,
-        Vector& out_wi_light, float& out_dir_pdf, Vec2 uv) const override final;
-    virtual Spectrum sample_camera_f(const Vector& wi_light,
-        Vector& out_wo_camera, float& out_dir_pdf, Vec2 uv) const override final;
-    virtual float light_f_pdf(const Vector&, const Vector&) const override final;
-    virtual float camera_f_pdf(const Vector&, const Vector&) const override final;
+    virtual Spectrum eval_f(const Vector&, const Vector&,
+        BxdfFlags) const override final;
+    virtual Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
+        Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const override final;
+    virtual Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
+        Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const override final;
+    virtual float light_f_pdf(const Vector&, const Vector&,
+        BxdfFlags request) const override final;
+    virtual float camera_f_pdf(const Vector&, const Vector&,
+        BxdfFlags request) const override final;
   private:
-    Spectrum sample_f(const Vector& w_fix, Vector& out_w_gen,
-        float& out_dir_pdf, float u, bool fix_is_light) const;
+    Spectrum sample_f(const Vector& w_fix, BxdfFlags request,
+        Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
+        float u, bool fix_is_light) const;
     void get_iors(const Vector& w, float& out_ior_refl, float& out_ior_trans) const;
   };
 

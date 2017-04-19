@@ -22,9 +22,10 @@ namespace dort {
       ///< The BSDF scatters light by a delta distribution (the contribution of
       /// a random pair of directions is always zero).
 
-    BSDF_ALL_HEMISPHERES = BSDF_REFLECTION | BSDF_TRANSMISSION,
-    BSDF_ALL_TYPES = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_DELTA,
-    BSDF_ALL = BSDF_ALL_HEMISPHERES | BSDF_ALL_TYPES,
+    BSDF_MODES = BSDF_REFLECTION | BSDF_TRANSMISSION,
+    BSDF_LOBES = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_DELTA,
+    BSDF_ALL = BSDF_MODES | BSDF_LOBES,
+    BSDF_NONE = 0,
   };
 
   constexpr BxdfFlags operator|(BxdfFlags a, BxdfFlags b) {
@@ -38,44 +39,90 @@ namespace dort {
   }
 
 
+  /// Internal part of a BSDF.
+  /// Bxdfs implement the scattering distributions. They can contain multiple
+  /// components (for example, a single Bxdf can contain both reflection and
+  /// transmission), in which case the flags must contain the union of all the
+  /// flags.
   struct Bxdf {
+    /// The union of all components that this BxDF can sample and evaluate.
+    /// This is used to quickly skip BxDFs that cannot contribute to a sample or
+    /// evaluation, but the BxDFs must also check the requested flags and apply
+    /// only the matching components. However, the Bsdf guarantees that the Bxdf
+    /// is evaluated only if matches_request returns true for the request.
     BxdfFlags flags;
 
-    Bxdf(BxdfFlags flags): flags(flags) { }
+    Bxdf(BxdfFlags flags): flags(flags) {
+      assert(flags & BSDF_MODES);
+      assert(flags & BSDF_LOBES);
+    }
     virtual ~Bxdf() { }
 
-    bool matches(BxdfFlags test) {
-      return (this->flags & test) == this->flags;
+    /// Returns true if there is a chance that the BxDF has a nonzero
+    /// contribution for the given request. The BxDF must support at least one
+    /// of the modes (reflection or transmission) and at least one lobe
+    /// (diffuse, glossy or delta).
+    bool matches_request(BxdfFlags request) const {
+      return (this->flags & (request & BSDF_MODES)) &&
+        (this->flags & (request & BSDF_LOBES));
     }
 
-    virtual Spectrum eval_f(const Vector& wi_light, const Vector& wo_camera) const = 0;
-    virtual Spectrum sample_light_f(const Vector& wo_camera,
-        Vector& out_wi_light, float& out_dir_pdf, Vec2 uv) const = 0;
-    virtual Spectrum sample_camera_f(const Vector& wi_light,
-        Vector& out_wo_camera, float& out_dir_pdf, Vec2 uv) const = 0;
+    /// Evaluates the requested components of the BxDF corresponding to the
+    /// light and camera directions in the shading frame. The request is
+    /// guaranteed to contain exacly one of BSDF_REFLECTION or BSDF_TRANSMISSION
+    /// (determined in Bsdf::eval() by the geometric normal) and the BxDF should
+    /// base the decision beteen reflection/transmission only of the request
+    /// (this reduces artifacts when shading normals are used).
+    virtual Spectrum eval_f(const Vector& wi_light, const Vector& wo_camera,
+        BxdfFlags request) const = 0;
+
+    /// Samples a direction to light, given a direction to camera.
+    /// Only the components that are present in the request are permitted to be
+    /// sampled (black Spectrum and zero pdf should be returned if the BxDF has
+    /// no matching component). The sampled component is returned in out_flags,
+    /// but the returned spectrum must include all components that match the
+    /// request!
+    virtual Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
+        Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const = 0;
+
+    /// Samples a direction to camera given a direction to light.
+    /// See sample_light_f() for details.
+    virtual Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
+        Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const = 0;
+
+    /// Computes the pdf of sampling a direction to light given a direction to
+    /// camera. This pdf must match the distribution used by sample_light_f().
     virtual float light_f_pdf(const Vector& wi_light_gen,
-        const Vector& wo_camera_fix) const = 0;
+        const Vector& wo_camera_fix, BxdfFlags request) const = 0;
+
+    /// Computes the pdf of sampling a direction to camera given a direction to
+    /// light.
     virtual float camera_f_pdf(const Vector& wo_camera_gen,
-        const Vector& wi_light_fix) const = 0;
+        const Vector& wi_light_fix, BxdfFlags request) const = 0;
   };
 
+  /// Bxdf that is the same for scattering from light and from camera.
   struct SymmetricBxdf: public Bxdf {
     SymmetricBxdf(BxdfFlags flags): Bxdf(flags) { }
 
-    virtual Spectrum sample_light_f(const Vector& wo_camera,
-        Vector& out_wi_light, float& out_dir_pdf, Vec2 uv) const override final;
-    virtual Spectrum sample_camera_f(const Vector& wi_light,
-        Vector& out_wo_camera, float& out_dir_pdf, Vec2 uv) const override final;
+    virtual Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
+        Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const override final;
+    virtual Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
+        Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const override final;
     virtual float light_f_pdf(const Vector& wi_light_gen,
-        const Vector& wo_camera_fix) const override final;
+        const Vector& wo_camera_fix, BxdfFlags request) const override final;
     virtual float camera_f_pdf(const Vector& wo_camera_gen,
-        const Vector& wi_light_fix) const override final;
+        const Vector& wi_light_fix, BxdfFlags request) const override final;
 
-  protected:
-    virtual Spectrum sample_symmetric_f(const Vector& w_fix,
-        Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const = 0;
+    virtual Spectrum sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
+        Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
+        Vec2 uv) const = 0;
     virtual float symmetric_f_pdf(const Vector& w_gen,
-        const Vector& w_fix) const = 0;
+        const Vector& w_fix, BxdfFlags request) const = 0;
   };
 
   struct BsdfSamplesIdxs {
@@ -93,6 +140,9 @@ namespace dort {
     static BsdfSamplesIdxs request(Sampler& sampler, uint32_t count);
   };
 
+  /// Bidirectional scattering distributon function.
+  /// Bsdf defines the local shading coordinate system and wraps the internal
+  /// BxDFs, which implement the scattering.
   class Bsdf final {
     // TODO: use a small_vector
     std::vector<std::unique_ptr<Bxdf>> bxdfs;
@@ -106,7 +156,7 @@ namespace dort {
 
     /// Evaluates the BSDF for the pair of directions.
     /// Vector wi_light points to the light, while wo_camera points to the
-    /// camera. Compontents that do not match flags are ignored. Delta
+    /// camera. Compontents that do not match the requested flags are ignored. Delta
     /// components are ignored (even if the two directions match exactly).
     ///
     /// The returned value is expected to be used in the light scattering
@@ -114,7 +164,7 @@ namespace dort {
     /// geometric normal is done in the Bsdf methods and should not be done by
     /// callers.
     Spectrum eval_f(const Vector& wi_light, const Vector& wo_camera,
-        BxdfFlags flags) const;
+        BxdfFlags request) const;
 
     /// Samples a direction to light.
     /// Given a direction to camera (wo_camera), samples a direction to light
@@ -122,7 +172,7 @@ namespace dort {
     /// sampled, it is assumed to be evaluated under an integral over the
     /// wi_light direction and the return value and pdf are coefficients of the
     /// respective delta distribution 
-    Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags flags,
+    Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
         Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
         BsdfSample sample) const;
     
@@ -130,7 +180,7 @@ namespace dort {
     /// Given a direction to light (wi_light), samples a direction to camera and
     /// returns the bsdf value in this direction. The handling of delta
     /// components is the same as in sample_light_f().
-    Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags flags,
+    Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
         Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
         BsdfSample sample) const;
 
@@ -140,16 +190,21 @@ namespace dort {
     /// angle. Delta distributions are ignored (even if the directions would
     /// match exactly).
     float light_f_pdf(const Vector& wi_light_gen, const Vector& wo_camera_fix,
-        BxdfFlags flags) const;
+        BxdfFlags request) const;
 
     /// Computes the pdf of sample_camera_f().
     /// Returns the probability of sampling the camera direction wo_camera_gen
     /// given light direction wi_light_fix from sample_camera_f().
     float camera_f_pdf(const Vector& wo_camera_gen, const Vector& wi_light_fix,
-        BxdfFlags flags) const;
+        BxdfFlags request) const;
 
-    uint32_t num_bxdfs(BxdfFlags flags) const;
-    uint32_t num_bxdfs() const { return this->bxdfs.size(); }
+    /// Returns the number of BxDFs that can match the request flags.
+    uint32_t bxdf_count(BxdfFlags request) const;
+
+    /// Returns the total number of BxDFs.
+    uint32_t bxdf_count() const {
+      return this->bxdfs.size();
+    }
 
     Vector local_to_world(const Vector& vec) const {
       return this->sn * vec.v.x + this->tn * vec.v.y + this->nn_shading * vec.v.z;
@@ -192,12 +247,12 @@ namespace dort {
     }
   private:
     template<bool FIX_IS_CAMERA>
-    Spectrum sample_f(const Vector& w_fix, BxdfFlags flags,
+    Spectrum sample_f(const Vector& w_fix, BxdfFlags request,
         Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
         BsdfSample sample) const;
 
     template<bool FIX_IS_CAMERA>
-    float f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags flags) const;
+    float f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags request) const;
 
     float shading_to_geom(const Vector& wi_light) const;
   };

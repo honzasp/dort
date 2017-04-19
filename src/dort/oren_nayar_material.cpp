@@ -2,7 +2,10 @@
 #include "dort/oren_nayar_material.hpp"
 
 namespace dort {
-  Spectrum OrenNayarBrdf::eval_f(const Vector& wi_light, const Vector& wo_camera) const {
+  Spectrum OrenNayarBrdf::eval_f(const Vector& wi_light,
+      const Vector& wo_camera, BxdfFlags request) const 
+  {
+    assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
     float sigma_square = square(this->sigma);
     float a = 1.f - 0.5f * sigma_square / (sigma_square + 0.33f);
     float b = 0.45f * sigma_square / (sigma_square + 0.09f);
@@ -30,16 +33,21 @@ namespace dort {
       (a + b * max(0.f, cos_diff_phi) * sin_alpha * tan_beta);
   }
 
-  Spectrum OrenNayarBrdf::sample_symmetric_f(const Vector& w_fix,
-      Vector& out_w_gen, float& out_dir_pdf, Vec2 uv) const
+  Spectrum OrenNayarBrdf::sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
+      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
   {
+    assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
     out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
     out_dir_pdf = cosine_hemisphere_pdf(out_w_gen.v.z);
     out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
-    return this->eval_f(w_fix, out_w_gen);
+    out_flags = BSDF_DIFFUSE | BSDF_REFLECTION;
+    return this->eval_f(w_fix, out_w_gen, request);
   }
 
-  float OrenNayarBrdf::symmetric_f_pdf(const Vector& w_gen, const Vector&) const {
+  float OrenNayarBrdf::symmetric_f_pdf(const Vector& w_gen,
+      const Vector&, BxdfFlags request) const 
+  {
+    assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
     return cosine_hemisphere_pdf(w_gen.v.z);
   }
 
