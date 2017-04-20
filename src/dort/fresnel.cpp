@@ -14,7 +14,7 @@ namespace dort {
     }
 
     float zt = sqrt(1.f - sin_t_squared);
-    out_w_trans = Vector(xt, yt, -copysign(zt, w.v.z));
+    out_w_trans = Vector(-xt, -yt, -copysign(zt, w.v.z));
     return true;
   }
 
