@@ -32,4 +32,17 @@ namespace dort {
 
     return 0.5f * (square(r_para) + square(r_perp));
   }
+
+  float fresnel_dielectric_refl(float cos_refl, float& out_cos_trans,
+      float ior_refl, float ior_trans) 
+  {
+    float cos_trans_square = 1.f - square(ior_refl / ior_trans) 
+      * (1.f - square(cos_refl));
+    if(cos_trans_square <= 0.f) {
+      out_cos_trans = 0.f;
+      return 1.f; 
+    }
+    out_cos_trans = sqrt(cos_trans_square);
+    return fresnel_dielectric(cos_refl, out_cos_trans, ior_refl, ior_trans);
+  }
 }

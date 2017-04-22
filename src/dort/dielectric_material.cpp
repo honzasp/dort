@@ -8,17 +8,17 @@ namespace dort {
   }
 
   Spectrum DielectricBxdf::sample_light_f(const Vector& wo_camera, BxdfFlags request,
-      Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
+      Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     return this->sample_f(wo_camera, request,
-        out_wi_light, out_dir_pdf, out_flags, uv.x, false);
+        out_wi_light, out_dir_pdf, out_flags, uvc.z, false);
   }
 
   Spectrum DielectricBxdf::sample_camera_f(const Vector& wi_light, BxdfFlags request,
-      Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
+      Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     return this->sample_f(wi_light, request,
-        out_wo_camera, out_dir_pdf, out_flags, uv.x, false);
+        out_wo_camera, out_dir_pdf, out_flags, uvc.z, false);
   }
 
   float DielectricBxdf::light_f_pdf(const Vector&, const Vector&, BxdfFlags) const {
@@ -106,15 +106,12 @@ namespace dort {
   void DielectricMaterial::add_bxdfs(const DiffGeom& geom,
       Spectrum scale, Bsdf& bsdf) const
   {
+    if(this->ior_inside <= 0.f || this->ior_outside <= 0.f) { return; }
     Spectrum reflect = this->reflect_tint->evaluate(geom);
     Spectrum transmit = this->transmit_tint->evaluate(geom);
     if(reflect.is_black() && transmit.is_black()) { return; }
 
-    float ior_inside = this->ior_inside->evaluate(geom);
-    float ior_outside = this->ior_outside->evaluate(geom);
-    if(ior_inside <= 0.f || ior_outside <= 0.f) { return; }
-
     bsdf.add(std::make_unique<DielectricBxdf>(reflect * scale, transmit * scale,
-        ior_inside, ior_outside, this->is_thin));
+        this->ior_inside, this->ior_outside, this->is_thin));
   }
 }

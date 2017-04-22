@@ -21,10 +21,10 @@ namespace dort {
         BxdfFlags) const override final;
     virtual Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
         Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const override final;
+        Vec3 uvc) const override final;
     virtual Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
         Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const override final;
+        Vec3 uvc) const override final;
     virtual float light_f_pdf(const Vector&, const Vector&,
         BxdfFlags request) const override final;
     virtual float camera_f_pdf(const Vector&, const Vector&,
@@ -39,16 +39,13 @@ namespace dort {
   class DielectricMaterial final: public Material {
     std::shared_ptr<TextureGeom<Spectrum>> reflect_tint;
     std::shared_ptr<TextureGeom<Spectrum>> transmit_tint;
-    std::shared_ptr<TextureGeom<float>> ior_inside;
-    std::shared_ptr<TextureGeom<float>> ior_outside;
+    float ior_inside, ior_outside;
     bool is_thin;
   public:
     DielectricMaterial(
         std::shared_ptr<TextureGeom<Spectrum>> reflect_tint,
         std::shared_ptr<TextureGeom<Spectrum>> transmit_tint,
-        std::shared_ptr<TextureGeom<float>> ior_inside,
-        std::shared_ptr<TextureGeom<float>> ior_outside,
-        bool is_thin):
+        float ior_inside, float ior_outside, bool is_thin):
       reflect_tint(reflect_tint), transmit_tint(transmit_tint),
       ior_inside(ior_inside), ior_outside(ior_outside), is_thin(is_thin)
     { }

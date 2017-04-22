@@ -22,17 +22,17 @@ namespace dort {
   }
 
   Spectrum SymmetricBxdf::sample_light_f(const Vector& wo_camera, BxdfFlags request,
-      Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
+      Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     return this->sample_symmetric_f(wo_camera, request,
-        out_wi_light, out_dir_pdf, out_flags, uv);
+        out_wi_light, out_dir_pdf, out_flags, uvc);
   }
 
   Spectrum SymmetricBxdf::sample_camera_f(const Vector& wi_light, BxdfFlags request,
-      Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
+      Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     return this->sample_symmetric_f(wi_light, request,
-        out_wo_camera, out_dir_pdf, out_flags, uv);
+        out_wo_camera, out_dir_pdf, out_flags, uvc);
   }
 
   float SymmetricBxdf::light_f_pdf(const Vector& wi_light_gen,
@@ -117,6 +117,7 @@ namespace dort {
     if(bxdf_count == 0) { return Spectrum(0.f); }
 
     uint32_t bxdf_idx = floor_int32(float(bxdf_count) * sample.u_component);
+    sample.u_component = sample.u_component * float(bxdf_count) - float(bxdf_idx);
     const Bxdf* sampled_bxdf = this->bxdfs.at(0).get();
     for(const auto& bxdf: this->bxdfs) {
       if(bxdf->matches_request(request) && (bxdf_idx--) == 0) {
@@ -125,20 +126,22 @@ namespace dort {
       }
     }
 
+    Vec3 sample_uvc(sample.uv_pos.x, sample.uv_pos.y, sample.u_component);
     Vector w_fix_local = this->world_to_local(w_fix);
     Vector w_gen_local;
     float sampled_dir_pdf;
     BxdfFlags sampled_flags;
     Spectrum sampled_f = FIX_IS_CAMERA
       ? sampled_bxdf->sample_light_f(w_fix_local, request,
-          w_gen_local, sampled_dir_pdf, sampled_flags, sample.uv_pos)
+          w_gen_local, sampled_dir_pdf, sampled_flags, sample_uvc)
       : sampled_bxdf->sample_camera_f(w_fix_local, request,
-          w_gen_local, sampled_dir_pdf, sampled_flags, sample.uv_pos);
+          w_gen_local, sampled_dir_pdf, sampled_flags, sample_uvc);
 
     assert(is_finite(sampled_f) && is_nonnegative(sampled_f));
     if(sampled_dir_pdf == 0.f) { return Spectrum(0.f); }
     assert(is_finite(sampled_dir_pdf) && sampled_dir_pdf >= 0.f);
     assert((sampled_flags & BSDF_MODES) && (sampled_flags & BSDF_LOBES));
+    assert(length_squared(w_gen_local) >= 0.99f && length_squared(w_gen_local) <= 1.01f);
 
     out_flags = sampled_flags;
     out_w_gen = this->local_to_world(w_gen_local);

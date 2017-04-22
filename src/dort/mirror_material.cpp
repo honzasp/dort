@@ -7,7 +7,7 @@ namespace dort {
   }
 
   Spectrum MirrorBrdf::sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
-      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec2) const
+      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec3) const
   {
     assert((request & BSDF_DELTA) && (request & BSDF_REFLECTION));
     out_w_gen = Vector(-w_fix.v.x, -w_fix.v.y, w_fix.v.z);

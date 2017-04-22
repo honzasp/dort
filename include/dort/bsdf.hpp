@@ -84,13 +84,13 @@ namespace dort {
     /// request!
     virtual Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
         Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const = 0;
+        Vec3 uvc) const = 0;
 
     /// Samples a direction to camera given a direction to light.
     /// See sample_light_f() for details.
     virtual Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
         Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const = 0;
+        Vec3 uvc) const = 0;
 
     /// Computes the pdf of sampling a direction to light given a direction to
     /// camera. This pdf must match the distribution used by sample_light_f().
@@ -109,10 +109,10 @@ namespace dort {
 
     virtual Spectrum sample_light_f(const Vector& wo_camera, BxdfFlags request,
         Vector& out_wi_light, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const override final;
+        Vec3 uvc) const override final;
     virtual Spectrum sample_camera_f(const Vector& wi_light, BxdfFlags request,
         Vector& out_wo_camera, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const override final;
+        Vec3 uvc) const override final;
     virtual float light_f_pdf(const Vector& wi_light_gen,
         const Vector& wo_camera_fix, BxdfFlags request) const override final;
     virtual float camera_f_pdf(const Vector& wo_camera_gen,
@@ -120,7 +120,7 @@ namespace dort {
 
     virtual Spectrum sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
         Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
-        Vec2 uv) const = 0;
+        Vec3 uvc) const = 0;
     virtual float symmetric_f_pdf(const Vector& w_gen,
         const Vector& w_fix, BxdfFlags request) const = 0;
   };

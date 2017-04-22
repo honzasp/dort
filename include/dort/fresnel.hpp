@@ -6,4 +6,6 @@ namespace dort {
       float ior_refl, float ior_trans);
   float fresnel_dielectric(float cos_refl, float cos_trans,
       float ior_refl, float ior_trans);
+  float fresnel_dielectric_refl(float cos_refl, float& out_cos_trans,
+      float ior_refl, float ior_trans);
 }

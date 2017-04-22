@@ -34,10 +34,10 @@ namespace dort {
   }
 
   Spectrum OrenNayarBrdf::sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
-      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
+      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
-    out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
+    out_w_gen = Vector(cosine_hemisphere_sample(uvc.x, uvc.y));
     out_dir_pdf = cosine_hemisphere_pdf(out_w_gen.v.z);
     out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
     out_flags = BSDF_DIFFUSE | BSDF_REFLECTION;

@@ -38,7 +38,7 @@ namespace dort {
   }
 
   Spectrum PhongBrdf::sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
-      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec2 uv) const
+      Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     assert(request & BSDF_REFLECTION);
     bool sample_diffuse = request & BSDF_DIFFUSE;
@@ -47,11 +47,7 @@ namespace dort {
 
     bool glossy;
     if(sample_glossy && sample_diffuse) {
-      if((glossy = uv.x < this->glossy_pdf)) {
-        uv.x = uv.x / this->glossy_pdf;
-      } else {
-        uv.x = (uv.x - this->glossy_pdf) / (1.f - this->glossy_pdf);
-      }
+      glossy = uvc.z < this->glossy_pdf;
     } else {
       glossy = sample_glossy;
     }
@@ -61,12 +57,12 @@ namespace dort {
       Vector refl_s, refl_t;
       coordinate_system(refl_w, refl_s, refl_t);
 
-      Vec3 relative_wi = power_cosine_hemisphere_sample(uv.x, uv.y, this->exponent);
+      Vec3 relative_wi = power_cosine_hemisphere_sample(uvc.x, uvc.y, this->exponent);
       out_w_gen = refl_w * relative_wi.z 
         + refl_s * relative_wi.x + refl_t * relative_wi.y;
       out_flags = BSDF_REFLECTION | BSDF_GLOSSY;
     } else {
-      out_w_gen = Vector(cosine_hemisphere_sample(uv.x, uv.y));
+      out_w_gen = Vector(cosine_hemisphere_sample(uvc.x, uvc.y));
       out_flags = BSDF_REFLECTION | BSDF_DIFFUSE;
     }
 

@@ -2,6 +2,7 @@
 #include "dort/shape.hpp"
 
 namespace dort {
+  // TODO: fix the material to produce a Bsdf with displaced normal!
   void BumpMaterial::add_bxdfs(const DiffGeom& geom, Spectrum scale, Bsdf& bsdf) const {
     // TODO: base the deltas on image-space distances!
     float delta_u = 0.1f;
