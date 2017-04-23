@@ -103,10 +103,10 @@ namespace dort {
 
   int lua_material_make_phong(lua_State* l) {
     int p = 1;
-    auto diffuse = lua_param_texture_opt(l, p, "diffuse_albedo",
+    auto diffuse = lua_param_texture_opt(l, p, "albedo",
         const_texture(Spectrum(0.f))).check<Spectrum>(l);
     auto glossy = lua_param_texture_opt(l, p, "glossy_albedo",
-        const_texture(Spectrum(1.f))).check<Spectrum>(l);
+        diffuse).check<Spectrum>(l);
     auto exponent = lua_param_texture_opt(l, p, "exponent",
         const_texture(50.f)).check<float>(l);
     lua_params_check_unused(l, p);

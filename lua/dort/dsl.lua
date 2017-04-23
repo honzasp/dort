@@ -131,7 +131,10 @@ end
 dsl.infinite_light = dort.light.make_infinite
 
 dsl.lambert_material = dort.material.make_lambert
+dsl.oren_nayar_material = dort.material.make_oren_nayar
 dsl.mirror_material = dort.material.make_mirror
+dsl.dielectric_material = dort.material.make_dielectric
+dsl.rough_dielectric_material = dort.material.make_rough_dielectric
 dsl.phong_material = dort.material.make_phong
 dsl.bump_material = dort.material.make_bump
 

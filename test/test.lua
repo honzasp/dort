@@ -104,13 +104,13 @@ function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
   local _ENV = require "dort/dsl"
   local s = cornell_scale
   return define_scene(function()
-    local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
-    local green = matte_material { color = rgb(0, 0.5, 0) }
-    local red = matte_material { color = rgb(0.5, 0, 0) }
-    local glossy_white = phong_material { color = rgb(0.5), exponent = 50 }
-    local glossy_red = phong_material { color = rgb(0.5, 0, 0), exponent = 50 }
-    local mirror = mirror_material { color = rgb(1) }
-    local glass = glass_material { color = rgb(1) }
+    local white = lambert_material { albedo = rgb(0.5, 0.5, 0.5) }
+    local green = lambert_material { albedo = rgb(0, 0.5, 0) }
+    local red = lambert_material { albedo = rgb(0.5, 0, 0) }
+    local glossy_white = phong_material { albedo = rgb(0.5), exponent = 50 }
+    local glossy_red = phong_material { albedo = rgb(0.5, 0, 0), exponent = 50 }
+    local mirror = mirror_material { albedo = rgb(1) }
+    local glass = dielectric_material { ior_inside = 1.3 }
 
     local right_box = white
     local left_box = white
@@ -229,7 +229,7 @@ function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
 
     if light_kind == "area" then
       block(function() 
-        material(matte_material { color = rgb(0) })
+        material(lambert_material { albedo = rgb(0) })
         transform(translate(0, -1*s, 0))
         local m = mesh {
           points = {
@@ -255,7 +255,7 @@ function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
     elseif light_kind == "sphe" then
       block(function()
         transform(translate(250*s, 400*s, 250*s))
-        material(matte_material { color = rgb(0) })
+        material(lambert_material { albedo = rgb(0) })
         local shape = sphere { radius = 20*s }
         local light = diffuse_light {
           radiance = rgb(100),
@@ -298,7 +298,6 @@ function cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
 end
 
 local cornell_scenes = {
-  --[[
   {"box", "diff", "area", "pin", {"pt", "lt", "bdpt", "vcm"}},
   {"box", "glos", "area", "pin", {"pt", "bdpt", "vcm"}},
   {"box", "delt", "area", "pin", {"bdpt", "vcm"}},
@@ -314,17 +313,14 @@ local cornell_scenes = {
   {"box", "diff", "beam", "pin", {"bdpt", "vcm"}},
   {"box", "glos", "beam", "pin", {"bdpt", "vcm"}},
   {"box", "delt", "beam", "pin", {"bdpt", "vcm"}},
-  --]]
   {"openbox", "diff", "infi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "glos", "infi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "delt", "infi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "diff", "envi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "glos", "envi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "delt", "envi", "pin", {"pt", "bdpt", "vcm"}},
-  --[[
   {"box", "diff", "area", "orth", {"pt", "bdpt", "vcm"}},
   {"box", "diff", "area", "thin", {"pt", "lt", "bdpt", "vcm"}},
-  --]]
 }
 
 local cornell_renderers = {
