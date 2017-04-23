@@ -154,6 +154,15 @@ namespace dort {
     return is_finite(norm.v);
   }
 
+  inline bool is_unit(const Vector& vec) {
+    float l = length_squared(vec);
+    return l >= 0.99f && l <= 1.01f;
+  }
+  inline bool is_unit(const Vec3& vec) {
+    float l = length_squared(vec);
+    return l >= 0.99f && l <= 1.01f;
+  }
+
   inline Vector abs(const Vector& vec) {
     return Vector(abs(vec.v));
   }

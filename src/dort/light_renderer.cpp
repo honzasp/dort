@@ -128,6 +128,7 @@ namespace dort {
     Point camera_p = this->camera->sample_point(film_res,
         camera_pos_pdf, CameraSample(sampler.rng));
     if(camera_pos_pdf == 0.f) { return; }
+    if(camera_p == light_p) { return; }
 
     Vec2 film_pos;
     Spectrum importance = this->camera->eval_importance(film_res,

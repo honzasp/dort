@@ -58,8 +58,9 @@ namespace dort {
       coordinate_system(refl_w, refl_s, refl_t);
 
       Vec3 relative_wi = power_cosine_hemisphere_sample(uvc.x, uvc.y, this->exponent);
-      out_w_gen = refl_w * relative_wi.z 
-        + refl_s * relative_wi.x + refl_t * relative_wi.y;
+      // needs renormalizing, probably due to numerical inaccuracies
+      out_w_gen = normalize(refl_w * relative_wi.z 
+        + refl_s * relative_wi.x + refl_t * relative_wi.y);
       out_flags = BSDF_REFLECTION | BSDF_GLOSSY;
     } else {
       out_w_gen = Vector(cosine_hemisphere_sample(uvc.x, uvc.y));

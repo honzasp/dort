@@ -59,6 +59,10 @@ namespace dort {
       assert(abs_dot(this->sn, this->nn_shading) < 1e-3);
       this->tn = cross(this->nn_shading, this->sn);
     }
+    assert(is_unit(this->nn_geom));
+    assert(is_unit(this->nn_shading));
+    assert(is_unit(this->sn));
+    assert(is_unit(this->tn));
   }
 
   void Bsdf::add(std::unique_ptr<Bxdf> bxdf) {
@@ -68,6 +72,7 @@ namespace dort {
   Spectrum Bsdf::eval_f(const Vector& wi_light, const Vector& wo_camera,
       BxdfFlags request) const
   {
+    assert(is_unit(wi_light)); assert(is_unit(wo_camera));
     Vector wi_local = this->world_to_local(wi_light);
     Vector wo_local = this->world_to_local(wo_camera);
     bool reflection = Bsdf::same_hemisphere(wo_local, wi_local);
@@ -110,6 +115,7 @@ namespace dort {
       Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags,
       BsdfSample sample) const
   {
+    assert(is_unit(w_fix));
     out_dir_pdf = 0.f;
     out_flags = BxdfFlags(0);
 
@@ -141,7 +147,7 @@ namespace dort {
     if(sampled_dir_pdf == 0.f) { return Spectrum(0.f); }
     assert(is_finite(sampled_dir_pdf) && sampled_dir_pdf >= 0.f);
     assert((sampled_flags & BSDF_MODES) && (sampled_flags & BSDF_LOBES));
-    assert(length_squared(w_gen_local) >= 0.99f && length_squared(w_gen_local) <= 1.01f);
+    assert(is_unit(w_gen_local));
 
     out_flags = sampled_flags;
     out_w_gen = this->local_to_world(w_gen_local);
@@ -199,6 +205,7 @@ namespace dort {
 
   template<bool FIX_IS_CAMERA>
   float Bsdf::f_pdf(const Vector& w_gen, const Vector& w_fix, BxdfFlags request) const {
+    assert(is_unit(w_gen)); assert(is_unit(w_fix));
     Vector w_gen_local = this->world_to_local(w_gen);
     Vector w_fix_local = this->world_to_local(w_fix);
 
