@@ -201,6 +201,7 @@ namespace dort {
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = y.bsdf->sample_camera_f(y.w, BSDF_ALL,
           bsdf_wo, bsdf_wo_pdf, bsdf_flags, BsdfSample(sampler.rng));
+      if(bsdf_f.is_black() || bsdf_wo_pdf == 0.f) { break; }
 
       light_ray = Ray(y.p, bsdf_wo, y.p_epsilon);
       fwd_bsdf_dir_pdf = bsdf_wo_pdf;
@@ -227,7 +228,7 @@ namespace dort {
         camera_ray, camera_pos_pdf, camera_dir_pdf, CameraSample(sampler.rng));
 
     float camera_ray_pdf = camera_pos_pdf * camera_dir_pdf;
-    if(camera_ray_pdf == 0.f) { return Spectrum(0.f); }
+    if(camera_ray_pdf == 0.f || camera_importance.is_black()) { return Spectrum(0.f); }
 
     Spectrum throughput = camera_importance / camera_ray_pdf;
     float fwd_bsdf_dir_pdf = SIGNALING_NAN;
@@ -320,7 +321,7 @@ namespace dort {
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = z.bsdf->sample_light_f(z.w, BSDF_ALL,
           bsdf_wi, bsdf_wi_pdf, bsdf_flags, BsdfSample(sampler.rng));
-      if(bsdf_wi_pdf == 0.f) { break; }
+      if(bsdf_f.is_black() || bsdf_wi_pdf == 0.f) { break; }
 
       camera_ray = Ray(z.p, bsdf_wi, isect.ray_epsilon);
       fwd_bsdf_dir_pdf = bsdf_wi_pdf;
