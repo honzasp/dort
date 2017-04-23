@@ -18,6 +18,9 @@ namespace dort {
     ret.nn = normalize(this->apply(inv, dg.nn));
     ret.dpdu = this->apply(inv, dg.dpdu);
     ret.dpdv = this->apply(inv, dg.dpdv);
+    ret.nn_shading = normalize(this->apply(inv, dg.nn_shading));
+    ret.dpdu_shading = this->apply(inv, dg.dpdu_shading);
+    ret.dpdv_shading = this->apply(inv, dg.dpdv_shading);
     return ret;
   }
 

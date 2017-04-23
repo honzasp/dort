@@ -5,6 +5,8 @@
 
 namespace dort {
   struct DiffGeom {
+    // remember to update Transform::apply when adding/removing geometric
+    // entries
     Point p;
     Vec2 uv;
     Normal nn;
