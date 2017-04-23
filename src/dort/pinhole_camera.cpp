@@ -49,9 +49,10 @@ namespace dort {
     }
 
     float area = this->get_image_plane_area(film_res);
+    float cos_theta = camera_pivot.z / length(camera_pivot);
     out_shadow.init_point_point(pivot, pivot_epsilon, this->world_origin, 0.f);
     out_film_pos = film_pos;
-    return Spectrum(1.f / area);
+    return Spectrum(1.f / (area * cube(cos_theta)));
   }
 
   Point PinholeCamera::sample_point(Vec2, float& out_pos_pdf, CameraSample) const {

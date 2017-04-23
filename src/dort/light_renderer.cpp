@@ -49,9 +49,10 @@ namespace dort {
 
   void LightRenderer::sample_path(Sampler& sampler) {
     uint32_t light_i = this->light_distrib.sample(sampler.random_1d());
-    float light_pdf = this->light_distrib.pdf(light_i);
+    float light_pick_pdf = this->light_distrib.pdf(light_i);
+    if(light_pick_pdf == 0.f) { return; }
+
     const Light& light = *this->scene->lights.at(light_i);
-    LightRaySample light_sample(sampler.rng);
     Vec2 film_res(this->film->res);
 
     if(this->min_length <= 2 && 2 <= this->max_length) {
@@ -72,7 +73,7 @@ namespace dort {
             camera_p, normalize(light_p - camera_p), film_pos);
         Spectrum radiance = light.eval_radiance(light_p, light_nn, camera_p);
 
-        float contrib_pdf = light_pdf * light_pos_pdf * camera_pos_pdf;
+        float contrib_pdf = light_pick_pdf * light_pos_pdf * camera_pos_pdf;
         Spectrum contrib = radiance * importance /
           (length_squared(light_p - camera_p) * contrib_pdf);
         if(!(light_nn == Normal())) {
@@ -95,13 +96,13 @@ namespace dort {
     Normal prev_nn;
     float light_pos_pdf, light_dir_pdf;
     Spectrum light_radiance = light.sample_ray_radiance(
-        *this->scene, ray, prev_nn, light_pos_pdf, light_dir_pdf, light_sample);
-    if(light_radiance.is_black() || light_pdf == 0.f) {
-      return;
-    }
+        *this->scene, ray, prev_nn, light_pos_pdf, light_dir_pdf,
+        LightRaySample(sampler.rng));
 
+    float light_pdf = light_pick_pdf * light_pos_pdf * light_dir_pdf;
+    if(light_radiance.is_black() || light_pdf == 0.f) { return; }
 
-    Spectrum alpha = light_radiance / (light_pdf * light_pos_pdf);
+    Spectrum throughput = light_radiance / (light_pos_pdf * light_pick_pdf);
     float prev_dir_pdf = light_dir_pdf;
     for(uint32_t bounces = 0; bounces + 3 <= this->max_length; ++bounces) {
       Intersection isect;
@@ -125,8 +126,8 @@ namespace dort {
           Vector camera_wo = normalize(camera_p - isect.world_diff_geom.p);
           Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
 
-          Spectrum contrib = alpha * importance * bsdf_f
-            * ( abs_dot(prev_nn, ray.dir) 
+          Spectrum contrib = throughput * importance * bsdf_f
+            * ( abs_dot(prev_nn, normalize(ray.dir)) 
               * abs_dot(isect.world_diff_geom.nn, camera_wo)
               / ( length_squared(camera_p - isect.world_diff_geom.p)
                 * prev_dir_pdf * camera_p_pdf));
@@ -143,13 +144,13 @@ namespace dort {
         bounce_wo, bounce_dir_pdf, bounce_flags, BsdfSample(sampler.rng));
 
       Spectrum bounce_contrib = bounce_f * (abs_dot(prev_nn, ray.dir) / prev_dir_pdf);
-      alpha *= bounce_contrib;
-      if(alpha.is_black()) { break; }
+      throughput *= bounce_contrib;
+      if(throughput.is_black()) { break; }
 
       if(bounces >= 2) {
         float rr_prob = min(1.f, bounce_contrib.average()) * 0.9f;
         if(sampler.random_1d() > rr_prob) { break; }
-        alpha /= rr_prob;
+        throughput /= rr_prob;
       }
 
       prev_nn = isect.world_diff_geom.nn;

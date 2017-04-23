@@ -33,7 +33,7 @@ namespace dort {
     }
 
     auto bsdf = isect.get_bsdf();
-    float isect_dot = dot(-ray.dir, isect.world_diff_geom.nn);
+    float isect_dot = dot(-normalize(ray.dir), isect.world_diff_geom.nn);
 
     bool emittor = !isect.eval_radiance(ray.orig).is_black();
     bool specular = bsdf->bxdf_count(BSDF_MODES | BSDF_DELTA) > 0;

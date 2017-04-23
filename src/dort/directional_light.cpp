@@ -15,11 +15,11 @@ namespace dort {
       LightRaySample sample) const 
   {
     Vec2 disk_p = uniform_disk_sample(sample.uv_pos.x, sample.uv_pos.y);
-    Point orig = scene.centroid + scene.radius *
+    Point orig = scene.centroid + scene.radius * 
       (-this->direction + disk_p.x * this->s + disk_p.y * this->t);
     out_ray = Ray(orig, this->direction, 0.f);
     out_nn = Normal(this->direction);
-    out_pos_pdf = 1.f / (PI * square(scene.radius));
+    out_pos_pdf = INV_PI / square(scene.radius);
     out_dir_pdf = 1.f;
     return this->radiance;
   }
@@ -53,7 +53,7 @@ namespace dort {
   float DirectionalLight::ray_radiance_pdf(const Scene& scene, const Point&,
       const Vector&, const Normal&) const
   {
-    return 1.f / (PI * square(scene.radius));
+    return INV_PI / square(scene.radius);
   }
 
   float DirectionalLight::pivot_radiance_pdf(const Vector&, const Point&) const {
