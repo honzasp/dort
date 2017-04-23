@@ -53,41 +53,10 @@ namespace dort {
     if(light_pick_pdf == 0.f) { return; }
 
     const Light& light = *this->scene->lights.at(light_i);
-    Vec2 film_res(this->film->res);
 
     if(this->min_length <= 2 && 2 <= this->max_length) {
       // connect a point on light directly to camera
-      Point light_p;
-      float light_epsilon;
-      Normal light_nn;
-      float light_pos_pdf;
-      if(light.sample_point(light_p, light_epsilon,
-          light_nn, light_pos_pdf, LightSample(sampler.rng))) 
-      {
-        float camera_pos_pdf;
-        Point camera_p = this->camera->sample_point(film_res, camera_pos_pdf,
-            CameraSample(sampler.rng));
-
-        Vec2 film_pos;
-        Spectrum importance = this->camera->eval_importance(film_res,
-            camera_p, normalize(light_p - camera_p), film_pos);
-        Spectrum radiance = light.eval_radiance(light_p, light_nn, camera_p);
-
-        float contrib_pdf = light_pick_pdf * light_pos_pdf * camera_pos_pdf;
-        Spectrum contrib = radiance * importance /
-          (length_squared(light_p - camera_p) * contrib_pdf);
-        if(!(light_nn == Normal())) {
-          contrib *= abs_dot(light_nn, normalize(light_p - camera_p));
-        }
-
-        if(!contrib.is_black() && contrib_pdf != 0.f) {
-          ShadowTest shadow;
-          shadow.init_point_point(light_p, light_epsilon, camera_p, 0.f);
-          if(shadow.visible(*this->scene)) {
-            this->film->add_splat(film_pos, contrib);
-          }
-        }
-      }
+      this->sample_immediate(light, light_pick_pdf, sampler);
     }
 
     if(this->max_length < 3) { return; }
@@ -111,30 +80,12 @@ namespace dort {
       }
       auto bsdf = isect.get_bsdf();
 
-      bool has_non_delta = bsdf->bxdf_count(BSDF_ALL & (~BSDF_DELTA));
-      if(has_non_delta && bounces + 3 >= this->min_length) {
-        // connect the intersection to the camera
-        Point camera_p;
-        float camera_p_pdf;
-        ShadowTest shadow;
-        Vec2 film_pos;
-        Spectrum importance = this->camera->sample_pivot_importance(film_res,
-            isect.world_diff_geom.p, isect.ray_epsilon,
-            camera_p, film_pos, camera_p_pdf,
-            shadow, CameraSample(sampler.rng));
-        if(camera_p_pdf != 0.f && !importance.is_black()) {
-          Vector camera_wo = normalize(camera_p - isect.world_diff_geom.p);
-          Spectrum bsdf_f = bsdf->eval_f(-ray.dir, camera_wo, BSDF_ALL);
+      Vector wi = normalize(-ray.dir);
+      float geom = abs_dot(prev_nn, wi) / prev_dir_pdf;
 
-          Spectrum contrib = throughput * importance * bsdf_f
-            * ( abs_dot(prev_nn, normalize(ray.dir)) 
-              * abs_dot(isect.world_diff_geom.nn, camera_wo)
-              / ( length_squared(camera_p - isect.world_diff_geom.p)
-                * prev_dir_pdf * camera_p_pdf));
-          if(!contrib.is_black() && shadow.visible(*this->scene)) {
-            this->film->add_splat(film_pos, contrib);
-          }
-        }
+      if(bounces + 3 >= this->min_length) {
+        // connect the intersection to the camera
+        this->connect_to_camera(isect, *bsdf, wi, throughput * geom, sampler);
       }
 
       Vector bounce_wo;
@@ -143,19 +94,90 @@ namespace dort {
       Spectrum bounce_f = bsdf->sample_camera_f(-ray.dir, BSDF_ALL,
         bounce_wo, bounce_dir_pdf, bounce_flags, BsdfSample(sampler.rng));
 
-      Spectrum bounce_contrib = bounce_f * (abs_dot(prev_nn, ray.dir) / prev_dir_pdf);
-      throughput *= bounce_contrib;
+      Spectrum bounce_contrib = bounce_f * geom;
+      throughput *= bounce_contrib * geom;
       if(throughput.is_black()) { break; }
+      assert(is_finite(throughput) && is_nonnegative(throughput));
 
       if(bounces >= 2) {
-        float rr_prob = min(1.f, bounce_contrib.average()) * 0.9f;
-        if(sampler.random_1d() > rr_prob) { break; }
-        throughput /= rr_prob;
+        float survive_prob = clamp(bounce_contrib.average(), 0.1f, 0.9f);
+        if(sampler.random_1d() > survive_prob) { break; }
+        throughput /= survive_prob;
       }
 
       prev_nn = isect.world_diff_geom.nn;
       prev_dir_pdf = bounce_dir_pdf;
       ray = Ray(isect.world_diff_geom.p, bounce_wo, isect.ray_epsilon);
+    }
+  }
+
+  void LightRenderer::sample_immediate(const Light& light,
+      float light_pick_pdf, Sampler& sampler)
+  {
+    Vec2 film_res(this->film->res);
+
+    Point light_p;
+    float light_epsilon;
+    Normal light_nn;
+    float light_pos_pdf;
+    bool sampled = light.sample_point(light_p, light_epsilon,
+        light_nn, light_pos_pdf, LightSample(sampler.rng)); 
+    if(!sampled || light_pos_pdf == 0.f) { return; }
+
+    float camera_pos_pdf;
+    Point camera_p = this->camera->sample_point(film_res,
+        camera_pos_pdf, CameraSample(sampler.rng));
+    if(camera_pos_pdf == 0.f) { return; }
+
+    Vec2 film_pos;
+    Spectrum importance = this->camera->eval_importance(film_res,
+        camera_p, normalize(light_p - camera_p), film_pos);
+    if(importance.is_black()) { return; }
+    Spectrum radiance = light.eval_radiance(light_p, light_nn, camera_p);
+    if(radiance.is_black()) { return; }
+
+    float contrib_pdf = light_pick_pdf * light_pos_pdf * camera_pos_pdf;
+    if(contrib_pdf == 0.f) { return; }
+    Spectrum contrib = radiance * importance /
+      (length_squared(light_p - camera_p) * contrib_pdf);
+    if(!(light_nn == Normal())) {
+      contrib *= abs_dot(light_nn, normalize(light_p - camera_p));
+    }
+    if(contrib.is_black()) { return; }
+
+    ShadowTest shadow;
+    shadow.init_point_point(light_p, light_epsilon, camera_p, 0.f);
+    if(shadow.visible(*this->scene)) {
+      this->film->add_splat(film_pos, contrib);
+    }
+  }
+
+  void LightRenderer::connect_to_camera(const Intersection& isect, const Bsdf& bsdf,
+      const Vector& wi, const Spectrum& throughput, Sampler& sampler)
+  {
+    if(bsdf.bxdf_count(BSDF_ALL & (~BSDF_DELTA)) == 0) { return; }
+    Vec2 film_res(this->film->res);
+
+    Point camera_p;
+    float camera_p_pdf;
+    ShadowTest shadow;
+    Vec2 film_pos;
+    Spectrum importance = this->camera->sample_pivot_importance(film_res,
+        isect.world_diff_geom.p, isect.ray_epsilon,
+        camera_p, film_pos, camera_p_pdf,
+        shadow, CameraSample(sampler.rng));
+    if(camera_p_pdf == 0.f || importance.is_black()) { return; }
+
+    Vector camera_wo = normalize(camera_p - isect.world_diff_geom.p);
+    Spectrum bsdf_f = bsdf.eval_f(-wi, camera_wo, BSDF_ALL);
+    if(bsdf_f.is_black()) { return; }
+
+    Spectrum contrib = throughput * importance * bsdf_f *
+        ( abs_dot(isect.world_diff_geom.nn, camera_wo)
+        / (length_squared(camera_p - isect.world_diff_geom.p) * camera_p_pdf));
+    assert(is_finite(contrib) && is_nonnegative(contrib));
+    if(!contrib.is_black() && shadow.visible(*this->scene)) {
+      this->film->add_splat(film_pos, contrib);
     }
   }
 }

@@ -26,5 +26,9 @@ namespace dort {
     virtual void render(CtxG& ctx, Progress& progress) override final;
   private:
     void sample_path(Sampler& sampler);
+    void sample_immediate(const Light& light,
+        float light_pick_pdf, Sampler& sampler);
+    void connect_to_camera(const Intersection& isect, const Bsdf& bsdf, 
+        const Vector& wi, const Spectrum& throughput, Sampler& sampler);
   };
 }
