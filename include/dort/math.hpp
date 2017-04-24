@@ -122,4 +122,5 @@ namespace dort {
   }
 
   bool solve_quadratic(float A, float B, float C, float& out_x1, float& out_x2);
+  float normal_cdf_inverse(float p);
 }

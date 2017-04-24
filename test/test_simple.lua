@@ -140,7 +140,6 @@ end
 local base_opts = {
   min_depth = 1,
   max_depth = 2,
-  iterations = 1,
   x_res = 512, y_res = 512,
   sampler = dort.sampler.make_random { samples_per_pixel = 1 },
   filter = dort.filter.make_box { radius = 0.5 },
@@ -149,6 +148,7 @@ local base_opts = {
 local render_optss = {
   dort.std.merge(base_opts, {
     renderer = "pt",
+    iterations = 2,
   }),
   dort.std.merge(base_opts, {
     renderer = "lt",
@@ -156,10 +156,11 @@ local render_optss = {
   }),
   dort.std.merge(base_opts, {
     renderer = "bdpt",
+    iterations = 2,
   }),
   dort.std.merge(base_opts, {
     renderer = "vcm",
-    iterations = 2,
+    iterations = 3,
     initial_radius = 0.02
     --debug_image_dir = "test/_vcm_debug",
   }),

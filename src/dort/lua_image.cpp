@@ -1,3 +1,4 @@
+#include "dort/convergence_test.hpp"
 #include "dort/image.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_helpers.hpp"
@@ -26,6 +27,7 @@ namespace dort {
       {"tonemap_gamma", lua_image_tonemap_gamma},
       {"get_res", lua_image_get_res},
       {"bias_variance", lua_image_bias_variance},
+      {"test_convergence", lua_image_test_convergence},
       {0, 0},
     };
 
@@ -154,6 +156,29 @@ namespace dort {
     lua_pushnumber(l, sum_bias);
     lua_pushnumber(l, sum_var);
     return 2;
+  }
+
+  int lua_image_test_convergence(lua_State* l) {
+    int p = 3;
+    auto ref_image = lua_check_image_f(l, 1);
+    auto tested_image = lua_check_image_f(l, 2);
+    int32_t min_tile_size = lua_param_uint32(l, p, "min_tile_size");
+    float variation = lua_param_float(l, p, "variation");
+    float p_value = lua_param_float(l, p, "p_value");
+    lua_params_check_unused(l, p);
+
+    if(!(ref_image->res == tested_image->res)) {
+      return luaL_error(l, "Reference and test images have mismatched resolution");
+    }
+
+    auto error = test_convergence(*lua_get_ctx(l), *ref_image, *tested_image,
+        min_tile_size, variation, p_value);
+    if(error.empty()) {
+      lua_pushnil(l);
+    } else {
+      lua_pushlstring(l, error.data(), error.size());
+    }
+    return 1;
   }
 
   std::shared_ptr<Image<PixelRgb8>> lua_check_image_8(lua_State* l, int idx) {

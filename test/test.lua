@@ -10,7 +10,7 @@ local COLORS = {
 
 local t = {
   dir = "test",
-  pattern = {"bsdf"},
+  pattern = {"bsdf", "mirror"},
   renderer = nil,
   compare_with_ref = true,
   generate_ref = false,
@@ -94,20 +94,23 @@ local t = {
 
       if self.compare_with_ref then
         local x_res, y_res = dort.image.get_res(ref_image)
-        local bias, variance = dort.image.bias_variance(ref_image, out_image,
+        local _, variance = dort.image.bias_variance(ref_image, out_image,
           dort.geometry.recti(0, 0, x_res, y_res))
-        local norm_bias = bias / (3 * x_res * y_res)
         local norm_sd = dort.math.sqrt(variance / (3 * x_res * y_res))
 
+        local conv_error = dort.image.test_convergence(ref_image, out_image, {
+          min_tile_size = 32,
+          variation = 8.0,
+          p_value = 0.01,
+        })
+
         local status
-        if dort.math.abs(norm_bias) < 0.05 then
-          if norm_sd < 1.5 then
-            status = "ok"
-          else
-            status = "warn"
-          end
-        else
+        if conv_error then
           status = "err"
+        elseif norm_sd > 1.5 then
+          status = "warn"
+        else
+          status = "ok"
         end
 
         if status == "err" then errs = errs + 1 end
@@ -117,8 +120,12 @@ local t = {
           warn = COLORS.yellow,
           err = COLORS.red,
         })[status]
-        dort.std.printf(" %s%s (%g s): %g, %g%s\n", color, status, test_time_s,
-          norm_bias, norm_sd, COLORS.reset)
+        dort.std.printf(" %s%s (%g s): %g%s\n", color, status, test_time_s,
+          norm_sd, COLORS.reset)
+
+        if conv_error then
+          dort.std.printf("    %s\n", conv_error)
+        end
       else
         dort.std.printf(" %sdone (%g s)%s\n", COLORS.cyan, test_time_s, COLORS.reset)
       end
