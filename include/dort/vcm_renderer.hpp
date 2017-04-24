@@ -39,7 +39,7 @@ namespace dort {
         uint32_t max_length,
         const std::string& debug_image_dir):
       Renderer(scene, film, sampler, camera),
-      use_vc(mode != Mode::VM),
+      use_vc(mode != Mode::VM || iteration_count == 1),
       use_vm(mode != Mode::VC && iteration_count > 1),
       initial_radius(initial_radius), alpha(alpha),
       iteration_count(iteration_count),

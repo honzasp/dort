@@ -74,12 +74,11 @@ namespace dort {
     Spectrum throughput = light_radiance / (light_pos_pdf * light_pick_pdf);
     float prev_dir_pdf = light_dir_pdf;
     for(uint32_t bounces = 0; bounces + 3 <= this->max_length; ++bounces) {
-      Intersection isect;
-      if(prev_dir_pdf == 0.f || !this->scene->intersect(ray, isect)) {
-        break;
-      }
-      auto bsdf = isect.get_bsdf();
+      if(prev_dir_pdf == 0.f) { break; }
 
+      Intersection isect;
+      if(!this->scene->intersect(ray, isect)) { break; }
+      auto bsdf = isect.get_bsdf();
       Vector wi = normalize(-ray.dir);
       float geom = abs_dot(prev_nn, wi) / prev_dir_pdf;
 
@@ -91,7 +90,7 @@ namespace dort {
       Vector bounce_wo;
       float bounce_dir_pdf;
       BxdfFlags bounce_flags;
-      Spectrum bounce_f = bsdf->sample_camera_f(-ray.dir, BSDF_ALL,
+      Spectrum bounce_f = bsdf->sample_camera_f(wi, BSDF_ALL,
         bounce_wo, bounce_dir_pdf, bounce_flags, BsdfSample(sampler.rng));
 
       Spectrum bounce_contrib = bounce_f * geom;
@@ -99,7 +98,7 @@ namespace dort {
       if(throughput.is_black()) { break; }
       assert(is_finite(throughput) && is_nonnegative(throughput));
 
-      if(bounces >= 2) {
+      if(bounces + 3 > this->min_length && bounces >= 2) {
         float survive_prob = clamp(bounce_contrib.average(), 0.1f, 0.9f);
         if(sampler.random_1d() > survive_prob) { break; }
         throughput /= survive_prob;
@@ -170,7 +169,7 @@ namespace dort {
     if(camera_p_pdf == 0.f || importance.is_black()) { return; }
 
     Vector camera_wo = normalize(camera_p - isect.world_diff_geom.p);
-    Spectrum bsdf_f = bsdf.eval_f(-wi, camera_wo, BSDF_ALL);
+    Spectrum bsdf_f = bsdf.eval_f(wi, camera_wo, BSDF_ALL);
     if(bsdf_f.is_black()) { return; }
 
     Spectrum contrib = throughput * importance * bsdf_f *

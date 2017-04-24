@@ -7,6 +7,10 @@ find include/ -type f | xargs egrep -h "$loc_regex" | wc -l
 printf "  sources         "
 find src/ -type f | xargs egrep -h "$loc_regex" | wc -l
 
+assert_regex='assert\('
+printf "asserts         "
+find src/ include/ -type f | xargs egrep -h "$assert_regex" | wc -l
+
 printf "physical lines  "
 find src/ include/ -type f | xargs cat | wc -l
 printf "  headers         "

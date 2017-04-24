@@ -110,7 +110,6 @@ namespace dort {
     float light_pos_pdf, light_dir_pdf;
     Spectrum light_radiance = light.sample_ray_radiance(*this->scene,
         light_ray, light_nn, light_pos_pdf, light_dir_pdf, LightRaySample(sampler.rng));
-
     float light_ray_pdf = light_pos_pdf * light_dir_pdf * light_pick_pdf;
 
     Spectrum throughput = light_radiance 
@@ -155,7 +154,7 @@ namespace dort {
           y.d_vc = abs_dot(light_nn, y.w) /
             (light_ray_pdf * abs_dot(y.nn, y.w));
         }
-        y.d_vm = y.d_vc * iter_state.mis_vm_weight;
+        y.d_vm = y.d_vc * iter_state.mis_vc_weight;
       } else if(fwd_bsdf_delta) {
         // equations (53), (54), (55)
         const auto& yp = light_vertices.at(bounces - 1);
