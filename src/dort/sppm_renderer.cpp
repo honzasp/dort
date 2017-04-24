@@ -150,7 +150,7 @@ namespace dort {
       }
 
       Spectrum emitted = isect.eval_radiance(ray.orig);
-      assert(is_finite(emitted) && is_nonnegative(emitted));
+      assert(is_finite(emitted)); assert(is_nonnegative(emitted));
       radiance += weight * emitted;
 
       LightingGeom geom;
@@ -178,8 +178,8 @@ namespace dort {
             geom.p, geom.nn, geom.wo_camera, *bsdf, radius);
         Spectrum direct_radiance = uniform_sample_one_light(
             *this->scene, geom, *bsdf, sampler);
-        assert(is_finite(photon_radiance) && is_nonnegative(photon_radiance));
-        assert(is_finite(direct_radiance) && is_nonnegative(direct_radiance));
+        assert(is_finite(photon_radiance)); assert(is_nonnegative(photon_radiance));
+        assert(is_finite(direct_radiance)); assert(is_nonnegative(direct_radiance));
         radiance += weight * (photon_radiance + direct_radiance);
         break;
       }

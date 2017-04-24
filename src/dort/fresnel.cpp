@@ -21,8 +21,8 @@ namespace dort {
   float fresnel_dielectric(float cos_refl, float cos_trans,
       float ior_refl, float ior_trans)
   {
-    assert(cos_refl >= 0.f && cos_refl <= 1.001f);
-    assert(cos_trans >= 0.f && cos_trans <= 1.001f);
+    assert(cos_refl >= 0.f); assert(cos_refl <= 1.001f);
+    assert(cos_trans >= 0.f); assert(cos_trans <= 1.001f);
     float term_tr = ior_trans * cos_refl;
     float term_rt = ior_refl * cos_trans;
     float term_rr = ior_refl * cos_refl;

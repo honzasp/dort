@@ -126,8 +126,8 @@ namespace dort {
       base_flags = BSDF_TRANSMISSION;
       */
     }
-    assert(is_finite(base_f) && is_nonnegative(base_f));
-    assert(is_finite(base_pdf) && base_pdf >= 0.f);
+    assert(is_finite(base_f)); assert(is_nonnegative(base_f));
+    assert(is_finite(base_pdf)); assert(base_pdf >= 0.f);
 
     if(base_pdf < 1e-5f) {
       out_dir_pdf = 0.f;
@@ -138,7 +138,7 @@ namespace dort {
     float d = this->distrib.d(m);
     float wfix_dot_n = Bsdf::cos_theta(w_fix);
     float wgen_dot_n = Bsdf::cos_theta(w_gen);
-    assert(is_finite(g) && is_finite(d));
+    assert(is_finite(g)); assert(is_finite(d));
 
     out_w_gen = w_gen;
     out_dir_pdf = pick_pdf * base_pdf;

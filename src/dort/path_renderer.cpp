@@ -68,7 +68,7 @@ namespace dort {
         // handled by adding the radiance emitted from sampled vertex if the
         // previous bounce was delta)
         Spectrum radiance = this->sample_direct_lighting(geom, *bsdf, sampler);
-        assert(is_finite(radiance) && is_nonnegative(radiance));
+        assert(is_finite(radiance)); assert(is_nonnegative(radiance));
         radiance_sum += radiance * throughput;
       }
 
@@ -88,7 +88,7 @@ namespace dort {
 
       Spectrum bounce_contrib = bsdf_f * (abs_dot(bsdf_wi, geom.nn) / bsdf_pdf);
       last_bounce_was_delta = bsdf_flags & BSDF_DELTA;
-      assert(is_finite(bounce_contrib) && is_nonnegative(bounce_contrib));
+      assert(is_finite(bounce_contrib)); assert(is_nonnegative(bounce_contrib));
       throughput = throughput * bounce_contrib;
 
       if(bounces == this->max_depth && !last_bounce_was_delta) {

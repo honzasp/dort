@@ -637,8 +637,8 @@ namespace dort {
       // vertices
       float fwd_pdf = pdf_light(s + j - 1);
       float bwd_pdf = pdf_camera(s + j - 1);
-      assert(fwd_pdf >= 0.f && is_finite(fwd_pdf));
-      assert(bwd_pdf >= 0.f && is_finite(bwd_pdf));
+      assert(fwd_pdf >= 0.f); assert(is_finite(fwd_pdf));
+      assert(bwd_pdf >= 0.f); assert(is_finite(bwd_pdf));
       if(bwd_pdf == 0.f) { break; }
       r_light *= fwd_pdf / bwd_pdf;
 
@@ -654,8 +654,8 @@ namespace dort {
       // vertices
       float fwd_pdf = pdf_camera(s - j);
       float bwd_pdf = pdf_light(s - j);
-      assert(fwd_pdf >= 0.f && is_finite(fwd_pdf));
-      assert(bwd_pdf >= 0.f && is_finite(bwd_pdf));
+      assert(fwd_pdf >= 0.f); assert(is_finite(fwd_pdf));
+      assert(bwd_pdf >= 0.f); assert(is_finite(bwd_pdf));
       if(bwd_pdf == 0.f) { break; }
       r_camera *= fwd_pdf / bwd_pdf;
 
@@ -665,7 +665,7 @@ namespace dort {
       inv_weight_sum += r_camera;
     }
 
-    assert(inv_weight_sum >= 1.f && is_finite(inv_weight_sum));
+    assert(inv_weight_sum >= 1.f); assert(is_finite(inv_weight_sum));
     return 1.f / inv_weight_sum;
   }
 

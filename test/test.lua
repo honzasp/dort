@@ -10,7 +10,7 @@ local COLORS = {
 
 local t = {
   dir = "test",
-  pattern = {"simple", "mixd"},
+  pattern = {"bsdf"},
   renderer = nil,
   compare_with_ref = true,
   generate_ref = false,
@@ -144,4 +144,5 @@ local t = {
 
 t:load_tests("test_simple.lua")
 t:load_tests("test_box.lua")
+t:load_tests("test_bsdf.lua")
 t:run()

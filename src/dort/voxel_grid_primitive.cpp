@@ -26,7 +26,7 @@ namespace dort {
         [&](const RayEntry& entry, const RayEntry& exit, Voxel voxel) 
     {
       assert(voxel != VOXEL_EMPTY);
-      assert(entry.t_hit >= ray.t_min && entry.t_hit <= ray.t_max);
+      assert(entry.t_hit >= ray.t_min); assert(entry.t_hit <= ray.t_max);
 
       if(voxel < 0) {
         Vector voxel_ray_dir = this->voxel_to_frame.apply_inv(ray.dir);
@@ -202,8 +202,8 @@ namespace dort {
   bool VoxelGridPrimitive::traverse_walk(const VoxelRay& ray, uint32_t node_idx,
       const Boxi& box, const RayEntry& entry, const RayEntry& exit, F callback) const
   {
-    assert(entry.t_hit >= ray.t_min && entry.t_hit <= ray.t_max);
-    assert(exit.t_hit >= ray.t_min && exit.t_hit <= ray.t_max);
+    assert(entry.t_hit >= ray.t_min); assert(entry.t_hit <= ray.t_max);
+    assert(exit.t_hit >= ray.t_min); assert(exit.t_hit <= ray.t_max);
     assert(exit.t_hit - entry.t_hit > -1e-3f);
 
     const Node& node = this->nodes.at(node_idx);
@@ -309,9 +309,9 @@ namespace dort {
       const RayEntry& entry, const RayEntry& exit, const RayEntry& mid_entry,
       F callback) const
   {
-    assert(entry.t_hit >= ray.t_min && entry.t_hit <= ray.t_max);
-    assert(exit.t_hit >= ray.t_min && exit.t_hit <= ray.t_max);
-    assert(mid_entry.t_hit >= ray.t_min && mid_entry.t_hit <= ray.t_max);
+    assert(entry.t_hit >= ray.t_min); assert(entry.t_hit <= ray.t_max);
+    assert(exit.t_hit >= ray.t_min); assert(exit.t_hit <= ray.t_max);
+    assert(mid_entry.t_hit >= ray.t_min); assert(mid_entry.t_hit <= ray.t_max);
 
     NodeType type = node.type();
     bool right_first = ray.dir_is_neg[axis];

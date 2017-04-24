@@ -94,9 +94,9 @@ namespace dort {
         bounce_wo, bounce_dir_pdf, bounce_flags, BsdfSample(sampler.rng));
 
       Spectrum bounce_contrib = bounce_f * geom;
-      throughput *= bounce_contrib * geom;
+      throughput *= bounce_contrib;
       if(throughput.is_black()) { break; }
-      assert(is_finite(throughput) && is_nonnegative(throughput));
+      assert(is_finite(throughput)); assert(is_nonnegative(throughput));
 
       if(bounces + 3 > this->min_length && bounces >= 2) {
         float survive_prob = clamp(bounce_contrib.average(), 0.1f, 0.9f);
@@ -175,7 +175,7 @@ namespace dort {
     Spectrum contrib = throughput * importance * bsdf_f *
         ( abs_dot(isect.world_diff_geom.nn, camera_wo)
         / (length_squared(camera_p - isect.world_diff_geom.p) * camera_p_pdf));
-    assert(is_finite(contrib) && is_nonnegative(contrib));
+    assert(is_finite(contrib)); assert(is_nonnegative(contrib));
     if(!contrib.is_black() && shadow.visible(*this->scene)) {
       this->film->add_splat(film_pos, contrib);
     }

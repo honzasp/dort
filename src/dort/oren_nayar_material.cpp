@@ -5,13 +5,18 @@ namespace dort {
   Spectrum OrenNayarBrdf::eval_f(const Vector& wi_light,
       const Vector& wo_camera, BxdfFlags request) const 
   {
-    assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
+    assert(request & BSDF_REFLECTION); assert(request & BSDF_DIFFUSE); (void)request;
     float sigma_square = square(this->sigma);
     float a = 1.f - 0.5f * sigma_square / (sigma_square + 0.33f);
     float b = 0.45f * sigma_square / (sigma_square + 0.09f);
 
     float cos_theta_i = Bsdf::abs_cos_theta(wi_light);
     float cos_theta_o = Bsdf::abs_cos_theta(wo_camera);
+    if(cos_theta_i == 0.f || cos_theta_o == 0.f) { return Spectrum(0.f); }
+    if(cos_theta_i >= 0.99f || cos_theta_o >= 0.99f) {
+      return this->albedo * (INV_PI * a);
+    }
+
     float sin_theta_i = Bsdf::sin_theta(wi_light);
     float sin_theta_o = Bsdf::sin_theta(wo_camera);
     float sin_phi_i = Bsdf::sin_phi(wi_light);
@@ -29,14 +34,14 @@ namespace dort {
       tan_beta = sin_theta_o / cos_theta_o;
     }
 
-    return this->albedo * INV_PI * 
-      (a + b * max(0.f, cos_diff_phi) * sin_alpha * tan_beta);
+    return this->albedo * (INV_PI * 
+      (a + b * max(0.f, cos_diff_phi) * sin_alpha * tan_beta));
   }
 
   Spectrum OrenNayarBrdf::sample_symmetric_f(const Vector& w_fix, BxdfFlags request,
       Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
-    assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
+    assert(request & BSDF_REFLECTION); assert(request & BSDF_DIFFUSE); (void)request;
     out_w_gen = Vector(cosine_hemisphere_sample(uvc.x, uvc.y));
     out_dir_pdf = cosine_hemisphere_pdf(out_w_gen.v.z);
     out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
@@ -47,7 +52,7 @@ namespace dort {
   float OrenNayarBrdf::symmetric_f_pdf(const Vector& w_gen,
       const Vector&, BxdfFlags request) const 
   {
-    assert((request & BSDF_REFLECTION) && (request & BSDF_DIFFUSE));
+    assert(request & BSDF_REFLECTION); assert(request & BSDF_DIFFUSE); (void)request;
     return cosine_hemisphere_pdf(w_gen.v.z);
   }
 

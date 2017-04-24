@@ -84,7 +84,7 @@ namespace dort {
     for(const auto& bxdf: this->bxdfs) {
       if(bxdf->matches_request(eval_request)) {
         Spectrum f = bxdf->eval_f(wi_local, wo_local, eval_request);
-        assert(is_finite(f) && is_nonnegative(f));
+        assert(is_finite(f)); assert(is_nonnegative(f));
         f_sum += f;
       }
     }
@@ -143,10 +143,10 @@ namespace dort {
       : sampled_bxdf->sample_camera_f(w_fix_local, request,
           w_gen_local, sampled_dir_pdf, sampled_flags, sample_uvc);
 
-    assert(is_finite(sampled_f) && is_nonnegative(sampled_f));
+    assert(is_finite(sampled_f)); assert(is_nonnegative(sampled_f));
     if(sampled_dir_pdf == 0.f) { return Spectrum(0.f); }
-    assert(is_finite(sampled_dir_pdf) && sampled_dir_pdf >= 0.f);
-    assert((sampled_flags & BSDF_MODES) && (sampled_flags & BSDF_LOBES));
+    assert(is_finite(sampled_dir_pdf)); assert(sampled_dir_pdf >= 0.f);
+    assert((sampled_flags & BSDF_MODES)); assert((sampled_flags & BSDF_LOBES));
     assert(is_unit(w_gen_local));
 
     out_flags = sampled_flags;
@@ -176,14 +176,14 @@ namespace dort {
             FIX_IS_CAMERA ? w_gen_local : w_fix_local,
             FIX_IS_CAMERA ? w_fix_local : w_gen_local,
             eval_request);
-        assert(is_finite(f) && is_nonnegative(f));
+        assert(is_finite(f)); assert(is_nonnegative(f));
         sum_f += f;
       }
 
       float pdf = FIX_IS_CAMERA
         ? bxdf->light_f_pdf(w_gen_local, w_fix_local, request)
         : bxdf->camera_f_pdf(w_gen_local, w_fix_local, request);
-      assert(is_finite(pdf) && pdf >= 0.f);
+      assert(is_finite(pdf)); assert(pdf >= 0.f);
       sum_dir_pdfs += pdf;
     }
 

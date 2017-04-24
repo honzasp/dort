@@ -58,7 +58,7 @@ namespace dort {
   float PiecewiseDistrib2d::sample_cdf_slice(slice<const float> cdf,
       float u, uint32_t& out_idx) 
   {
-    assert(u >= 0.f && u <= 1.f);
+    assert(u >= 0.f); assert(u <= 1.f);
     uint32_t begin = 0;
     uint32_t end = cdf.size() - 1;
     while(begin + 1 < end) {

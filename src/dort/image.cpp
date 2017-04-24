@@ -16,7 +16,7 @@ namespace dort {
     uint8_t* data = stbi_load_from_file(input, &x_res, &y_res, 0, 3);
 
     assert(data);
-    assert(x_res >= 0 && y_res >= 0);
+    assert(x_res >= 0); assert(y_res >= 0);
     Image<PixelRgb8> img(x_res, y_res);
     std::memcpy(img.storage.data(), data,
         3 * sizeof(uint8_t) * img.res.x * img.res.y);
@@ -30,7 +30,7 @@ namespace dort {
     float* data = stbi_loadf_from_file(input, &x_res, &y_res, 0, 3);
 
     assert(data);
-    assert(x_res >= 0 && y_res >= 0);
+    assert(x_res >= 0); assert(y_res >= 0);
     Image<PixelRgbFloat> img(x_res, y_res);
     std::memcpy(img.storage.data(), data, 
         3 * sizeof(float) * img.res.x * img.res.y);

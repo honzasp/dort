@@ -20,7 +20,7 @@ namespace dort {
   }
 
   uint32_t DiscreteDistrib1d::sample(float u) const {
-    assert(u >= 0.f && u <= 1.f);
+    assert(u >= 0.f); assert(u <= 1.f);
     uint32_t begin = 0;
     uint32_t end = this->cdf.size() - 1;
     while(begin + 1 < end) {

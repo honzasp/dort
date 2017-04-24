@@ -131,7 +131,7 @@ namespace dort {
       }
 
       make_leaf = split.prefer_leaf && elem_count <= ctx.opts.max_leaf_size;
-      assert(node.begin < split.mid && split.mid + 1 < node.end);
+      assert(node.begin < split.mid); assert(split.mid + 1 < node.end);
     }
 
     if(make_leaf) {
