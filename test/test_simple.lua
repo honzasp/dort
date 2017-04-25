@@ -148,19 +148,19 @@ local base_opts = {
 local render_optss = {
   dort.std.merge(base_opts, {
     renderer = "pt",
-    iterations = 2,
+    iterations = 6,
   }),
   dort.std.merge(base_opts, {
     renderer = "lt",
-    iterations = 10,
+    iterations = 15,
   }),
   dort.std.merge(base_opts, {
     renderer = "bdpt",
-    iterations = 2,
+    iterations = 6,
   }),
   dort.std.merge(base_opts, {
     renderer = "vcm",
-    iterations = 3,
+    iterations = 4,
     initial_radius = 0.02
     --debug_image_dir = "test/_vcm_debug",
   }),

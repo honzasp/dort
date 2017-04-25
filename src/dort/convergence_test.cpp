@@ -51,7 +51,7 @@ namespace dort {
       assert(max_diff >= 0.f);
 
       if(abs(mean_diff) > max_diff) {
-        return "Tile (" + std::to_string(tile_res.p_min.x) + "," +
+        return "tile (" + std::to_string(tile_res.p_min.x) + "," +
           std::to_string(tile_res.p_min.y) + "):(" +
           std::to_string(tile_res.p_max.x) + "," +
           std::to_string(tile_res.p_max.y) + ") has diff " +
@@ -61,34 +61,35 @@ namespace dort {
       return "";
     };
 
-    std::vector<Recti> tiles;
-    for(uint32_t depth = max_depth + 1; depth-- > 0; ) {
+    auto test_depth = [&](uint32_t depth) -> std::string {
       int32_t tile_size = min(res.x, res.y) >> depth;
       int32_t tiles_x = (res.x + tile_size - 1) / tile_size;
       int32_t tiles_y = (res.y + tile_size - 1) / tile_size;
       for(int32_t tile_y = 0; tile_y < tiles_y; ++tile_y) {
         for(int32_t tile_x = 0; tile_x < tiles_x; ++tile_x) {
-          tiles.emplace_back(tile_x * tile_size, tile_y * tile_size,
+          auto error = test_tile(Recti(tile_x * tile_size, tile_y * tile_size,
               min((tile_x + 1) * tile_size, res.x),
-              min((tile_y + 1) * tile_size, res.y));
+              min((tile_y + 1) * tile_size, res.y)));
+          if(!error.empty()) { return error; }
         }
       }
-    }
+      return "";
+    };
 
     std::mutex error_mutex;
     std::string error;
     // ensure that we always report the first error
-    std::atomic<uint32_t> error_i(-1u);
+    std::atomic<uint32_t> error_depth(-1u);
 
-    fork_join(*ctx.pool, tiles.size(), [&](uint32_t tile_i) {
-      if(error_i.load() < tile_i) { return; }
-      auto local_error = test_tile(tiles.at(tile_i));
+    fork_join(*ctx.pool, max_depth + 1, [&](uint32_t depth) {
+      if(error_depth.load() < depth) { return; }
+      auto local_error = test_depth(depth);
       if(local_error.empty()) { return; }
 
       std::unique_lock<std::mutex> error_lock(error_mutex);
-      if(tile_i < error_i.load()) {
+      if(depth < error_depth.load()) {
         error = local_error;
-        error_i.store(tile_i);
+        error_depth.store(depth);
       }
     });
 

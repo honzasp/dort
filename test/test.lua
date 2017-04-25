@@ -10,10 +10,11 @@ local COLORS = {
 
 local t = {
   dir = "test",
-  pattern = {"bsdf", "mirror"},
+  pattern = {"simple"},
   renderer = nil,
   compare_with_ref = true,
   generate_ref = false,
+  verbose = false,
   tests = {},
 
   test = function(self, name, scene, render_optss, ref_opts)
@@ -54,7 +55,7 @@ local t = {
       end
     end
 
-    dort.std.printf("test %s\n", name)
+    if self.verbose then dort.std.printf("test %s\n", name) end
     local ref_path = string.format("%s/ref/%s.hdr", self.dir, name)
     local out_dir_path = string.format("%s/out/%s", self.dir, name)
 
@@ -86,7 +87,7 @@ local t = {
         goto next_iter
       end
 
-      dort.std.printf("  %s...", render_opts.renderer)
+      if self.verbose then dort.std.printf("  %s...", render_opts.renderer) end
       io.stdout:flush()
       local out_image, test_time_s = self:render(scene, render_opts)
       dort.image.write_rgbe(string.format("%s/%s.hdr",
@@ -120,13 +121,17 @@ local t = {
           warn = COLORS.yellow,
           err = COLORS.red,
         })[status]
-        dort.std.printf(" %s%s (%g s): %g%s\n", color, status, test_time_s,
-          norm_sd, COLORS.reset)
 
-        if conv_error then
-          dort.std.printf("    %s\n", conv_error)
+        if self.verbose then
+          dort.std.printf(" %s%s (%g s): %g%s\n", color, status,
+            test_time_s, norm_sd, COLORS.reset)
+          if conv_error then dort.std.printf("    %s\n", conv_error) end
+        elseif status ~= "ok" then
+          dort.std.printf("%stest %s %s: %s%s\n", color, name,
+            render_opts.renderer, status, COLORS.reset)
+          if conv_error then dort.std.printf("  %s\n", conv_error) end
         end
-      else
+      elseif self.verbose then
         dort.std.printf(" %sdone (%g s)%s\n", COLORS.cyan, test_time_s, COLORS.reset)
       end
 
