@@ -157,6 +157,7 @@ local render_optss = {
   dort.std.merge(base_opts, {
     renderer = "bdpt",
     iterations = 6,
+    --debug_image_dir = "test/_bdpt_debug",
   }),
   dort.std.merge(base_opts, {
     renderer = "vcm",
@@ -190,7 +191,11 @@ return function(t)
             if render_opts.renderer == "lt" and is_delta_surf then
               goto skip_renderer
             end
-            test_render_optss[#test_render_optss + 1] = render_opts
+            local opts = dort.std.clone(render_opts)
+            if surface_kind == "diel" and opts.renderer == "bdpt" then
+              opts.iterations = opts.iterations * 3
+            end
+            test_render_optss[#test_render_optss + 1] = opts
             ::skip_renderer::
           end
 

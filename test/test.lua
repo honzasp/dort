@@ -10,11 +10,11 @@ local COLORS = {
 
 local t = {
   dir = "test",
-  pattern = {"simple"},
-  renderer = nil,
+  pattern = {"simple", "disk_diel"},
+  renderer = "bdpt",
   compare_with_ref = true,
   generate_ref = false,
-  verbose = false,
+  verbose = true,
   tests = {},
 
   test = function(self, name, scene, render_optss, ref_opts)

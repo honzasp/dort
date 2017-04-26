@@ -539,7 +539,7 @@ namespace dort {
         } else {
           float ray_angle_pdf = light.ray_radiance_pdf(scene, x0.p, -wi, x0.nn);
           if(light.flags & LIGHT_DISTANT) {
-            ray_pdf = ray_angle_pdf;
+            ray_pdf = ray_angle_pdf * abs_dot(x1.nn, wi);
           } else {
             // the ray pdf must be converted from area*solidangle to area*area
             ray_pdf = ray_angle_pdf * abs_dot(x1.nn, wi) / length_squared(x0.p - x1.p);
