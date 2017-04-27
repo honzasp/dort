@@ -5,6 +5,7 @@
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
 #include "dort/lua_chrono.hpp"
+#include "dort/lua_env.hpp"
 #include "dort/lua_filter.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_grid.hpp"
@@ -70,6 +71,7 @@ namespace dort {
       load_sublib("builder", lua_open_builder);
       load_sublib("camera", lua_open_camera);
       load_sublib("chrono", lua_open_chrono);
+      load_sublib("env", lua_open_env);
       load_sublib("filter", lua_open_filter);
       load_sublib("geometry", lua_open_geometry);
       load_sublib("grid", lua_open_grid);
@@ -88,6 +90,10 @@ namespace dort {
 
       assert(argc >= 2);
       const char* input_file = argv[1];
+
+      for(int32_t i = 2; i < argc; ++i) {
+        ctx_g.argv.push_back(std::string(argv[i]));
+      }
 
       lua_pushcfunction(l, [](lua_State* l) -> int {
         if(!lua_isstring(l, 1)) {

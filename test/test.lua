@@ -10,11 +10,11 @@ local COLORS = {
 
 local t = {
   dir = "test",
-  pattern = {"simple", "disk_diel"},
-  renderer = "bdpt",
+  pattern = {},
+  renderer = nil,
   compare_with_ref = true,
   generate_ref = false,
-  verbose = true,
+  verbose = false,
   tests = {},
 
   test = function(self, name, scene, render_optss, ref_opts)
@@ -23,6 +23,26 @@ local t = {
 
   load_tests = function(self, file)
     (dofile(self.dir .. "/" .. file))(self)
+  end,
+
+  parse_argv = function(self, argv)
+    local i = 1
+    while i <= #argv do
+      local arg = argv[i]
+      if arg == "-r" or arg == "--renderer" then
+        self.renderer = argv[i+1]
+        i = i + 1
+      elseif arg == "-n" or arg == "--no-ref" then
+        self.compare_with_ref = false
+      elseif arg == "-g" or arg == "--generate-ref" then
+        self.generate_ref = true
+      elseif arg == "-v" or arg == "--verbose" then
+        self.verbose = true
+      else
+        self.pattern[#self.pattern + 1] = arg
+      end
+      i = i + 1
+    end
   end,
 
   run = function(self)
@@ -154,6 +174,7 @@ local t = {
   end,
 }
 
+t:parse_argv(dort.env.get_argv())
 t:load_tests("test_simple.lua")
 t:load_tests("test_box.lua")
 t:load_tests("test_bsdf.lua")
