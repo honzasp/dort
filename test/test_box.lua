@@ -296,11 +296,20 @@ return function(t)
   for _, scene_def in ipairs(cornell_scenes) do
     local scene = cornell_scene(scene_def[1], scene_def[2],
       scene_def[3], scene_def[4])
-    local render_optss = {}
+
+    local renders = {}
     for _, renderer in ipairs(scene_def[5]) do
-      render_optss[#render_optss + 1] = cornell_renderers[renderer]
+      renders[#renders + 1] = {
+        name = renderer,
+        opts = cornell_renderers[renderer],
+      }
     end
-    t:test(string.format("%s_%s_%s_%s", scene_def[1], scene_def[2],
-      scene_def[3], scene_def[4]), scene, render_optss)
+
+    t:test {
+      name = string.format("%s_%s_%s_%s", scene_def[1], scene_def[2],
+        scene_def[3], scene_def[4]),
+      scene = scene,
+      renders = renders,
+    }
   end
 end

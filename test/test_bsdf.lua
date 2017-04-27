@@ -136,15 +136,27 @@ return function(t)
     local name = string.format("bsdf_%s", pair[1])
     local scene = test_scene(pair[2])
 
-    local test_render_optss = dort.std.clone(render_optss)
+    local test_renders = {}
+    for _, render_opts in ipairs(render_optss) do
+      if pair[3] then
+        render_opts = dort.std.merge(render_opts, { max_depth = pair[3] })
+      end
+      test_renders[#test_renders + 1] = {
+        name = render_opts.renderer,
+        opts = render_opts,
+      }
+    end
+
     local test_ref_opts = dort.std.clone(ref_opts)
     if pair[3] then
-      for _, render_opts in ipairs(test_render_optss) do
-        render_opts.max_depth = pair[3]
-      end
       test_ref_opts.max_depth = pair[3]
     end
 
-    t:test(name, scene, test_render_optss, test_ref_opts)
+    t:test {
+      name = name,
+      scene = scene,
+      renders = test_renders,
+      ref_opts = test_ref_opts,
+    }
   end
 end

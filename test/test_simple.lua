@@ -186,24 +186,35 @@ return function(t)
           if is_delta_surf and is_delta_light then goto next_iter end
           if is_delta_surf and geom_kind == "disk2" then goto next_iter end
 
-          local test_render_optss = {}
+          local test_renders = {}
           for _, render_opts in ipairs(render_optss) do
             if render_opts.renderer == "lt" and is_delta_surf then
-              goto skip_renderer
+              goto skip_render
             end
+
             local opts = dort.std.clone(render_opts)
             if surface_kind == "diel" and opts.renderer == "bdpt" then
-              opts.iterations = opts.iterations * 3
+              opts.iterations = 3 * opts.iterations
             end
-            test_render_optss[#test_render_optss + 1] = opts
-            ::skip_renderer::
+            test_renders[#test_renders + 1] = {
+              name = opts.renderer,
+              opts = opts,
+              variation = 8,
+              min_tile_size = 32,
+            }
+            ::skip_render::
           end
 
           local name = string.format("simple_%s_%s_%s_%s", geom_kind,
             surface_kind, light_kind, camera_kind)
           local scene = simple_scene(geom_kind,
             surface_kind, light_kind, camera_kind)
-          t:test(name, scene, test_render_optss, ref_opts)
+          t:test {
+            name = name,
+            scene = scene,
+            renders = test_renders,
+            ref_opts = ref_opts,
+          }
           ::next_iter::
         end
       end
