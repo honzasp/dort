@@ -196,10 +196,16 @@ return function(t)
             if surface_kind == "diel" and opts.renderer == "bdpt" then
               opts.iterations = 3 * opts.iterations
             end
+
+            local vari = 4
+            if surface_kind == "diel" and light_kind == "area_fwd" then
+              vari = 12
+            end
+
             test_renders[#test_renders + 1] = {
               name = opts.renderer,
               opts = opts,
-              variation = 8,
+              variation = vari,
               min_tile_size = 32,
             }
             ::skip_render::

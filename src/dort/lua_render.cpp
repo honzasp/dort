@@ -62,6 +62,8 @@ namespace dort {
       return luaL_error(l, "No camera is set in the scene and no camera was given.");
     }
 
+    sampler->reseed(42); // TODO: temporary hack
+
     std::shared_ptr<Renderer> renderer;
     if(method == "dot") {
       renderer = std::make_shared<DotRenderer>(scene, film, sampler,

@@ -99,12 +99,13 @@ local function run_test(test_def)
 
     local status
     if conv_error then
-      return "err"
+      status = "err"
     elseif norm_sd > 1.5 then
-      return "warn"
+      status = "warn"
     else
-      return "ok"
+      status = "ok"
     end
+    return status, conv_error
   end
 
   local count = 0
@@ -123,7 +124,7 @@ local function run_test(test_def)
       out_dir_path, render_def.name), out_image)
 
     if opts.compare_with_ref then
-      local status = compare_with_ref(render_def, ref_image, out_image)
+      local status, conv_error = compare_with_ref(render_def, ref_image, out_image)
       if status == "err" then errs = errs + 1 end
 
       local color = ({
@@ -137,7 +138,7 @@ local function run_test(test_def)
         if conv_error then dort.std.printf("    %s\n", conv_error) end
       elseif status ~= "ok" then
         dort.std.printf("%stest %s %s: %s%s\n", color, test_def.name,
-          test_def.sub_name, status, COLORS.reset)
+          render_def.name, status, COLORS.reset)
         if conv_error then dort.std.printf("  %s\n", conv_error) end
       end
     elseif opts.verbose then
