@@ -41,15 +41,13 @@ namespace dort {
       Vector& out_w_gen, float& out_dir_pdf, BxdfFlags& out_flags, Vec3 uvc) const
   {
     assert(request & BSDF_REFLECTION);
-    bool sample_diffuse = request & BSDF_DIFFUSE;
-    bool sample_glossy = request & BSDF_GLOSSY;
-    assert(sample_diffuse || sample_glossy);
+    assert((request & BSDF_DIFFUSE) || (request & BSDF_GLOSSY));
 
     bool glossy;
-    if(sample_glossy && sample_diffuse) {
+    if((request & BSDF_DIFFUSE) && (request & BSDF_GLOSSY)) {
       glossy = uvc.z < this->glossy_pdf;
     } else {
-      glossy = sample_glossy;
+      glossy = request & BSDF_GLOSSY;
     }
 
     if(glossy) {
@@ -58,9 +56,8 @@ namespace dort {
       coordinate_system(refl_w, refl_s, refl_t);
 
       Vec3 relative_wi = power_cosine_hemisphere_sample(uvc.x, uvc.y, this->exponent);
-      // needs renormalizing, probably due to numerical inaccuracies
-      out_w_gen = normalize(refl_w * relative_wi.z 
-        + refl_s * relative_wi.x + refl_t * relative_wi.y);
+      out_w_gen = refl_w * relative_wi.z 
+        + refl_s * relative_wi.x + refl_t * relative_wi.y;
       out_flags = BSDF_REFLECTION | BSDF_GLOSSY;
     } else {
       out_w_gen = Vector(cosine_hemisphere_sample(uvc.x, uvc.y));
@@ -69,7 +66,7 @@ namespace dort {
 
     out_w_gen.v.z = copysign(out_w_gen.v.z, w_fix.v.z);
     out_dir_pdf = this->symmetric_f_pdf(out_w_gen, w_fix, request);
-    return this->eval_f(w_fix, out_w_gen, request);
+    return this->eval_f(out_w_gen, w_fix, request);
   }
 
   float PhongBrdf::symmetric_f_pdf(const Vector& w_gen,

@@ -339,7 +339,7 @@ namespace dort {
     } else if(s == 0 && t >= 2) {
       // The camera path hit neither a background or an area light
       return Spectrum(0.f);
-    } else if(s == 1) {
+    } else if(s == 1 && t >= 2) {
       // Connect the camera subpath to a new light vertex.
       uint32_t light_i = this->light_distrib.sample(rng.uniform_float());
       float light_pick_pdf = this->light_distrib.pdf(light_i);
@@ -388,7 +388,7 @@ namespace dort {
 
       return last_camera.alpha * bsdf_f * light_radiance
         * (abs_dot(last_camera.nn, wi) / (light_pick_pdf * wi_dir_pdf));
-    } else if(t == 1) {
+    } else if(s >= 2 && t == 1) {
       // Connect the light subpath to a new camera vertex.
       const Vertex& last_light = light_walk.at(s - 1);
       Point camera_p;
@@ -398,15 +398,14 @@ namespace dort {
           last_light.p, last_light.p_epsilon,
           camera_p, out_film_pos, camera_p_pdf,
           shadow, CameraSample(rng));
-      if(camera_importance.is_black() || camera_p_pdf == 0.f) {
-        return Spectrum(0.f);
-      }
-      if(!shadow.visible(scene)) { return Spectrum(0.f); }
+      if(camera_importance.is_black() || camera_p_pdf == 0.f) { return Spectrum(0.f); }
 
       Vector wi = normalize(light_walk.at(s - 2).p - last_light.p);
       Vector wo = normalize(camera_p - last_light.p);
       Spectrum bsdf_f = last_light.bsdf->eval_f(wi, wo, BSDF_ALL);
       if(bsdf_f.is_black()) { return Spectrum(0.f); }
+
+      if(!shadow.visible(scene)) { return Spectrum(0.f); }
 
       out_first_camera.p = camera_p;
       out_first_camera.p_epsilon = 0.f;

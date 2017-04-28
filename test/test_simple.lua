@@ -153,13 +153,13 @@ local render_optss = {
   dort.std.merge(base_opts, {
     renderer = "bdpt",
     iterations = 6,
-    debug_image_dir = "test/_bdpt_debug",
+    --debug_image_dir = "test/_bdpt_debug",
   }),
   dort.std.merge(base_opts, {
     renderer = "vcm",
     iterations = 10,
     initial_radius = 0.02,
-    --debug_image_dir = "test/_vcm_debug",
+    -- debug_image_dir = "test/_vcm_debug",
   }),
 }
 
