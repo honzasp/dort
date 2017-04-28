@@ -1,5 +1,5 @@
 local geom_kinds = {"sphe", "disk", "cube", "disk2"}
-local surface_kinds = {"diff", "glos", "mirr", "diel", "thdi"}
+local surface_kinds = {"diff", "glos", "mirr"}
 local light_kinds = {"poin_fwd", "poin_blw", "area_fwd", "dire_blw", "mixd_2", "mixd_3"}
 local camera_kinds = {"pin"}
 
@@ -12,10 +12,6 @@ local function simple_scene(geom_kind, surface_kind, light_kind, camera_kind)
       material(phong_material { albedo = rgb(0.5), exponent = 50 })
     elseif surface_kind == "mirr" then
       material(mirror_material { albedo = rgb(1) })
-    elseif surface_kind == "diel" then
-      material(dielectric_material { ior_inside = 1.5 })
-    elseif surface_kind == "thdi" then
-      material(dielectric_material { ior_inside = 1.5, is_thin = true })
     else
       error(surface_kind)
     end
@@ -157,11 +153,11 @@ local render_optss = {
   dort.std.merge(base_opts, {
     renderer = "bdpt",
     iterations = 6,
-    --debug_image_dir = "test/_bdpt_debug",
+    debug_image_dir = "test/_bdpt_debug",
   }),
   dort.std.merge(base_opts, {
     renderer = "vcm",
-    iterations = 6,
+    iterations = 10,
     initial_radius = 0.02,
     --debug_image_dir = "test/_vcm_debug",
   }),
@@ -178,8 +174,7 @@ return function(t)
     for _, surface_kind in ipairs(surface_kinds) do
       for _, light_kind in ipairs(light_kinds) do
         for _, camera_kind in ipairs(camera_kinds) do
-          local is_delta_surf = surface_kind == "mirr" or
-            surface_kind == "diel" or surface_kind == "thdi"
+          local is_delta_surf = surface_kind == "mirr"
           local is_delta_light = light_kind == "poin_fwd" or 
             light_kind == "poin_blw" or light_kind == "dire_blw" or
             light_kind == "mixd_2" or light_kind == "mixd_3"
@@ -187,29 +182,43 @@ return function(t)
           if is_delta_surf and geom_kind == "disk2" then goto next_iter end
 
           local test_renders = {}
-          for _, render_opts in ipairs(render_optss) do
-            if render_opts.renderer == "lt" and is_delta_surf then
+          for _, opts in ipairs(render_optss) do
+            if opts.renderer == "lt" and is_delta_surf then
               goto skip_render
             end
 
-            local opts = dort.std.clone(render_opts)
-            if surface_kind == "diel" and opts.renderer == "bdpt" then
-              opts.iterations = 3 * opts.iterations
-            elseif surface_kind == "glos" and light_kind == "mixd_2" then
-              if opts.renderer == "lt" then opts.iterations = 2 * opts.iterations end
-            end
+            local iter = 1
+            local vari = 1
+            local bias = 0
 
-            local vari = 4
-            if surface_kind == "diel" and light_kind == "area_fwd" then
-              if opts.renderer == "vcm" then vari = 16 else vari = 12 end
-            elseif surface_kind == "thdi" and light_kind == "area_fwd" then
-              if opts.renderer == "vcm" then vari = 10 end
+            if opts.renderer == "lt" then
+              vari = 2
+              if light_kind == "mixd_2" and surface_kind == "glos" then
+                iter = 4
+              elseif light_kind == "mixd_2" and surface_kind == "diff" then
+                iter = 2
+              elseif geom_kind == "disk2" and surface_kind == "glos" and
+                  light_kind == "area_fwd" then
+                iter = 4
+              end
+            elseif opts.renderer == "vcm" then
+              if geom_kind == "cube" then
+                bias = 0.01
+              elseif surface_kind == "diff" or surface_kind == "glos" then
+                bias = 0.008
+              end
+              if geom_kind == "sphe" and surface_kind == "diff" then
+                iter = 2
+              end
             end
 
             test_renders[#test_renders + 1] = {
               name = opts.renderer,
-              opts = opts,
+              opts = dort.std.merge(opts, {
+                iterations = opts.iterations * iter,
+              }),
               variation = vari,
+              bias = bias,
               min_tile_size = 32,
             }
             ::skip_render::

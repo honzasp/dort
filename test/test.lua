@@ -94,6 +94,7 @@ local function run_test(test_def)
     local conv_error = dort.image.test_convergence(ref_image, out_image, {
       min_tile_size = render_def.min_tile_size or 32,
       variation = render_def.variation or 8,
+      bias = render_def.bias or 0,
       p_value = 0.01,
     })
 

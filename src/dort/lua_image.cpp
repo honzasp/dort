@@ -164,6 +164,7 @@ namespace dort {
     auto tested_image = lua_check_image_f(l, 2);
     int32_t min_tile_size = lua_param_uint32(l, p, "min_tile_size");
     float variation = lua_param_float(l, p, "variation");
+    float bias = lua_param_float_opt(l, p, "bias", 0.f);
     float p_value = lua_param_float(l, p, "p_value");
     lua_params_check_unused(l, p);
 
@@ -172,7 +173,7 @@ namespace dort {
     }
 
     auto error = test_convergence(*lua_get_ctx(l), *ref_image, *tested_image,
-        min_tile_size, variation, p_value);
+        min_tile_size, variation, bias, p_value);
     if(error.empty()) {
       lua_pushnil(l);
     } else {

@@ -10,7 +10,7 @@ namespace dort {
   std::string test_convergence(CtxG& ctx,
       const Image<PixelRgbFloat>& reference,
       const Image<PixelRgbFloat>& tested,
-      int32_t min_tile_size, float variation, float p_value)
+      int32_t min_tile_size, float variation, float bias, float p_value)
   {
     assert(reference.res == tested.res);
     Vec2i res(reference.res);
@@ -45,9 +45,13 @@ namespace dort {
       float stddev_local = (tile_ref_mean * variation).max();
       float stddev = max(stddev_global, stddev_local);
 
+      float bias_global = (ref_mean * bias).max();
+      float bias_local = (tile_ref_mean * bias).max();
+      float bias = min(bias_global, bias_local);
+
       float count = float(tile_res.p_max.x - tile_res.p_min.x)
         * float(tile_res.p_max.y - tile_res.p_min.y);
-      float max_diff = -stddev / sqrt(count) * inv_phi;
+      float max_diff = -stddev / sqrt(count) * inv_phi + bias;
       assert(max_diff >= 0.f);
 
       if(abs(mean_diff) > max_diff) {
