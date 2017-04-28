@@ -161,8 +161,8 @@ local render_optss = {
   }),
   dort.std.merge(base_opts, {
     renderer = "vcm",
-    iterations = 4,
-    initial_radius = 0.02
+    iterations = 6,
+    initial_radius = 0.02,
     --debug_image_dir = "test/_vcm_debug",
   }),
 }
@@ -195,11 +195,15 @@ return function(t)
             local opts = dort.std.clone(render_opts)
             if surface_kind == "diel" and opts.renderer == "bdpt" then
               opts.iterations = 3 * opts.iterations
+            elseif surface_kind == "glos" and light_kind == "mixd_2" then
+              if opts.renderer == "lt" then opts.iterations = 2 * opts.iterations end
             end
 
             local vari = 4
             if surface_kind == "diel" and light_kind == "area_fwd" then
-              vari = 12
+              if opts.renderer == "vcm" then vari = 16 else vari = 12 end
+            elseif surface_kind == "thdi" and light_kind == "area_fwd" then
+              if opts.renderer == "vcm" then vari = 10 end
             end
 
             test_renders[#test_renders + 1] = {

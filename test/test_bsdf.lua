@@ -99,7 +99,6 @@ local materials = {
 local base_opts = {
   min_depth = 1,
   max_depth = 2,
-  iterations = 1,
   x_res = 512, y_res = 338,
   sampler = dort.sampler.make_random { samples_per_pixel = 1 },
   filter = dort.filter.make_box { radius = 0.5 },
@@ -108,6 +107,7 @@ local base_opts = {
 local render_optss = {
   dort.std.merge(base_opts, {
     renderer = "pt",
+  iterations = 1,
   }),
   dort.std.merge(base_opts, {
     renderer = "lt",

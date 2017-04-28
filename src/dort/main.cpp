@@ -33,6 +33,7 @@ namespace dort {
     stat_init_global();
 
     uint32_t thread_count = std::thread::hardware_concurrency();
+    //thread_count = 1; std::printf("ONE THREAD\n");
     auto pool_g = std::make_shared<ThreadPool>(max(thread_count, 1u));
     CtxG ctx_g(pool_g);
 

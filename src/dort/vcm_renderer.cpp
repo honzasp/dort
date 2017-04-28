@@ -523,12 +523,15 @@ namespace dort {
 
     // equations (44), (45)
     float w_light, w_camera;
-    if(light_path.light->flags & LIGHT_DISTANT) {
+    if(!(light_path.light->flags & LIGHT_DELTA)) {
       w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
+    } else {
+      w_light = 0.f;
+    }
+    if(light_path.light->flags & LIGHT_DISTANT) {
       w_camera = light_ray_pdf * abs_dot(z.nn, light_wi) / light_wi_pdf
         * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);
     } else {
-      w_light = fwd_bsdf_dir_pdf / (light_path.light_pick_pdf * light_wi_pdf);
       w_camera = light_ray_pdf * abs_dot(z.nn, light_wi)
         / (light_wi_pdf * abs_dot(light_nn, light_wi))
         * (iter_state.mis_vm_weight + z.d_vcm + bwd_bsdf_dir_pdf * z.d_vc);

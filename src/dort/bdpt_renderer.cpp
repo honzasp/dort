@@ -652,6 +652,8 @@ namespace dort {
     for(uint32_t j = 1; j <= s; ++j) {
       // alternative strategy using s - j light vertices and t + j camera
       // vertices
+      if(s - j == 0 && (light.flags & LIGHT_DELTA)) { break; }
+
       float fwd_pdf = pdf_camera(s - j);
       float bwd_pdf = pdf_light(s - j);
       assert(fwd_pdf >= 0.f); assert(is_finite(fwd_pdf));
