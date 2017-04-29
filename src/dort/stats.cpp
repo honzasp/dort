@@ -137,9 +137,14 @@ namespace dort {
       glob.sampled_count += thrd.sampled_count;
       glob.sum_ns += thrd.sum_ns;
       glob.sum_squares_ns += thrd.sum_squares_ns;
-      glob.sum_overhead_ns += thrd.sum_overhead_ns;
       glob.min_ns = std::min(glob.min_ns, thrd.min_ns);
       glob.max_ns = std::max(glob.max_ns, thrd.max_ns);
+    }
+    {
+      auto& glob = GLOBAL_STATS.timer_overhead_distrib;
+      auto& thrd = THREAD_STATS.timer_overhead_distrib;
+      glob.sampled_count += thrd.sampled_count;
+      glob.sum_ns += thrd.sum_ns;
     }
 
     THREAD_STATS.initialized = false;
@@ -182,6 +187,15 @@ namespace dort {
     }
 
     std::fprintf(output, "## Time distributions\n");
+    float estimate_overhead_ns = 0.f;
+    const auto& overhead_distrib = GLOBAL_STATS.timer_overhead_distrib;
+    if(overhead_distrib.sampled_count > 0) {
+      estimate_overhead_ns = float(overhead_distrib.sum_ns) 
+        / float(overhead_distrib.sampled_count);
+      std::fprintf(output, "estimated overhead %3g ns (%" PRIu64 ")\n",
+          estimate_overhead_ns, overhead_distrib.sampled_count);
+    }
+
     for(uint32_t i = 0; i < _TIMER_END; ++i) {
       const auto& distrib = GLOBAL_STATS.distrib_times.at(i);
       if(!distrib.enabled) { continue; }
@@ -210,9 +224,8 @@ namespace dort {
         / float(distrib.sampled_count);
       float average_square_ns = float(distrib.sum_squares_ns) 
         / float(distrib.sampled_count);
-      float average_overhead_ns = float(distrib.sum_overhead_ns) 
-        / float(distrib.sampled_count);
-      float estimate_total_ns = average_ns * float(distrib.total_count);
+      float estimate_total_ns = (average_ns - estimate_overhead_ns) 
+        * float(distrib.total_count);
       float variance = abs(average_square_ns - average_ns * average_ns);
       float stddev_ns = sqrt(variance);
 
@@ -220,11 +233,10 @@ namespace dort {
       std::fprintf(output, ", sd "); p(stddev_ns);
       std::fprintf(output, ", n %" PRIu64 "/%" PRIu64,
           distrib.sampled_count, distrib.total_count);
-      std::fprintf(output, ", total ~"); p(estimate_total_ns);
       std::fprintf(output, "\n                                  ");
-      std::fprintf(output, "min "); p(float(distrib.min_ns));
+      std::fprintf(output, "total ~"); p(estimate_total_ns);
+      std::fprintf(output, ", min "); p(float(distrib.min_ns));
       std::fprintf(output, ", max "); p(float(distrib.max_ns));
-      std::fprintf(output, ", avg ohead "); p(average_overhead_ns);
       std::fprintf(output, "\n");
     }
   }
@@ -244,7 +256,9 @@ namespace dort {
     assert(!THREAD_STATS.initialized);
 
     std::unique_lock<std::mutex> global_lock(GLOBAL_STATS_MUTEX);
-    GLOBAL_STATS.enabled = true;
+    if(enable) {
+      GLOBAL_STATS.enabled = true;
+    }
 
     for(uint32_t i = 0; i < _COUNTER_END; ++i) {
       if(stat_name_matches(STAT_COUNTER_DEFS.at(i).name, word)) {
@@ -265,12 +279,18 @@ namespace dort {
 
   StatTimer::StatTimer(StatDistribTime distrib_id) {
     this->distrib_id = distrib_id;
-    uint32_t prob = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_probability;
-    uint32_t rand = THREAD_TIME_SAMPLE_RNG() << (32 - THREAD_TIME_SAMPLE_RNG.word_size);
-    if((this->measuring = rand < prob)) {
-      this->time_0 = stat_clock_now_ns();
-    }
+    this->measuring = false;
+    this->estimate_overhead = false;
     this->active = true;
+
+    if(THREAD_STATS.distrib_times.at(this->distrib_id).enabled) {
+      uint32_t prob = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_probability;
+      uint32_t rand = THREAD_TIME_SAMPLE_RNG() << (32 - THREAD_TIME_SAMPLE_RNG.word_size);
+      if((this->measuring = rand < prob)) {
+        this->estimate_overhead = (uint64_t(rand) * 64 / prob) == 0;
+        this->time_0 = stat_clock_now_ns();
+      }
+    }
   }
 
   StatTimer::~StatTimer() {
@@ -288,15 +308,20 @@ namespace dort {
     }
 
     int64_t time_1 = stat_clock_now_ns();
-    THREAD_TIME_SAMPLE_RNG();
-    int64_t time_2 = stat_clock_now_ns();
-    int64_t overhead_ns = time_2 - time_1;
-    int64_t sample_ns = time_1 - this->time_0 - overhead_ns;
+    int64_t sample_ns = time_1 - this->time_0;
+
+    if(this->estimate_overhead) {
+      auto& o_distrib = THREAD_STATS.timer_overhead_distrib;
+      int64_t time_2 = stat_clock_now_ns();
+      int64_t o_sample_ns = time_2 - time_1;
+
+      o_distrib.sampled_count += 1;
+      o_distrib.sum_ns += o_sample_ns;
+    }
 
     distrib.sampled_count += 1;
     distrib.sum_ns += sample_ns;
     distrib.sum_squares_ns += sample_ns * sample_ns;
-    distrib.sum_overhead_ns += overhead_ns;
     distrib.min_ns = std::min(distrib.min_ns, sample_ns);
     distrib.max_ns = std::max(distrib.max_ns, sample_ns);
     this->active = this->measuring = false;

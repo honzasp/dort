@@ -106,7 +106,6 @@ namespace dort {
       uint64_t sampled_count = 0;
       int64_t sum_ns = 0;
       int64_t sum_squares_ns = 0;
-      int64_t sum_overhead_ns = 0;
       int64_t min_ns = INT64_MAX;
       int64_t max_ns = INT64_MIN;
     };
@@ -116,6 +115,7 @@ namespace dort {
     std::vector<Counter> counters;
     std::vector<DistribInt> distrib_ints;
     std::vector<DistribTime> distrib_times;
+    DistribTime timer_overhead_distrib;
   };
 
   extern Stats GLOBAL_STATS;
@@ -146,6 +146,7 @@ namespace dort {
     int64_t time_0;
     bool active;
     bool measuring;
+    bool estimate_overhead;
   public:
     StatTimer(StatDistribTime distrib_id);
     ~StatTimer();
