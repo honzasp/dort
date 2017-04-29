@@ -42,11 +42,6 @@ namespace dort {
 
   const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS = {
     { "render", 0 },
-    { "render tile", 16 },
-    { "direct get_radiance", 256 },
-    { "uniform_sample_all_lights", 256 }, 
-    { "estimate_direct", 512 },
-    { "trace_specular", 512 },
     { "scene isect", 256 },
     { "scene isect_p", 256 },
     { "film add_sample", 256 },
