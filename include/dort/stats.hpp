@@ -85,7 +85,13 @@ namespace dort {
   };
 
   struct Stats {
+    struct Counter {
+      bool enabled = false;
+      uint64_t count = 0;
+    };
+
     struct DistribInt {
+      bool enabled = false;
       uint64_t count = 0;
       int64_t sum = 0;
       int64_t sum_squares = 0;
@@ -94,6 +100,8 @@ namespace dort {
     };
 
     struct DistribTime {
+      bool enabled = false;
+      uint32_t ticks_to_sample = 0;
       uint64_t total_count = 0;
       uint64_t sampled_count = 0;
       int64_t sum_ns = 0;
@@ -104,7 +112,8 @@ namespace dort {
     };
 
     bool initialized = false;
-    std::vector<uint64_t> counters;
+    bool enabled = false;
+    std::vector<Counter> counters;
     std::vector<DistribInt> distrib_ints;
     std::vector<DistribTime> distrib_times;
   };
@@ -125,9 +134,11 @@ namespace dort {
   void stat_finish_thread();
   void stat_report_global(FILE* output);
   void stat_reset_global();
+  bool stat_name_matches(const char* name, const std::string& word);
+  void stat_enable(const std::string& word, bool enable);
 
   inline void stat_count(StatCounter id) {
-    THREAD_STATS.counters.at(id) += 1;
+    THREAD_STATS.counters.at(id).count += 1;
   }
 
   class StatTimer {
@@ -156,6 +167,8 @@ namespace dort {
   inline void stat_finish_thread() { }
   inline void stat_report_global(FILE*) { }
   inline void stat_reset_global() { }
+  inline void stat_enable(const std::string&) { }
+  inline void stat_disable(const std::string&) { }
 
   inline void stat_count(StatCounter) { }
 
