@@ -80,7 +80,7 @@ local function run_test(test_def)
     end
     io.stdout:flush()
 
-    local out_image, ref_time_s = render(scene, ref_opts)
+    local out_image, ref_time_s = render(test_def.scene, ref_opts)
     dort.image.write_rgbe(ref_path, out_image)
     dort.std.printf(" %sdone (%g s)%s\n", COLORS.cyan, ref_time_s, COLORS.reset)
   end

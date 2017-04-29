@@ -199,19 +199,19 @@ end
 local cornell_scenes = {
   {"box", "diff", "area", "pin", {"pt", "lt", "bdpt", "vcm"}},
   {"box", "glos", "area", "pin", {"pt", "bdpt", "vcm"}},
-  {"box", "delt", "area", "pin", {"bdpt", "vcm"}},
+  --{"box", "delt", "area", "pin", {"bdpt", "vcm"}},
   {"box", "diff", "sphe", "pin", {"pt", "bdpt", "vcm"}},
   {"box", "glos", "sphe", "pin", {"pt", "bdpt", "vcm"}},
   {"box", "delt", "sphe", "pin", {"pt", "bdpt", "vcm"}},
-  {"box", "diff", "poin", "pin", {"pt_min_1", "lt_min_1", "bdpt_min_1", "vcm"}},
-  {"box", "glos", "poin", "pin", {"pt_min_1", "bdpt_min_1", "vcm"}},
-  {"box", "delt", "poin", "pin", {"bdpt_min_1", "vcm"}},
+  {"box", "diff", "poin", "pin", {"pt", "lt", "bdpt", "vcm"}},
+  {"box", "glos", "poin", "pin", {"pt", "bdpt", "vcm"}},
+  --{"box", "delt", "poin", "pin", {"bdpt", "vcm"}},
   {"box", "diff", "dire", "pin", {"pt", "lt", "bdpt", "vcm"}},
   {"box", "glos", "dire", "pin", {"pt", "bdpt", "vcm"}},
   {"box", "delt", "dire", "pin", {"pt", "bdpt", "vcm"}},
-  {"box", "diff", "beam", "pin", {"bdpt", "vcm"}},
-  {"box", "glos", "beam", "pin", {"bdpt", "vcm"}},
-  {"box", "delt", "beam", "pin", {"bdpt", "vcm"}},
+  --{"box", "diff", "beam", "pin", {"bdpt", "vcm"}},
+  --{"box", "glos", "beam", "pin", {"bdpt", "vcm"}},
+  --{"box", "delt", "beam", "pin", {"bdpt", "vcm"}},
   {"openbox", "diff", "infi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "glos", "infi", "pin", {"pt", "bdpt", "vcm"}},
   {"openbox", "delt", "infi", "pin", {"pt", "bdpt", "vcm"}},
@@ -220,96 +220,94 @@ local cornell_scenes = {
   {"openbox", "delt", "envi", "pin", {"pt", "bdpt", "vcm"}},
   {"box", "diff", "area", "orth", {"pt", "bdpt", "vcm"}},
   {"box", "diff", "area", "thin", {"pt", "lt", "bdpt", "vcm"}},
+  --]]
 }
 
-local cornell_renderers = {
-  pt = {
+local base_opts = {
+  x_res = 512, y_res = 512,
+  sampler = dort.sampler.make_random { samples_per_pixel = 1 },
+  filter = dort.filter.make_box { radius = 0.5 },
+}
+
+local render_optss = {
+  pt = dort.std.merge(base_opts, {
     renderer = "pt",
-    min_depth = 0,
-    max_depth = 4,
-    iterations = 1,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-  },
-  pt_min_1 = {
-    renderer = "pt",
-    min_depth = 1,
-    max_depth = 4,
-    iterations = 1,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-  },
-  lt = {
+    iterations = 5,
+  }),
+  lt = dort.std.merge(base_opts, {
     renderer = "lt",
-    min_depth = 0,
-    max_depth = 4,
-    iterations = 1,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-  },
-  lt_min_1 = {
-    renderer = "lt",
-    min_depth = 1,
-    max_depth = 4,
-    iterations = 1,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-  },
-  bdpt = {
+    iterations = 10,
+  }),
+  bdpt = dort.std.merge(base_opts, {
     renderer = "bdpt",
-    min_depth = 0,
-    max_depth = 4,
-    iterations = 1,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-  },
-  bdpt_min_1 = {
-    renderer = "bdpt",
-    min_depth = 1,
-    max_depth = 4,
-    iterations = 1,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-    --debug_image_dir = "test/_bdpt_debug",
-  },
-  vcm = {
+    iterations = 5,
+  }),
+  vcm = dort.std.merge(base_opts, {
     renderer = "vcm",
-    min_depth = 0,
-    max_depth = 4,
     iterations = 5,
     initial_radius = 1*cornell_scale,
-    alpha = 0.7,
-    x_res = 512, y_res = 512,
-    sampler = dort.sampler.make_random { samples_per_pixel = 1},
-    filter = dort.filter.make_box { radius = 0.5 },
-    debug_image_dir = "test/_vcm_debug",
-  },
+  }),
 }
+
+local ref_opts = dort.std.merge(base_opts, {
+  renderer = "pt",
+  iterations = 500,
+})
 
 return function(t)
   for _, scene_def in ipairs(cornell_scenes) do
-    local scene = cornell_scene(scene_def[1], scene_def[2],
-      scene_def[3], scene_def[4])
+    local geom_kind = scene_def[1]
+    local surface_kind = scene_def[2]
+    local light_kind = scene_def[3]
+    local camera_kind = scene_def[4]
+    local scene = cornell_scene(geom_kind, surface_kind, light_kind, camera_kind)
 
-    local renders = {}
-    for _, renderer in ipairs(scene_def[5]) do
-      renders[#renders + 1] = {
-        name = renderer,
-        opts = cornell_renderers[renderer],
+    local min_depth = 0
+    local max_depth = 3
+    if light_kind == "poin" then
+      min_depth = 1
+    end
+
+    local ref_iter = 1
+    if surface_kind == "delt" then
+      ref_iter = 8
+    elseif surface_kind == "glos" then
+      ref_iter = 4
+    end
+
+    local function add_test_depth(min_depth, max_depth)
+      local name = string.format("%s_%s_%s_%s", geom_kind,
+        surface_kind, light_kind, camera_kind)
+      if min_depth == max_depth then
+        name = string.format("%s_d%d", name, min_depth)
+      end
+
+      local renders = {}
+      for _, renderer in ipairs(scene_def[5]) do
+        renders[#renders + 1] = {
+          name = renderer,
+          opts = dort.std.merge(render_optss[renderer], {
+            min_depth = min_depth,
+            max_depth = min_depth,
+          }),
+        }
+      end
+
+      t:test {
+        name = name,
+        scene = scene,
+        renders = renders,
+        ref_opts = dort.std.merge(ref_opts, {
+          min_depth = min_depth,
+          max_depth = min_depth,
+          iterations = ref_opts.iterations * ref_iter,
+        }),
       }
     end
 
-    t:test {
-      name = string.format("%s_%s_%s_%s", scene_def[1], scene_def[2],
-        scene_def[3], scene_def[4]),
-      scene = scene,
-      renders = renders,
-    }
+    for depth = min_depth, max_depth do
+      add_test_depth(depth, depth)
+    end
+    add_test_depth(min_depth, max_depth)
   end
 end
