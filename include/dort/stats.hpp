@@ -81,7 +81,7 @@ namespace dort {
 
   struct StatDistribTimeDef {
     const char* name;
-    uint32_t sample_probability;
+    uint32_t sample_period;
   };
 
   struct Stats {

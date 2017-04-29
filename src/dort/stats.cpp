@@ -41,39 +41,39 @@ namespace dort {
   };
 
   const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS = {
-    { "render", UINT32_MAX },
-    { "render tile", UINT32_MAX / 16 },
-    { "direct get_radiance", UINT32_MAX / 256 },
-    { "uniform_sample_all_lights", UINT32_MAX / 256 }, 
-    { "estimate_direct", UINT32_MAX / 512 },
-    { "trace_specular", UINT32_MAX / 512 },
-    { "scene isect", UINT32_MAX / 256 },
-    { "scene isect_p", UINT32_MAX / 256 },
-    { "film add_sample", UINT32_MAX / 256 },
-    { "film add_splat", UINT32_MAX / 256 },
-    { "film add_tile", UINT32_MAX / 16 },
-    { "rng float", UINT32_MAX / 1024 },
-    { "rng uint32", UINT32_MAX / 1024 },
-    { "bvh build", UINT32_MAX },
-    { "bvh compute build_infos", UINT32_MAX },
-    { "bvh build node parallel", UINT32_MAX },
-    { "bvh build node serial", UINT32_MAX / 256 },
-    { "bvh build partition parallel", UINT32_MAX },
-    { "bvh build partition serial", UINT32_MAX / 256 },
-    { "bvh write_linear_node", UINT32_MAX / 1024 },
-    { "bvh write_linear_node resize", UINT32_MAX },
-    { "bvh split_middle", UINT32_MAX / 256 },
-    { "bvh split_middle bounds out parallel", UINT32_MAX },
-    { "bvh split_middle bounds out serial", UINT32_MAX / 256 },
-    { "bvh split_middle bounds in parallel", UINT32_MAX },
-    { "bvh split_middle bounds in serial", UINT32_MAX / 1024 },
-    { "bvh split_median", UINT32_MAX / 256 },
-    { "bvh split_sah", UINT32_MAX / 256 },
-    { "bvh traverse node", UINT32_MAX / 256 },
-    { "bvh traverse elem", UINT32_MAX / 256 },
-    { "pool wait", UINT32_MAX / 16 },
-    { "pool job", UINT32_MAX / 16 },
-    { "pool schedule", UINT32_MAX / 16 },
+    { "render", 0 },
+    { "render tile", 16 },
+    { "direct get_radiance", 256 },
+    { "uniform_sample_all_lights", 256 }, 
+    { "estimate_direct", 512 },
+    { "trace_specular", 512 },
+    { "scene isect", 256 },
+    { "scene isect_p", 256 },
+    { "film add_sample", 256 },
+    { "film add_splat", 256 },
+    { "film add_tile", 16 },
+    { "rng float", 1024 },
+    { "rng uint32", 1024 },
+    { "bvh build", 0 },
+    { "bvh compute build_infos", 0 },
+    { "bvh build node parallel", 0 },
+    { "bvh build node serial", 256 },
+    { "bvh build partition parallel", 0 },
+    { "bvh build partition serial", 256 },
+    { "bvh write_linear_node", 1024 },
+    { "bvh write_linear_node resize", 0 },
+    { "bvh split_middle", 256 },
+    { "bvh split_middle bounds out parallel", 0 },
+    { "bvh split_middle bounds out serial", 256 },
+    { "bvh split_middle bounds in parallel", 0 },
+    { "bvh split_middle bounds in serial", 1024 },
+    { "bvh split_median", 256 },
+    { "bvh split_sah", 256 },
+    { "bvh traverse node", 256 },
+    { "bvh traverse elem", 256 },
+    { "pool wait", 16 },
+    { "pool job", 16 },
+    { "pool schedule", 16 },
   };
 
   int64_t stat_clock_now_ns() {
@@ -283,12 +283,20 @@ namespace dort {
     this->estimate_overhead = false;
     this->active = true;
 
-    if(THREAD_STATS.distrib_times.at(this->distrib_id).enabled) {
-      uint32_t prob = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_probability;
-      uint32_t rand = THREAD_TIME_SAMPLE_RNG() << (32 - THREAD_TIME_SAMPLE_RNG.word_size);
-      if((this->measuring = rand < prob)) {
-        this->estimate_overhead = (uint64_t(rand) * 64 / prob) == 0;
+    auto& distrib = THREAD_STATS.distrib_times.at(this->distrib_id);
+    if(distrib.enabled) {
+      if(distrib.ticks_to_sample-- == 0) {
+        uint32_t period = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_period;
+        distrib.ticks_to_sample = std::uniform_int_distribution<uint32_t>(
+            period / 2, 3 * period / 2)(THREAD_TIME_SAMPLE_RNG);
+        this->measuring = true;
         this->time_0 = stat_clock_now_ns();
+
+        auto& o_distrib = THREAD_STATS.timer_overhead_distrib;
+        if(o_distrib.ticks_to_sample-- == 0) {
+          this->estimate_overhead = true;
+          o_distrib.ticks_to_sample = 512;
+        }
       }
     }
   }
