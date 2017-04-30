@@ -32,10 +32,7 @@ namespace dort {
     virtual ~Sampler() { }
     virtual void start_pixel() = 0;
     virtual void start_pixel_sample() = 0;
-    virtual std::shared_ptr<Sampler> split() = 0;
-    void reseed(uint32_t seed) { // TODO: temporary hack
-      this->rng = Rng(seed);
-    }
+    virtual std::shared_ptr<Sampler> split(uint32_t seed) = 0;
 
     virtual uint32_t round_count(uint32_t count) {
       return count; 

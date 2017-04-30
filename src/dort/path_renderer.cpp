@@ -1,20 +1,23 @@
 #include "dort/camera.hpp"
+#include "dort/ctx.hpp"
 #include "dort/discrete_distrib_1d.hpp"
 #include "dort/film.hpp"
 #include "dort/path_renderer.hpp"
 #include "dort/primitive.hpp"
+#include "dort/thread_pool.hpp"
 #include "dort/vec_2i.hpp"
 
 namespace dort {
   void PathRenderer::render(CtxG& ctx, Progress&) {
+    StatTimer t(TIMER_RENDER);
     this->light_distrib = compute_light_distrib(*this->scene);
 
-    for(uint32_t i = 0; i < this->iteration_count; ++i) {
+    parallel_for(*ctx.pool, this->iteration_count, [&](uint32_t i) {
       this->iteration_tiled(ctx, [&](Vec2i pixel, Vec2& film_pos, Sampler& sampler) {
         film_pos = Vec2(pixel) + (i == 0 ? Vec2(0.5f, 0.5f) : sampler.random_2d());
         return this->sample(film_pos, sampler);
       });
-    }
+    });
   }
 
   Spectrum PathRenderer::sample(Vec2 film_pos, Sampler& sampler) const {

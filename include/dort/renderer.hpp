@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include "dort/dort.hpp"
 
 namespace dort {
@@ -14,6 +15,8 @@ namespace dort {
     std::shared_ptr<Film> film;
     std::shared_ptr<Sampler> sampler;
     std::shared_ptr<Camera> camera;
+    std::mutex film_mutex;
+    std::mutex sampler_mutex;
   public:
     Renderer(std::shared_ptr<Scene> scene,
         std::shared_ptr<Film> film,

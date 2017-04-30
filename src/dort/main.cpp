@@ -112,9 +112,10 @@ R"(Usage: dort [options] [--] <program.lua> [program args]
     }
 
     stat_init_thread();
-    auto pool_g = std::make_shared<ThreadPool>(max(thread_count, 1u));
-    CtxG ctx_g(pool_g);
+    CtxG ctx_g;
+    ctx_g.pool = std::make_shared<ThreadPool>();
     ctx_g.argv = std::move(lua_argv);
+    ctx_g.pool->start(thread_count);
 
     lua_State* l = luaL_newstate();
     lua_set_ctx(l, &ctx_g);

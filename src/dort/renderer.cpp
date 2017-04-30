@@ -26,7 +26,7 @@ namespace dort {
   void Renderer::iteration_tiled(CtxG& ctx,
       std::function<Spectrum(Vec2i, Vec2&, Sampler&)> get_pixel_contrib)
   {
-    this->iteration_tiled_per_job(ctx, 
+    this->iteration_tiled_per_job(ctx,
       [&](Film& tile_film, Recti tile_rect, Recti tile_film_rect, Sampler& sampler)
     {
       for(int32_t y = tile_rect.p_min.y; y < tile_rect.p_max.y; ++y) {
@@ -52,13 +52,13 @@ namespace dort {
       Vec2(float(layout_tiles.x), float(layout_tiles.y));
     uint32_t tile_count = layout_tiles.x * layout_tiles.y;
 
-    std::vector<std::shared_ptr<Sampler>> samplers;
-    for(uint32_t i = 0; i < tile_count; ++i) {
-      samplers.push_back(this->sampler->split());
-    }
+    std::unique_lock<std::mutex> sampler_lock(this->sampler_mutex);
+    uint32_t seed = sampler->rng.uniform_uint32(1 << 24);
+    sampler_lock.unlock();
 
-    std::mutex film_mutex;
-    fork_join(*ctx.pool, tile_count, [&](uint32_t tile_i) {
+    parallel_for(*ctx.pool, tile_count, [&](uint32_t i) {
+      StatTimer t(TIMER_RENDERER_TILE);
+      uint32_t tile_i = (i + seed) % tile_count;
       uint32_t tile_x = tile_i % layout_tiles.x;
       uint32_t tile_y = tile_i / layout_tiles.x;
       Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));
@@ -70,13 +70,18 @@ namespace dort {
       Vec2i film_size = film_rect.p_max - film_rect.p_min;
       Film tile_film(film_size.x, film_size.y, this->film->filter);
 
-      Sampler& sampler = *samplers.at(tile_i);
-      render_tile(tile_film, tile_rect, film_rect, sampler);
+      std::unique_lock<std::mutex> sampler_lock(this->sampler_mutex);
+      auto tile_sampler = this->sampler->split(seed + i);
+      sampler_lock.unlock();
 
-      {
-        std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->film->add_tile(film_rect.p_min, tile_film);
-      }
+      render_tile(tile_film, tile_rect, film_rect, *tile_sampler);
+
+      StatTimer lock_timer(TIMER_RENDERER_LOCK_FILM);
+      std::unique_lock<std::mutex> film_lock(this->film_mutex);
+      lock_timer.stop();
+
+      StatTimer tile_timer(TIMER_RENDERER_ADD_TILE);
+      this->film->add_tile(film_rect.p_min, tile_film);
     });
   }
 }

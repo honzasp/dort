@@ -42,6 +42,9 @@ namespace dort {
 
   const std::vector<StatDistribTimeDef> STAT_DISTRIB_TIME_DEFS = {
     { "render", 0 },
+    { "renderer tile", 4 },
+    { "renderer lock film", 4 },
+    { "renderer add_tile", 4 },
     { "scene isect", 256 },
     { "scene isect_p", 256 },
     { "film add_sample", 256 },
@@ -66,9 +69,9 @@ namespace dort {
     { "bvh split_sah", 256 },
     { "bvh traverse node", 256 },
     { "bvh traverse elem", 256 },
-    { "pool wait", 16 },
-    { "pool job", 16 },
-    { "pool schedule", 16 },
+    { "pool wait", 0 },
+    { "pool work", 0 },
+    { "pool job", 0 },
   };
 
   int64_t stat_clock_now_ns() {
@@ -274,6 +277,18 @@ namespace dort {
 
   StatTimer::StatTimer(StatDistribTime distrib_id) {
     this->distrib_id = distrib_id;
+    this->active = false;
+    this->start();
+  }
+
+  StatTimer::~StatTimer() {
+    if(this->active) {
+      this->stop();
+    }
+  }
+
+  void StatTimer::start() {
+    assert(!this->active);
     this->measuring = false;
     this->estimate_overhead = false;
     this->active = true;
@@ -282,8 +297,13 @@ namespace dort {
     if(distrib.enabled) {
       if(distrib.ticks_to_sample-- == 0) {
         uint32_t period = STAT_DISTRIB_TIME_DEFS.at(distrib_id).sample_period;
-        distrib.ticks_to_sample = std::uniform_int_distribution<uint32_t>(
-            period / 2, 3 * period / 2)(THREAD_TIME_SAMPLE_RNG);
+        if(period > 0) {
+          distrib.ticks_to_sample = std::uniform_int_distribution<uint32_t>(
+              period / 2, 3 * period / 2)(THREAD_TIME_SAMPLE_RNG);
+        } else {
+          distrib.ticks_to_sample = 0;
+        }
+
         this->measuring = true;
         this->time_0 = stat_clock_now_ns();
 
@@ -293,12 +313,6 @@ namespace dort {
           o_distrib.ticks_to_sample = 512;
         }
       }
-    }
-  }
-
-  StatTimer::~StatTimer() {
-    if(this->active) {
-      this->stop();
     }
   }
 
@@ -327,7 +341,7 @@ namespace dort {
     distrib.sum_squares_ns += sample_ns * sample_ns;
     distrib.min_ns = std::min(distrib.min_ns, sample_ns);
     distrib.max_ns = std::max(distrib.max_ns, sample_ns);
-    this->active = this->measuring = false;
+    this->active = false;
   }
 }
 #endif

@@ -44,6 +44,9 @@ namespace dort {
 
   enum StatDistribTime: uint32_t {
     TIMER_RENDER,
+    TIMER_RENDERER_TILE,
+    TIMER_RENDERER_LOCK_FILM,
+    TIMER_RENDERER_ADD_TILE,
     TIMER_SCENE_INTERSECT,
     TIMER_SCENE_INTERSECT_P,
     TIMER_FILM_ADD_SAMPLE,
@@ -69,8 +72,8 @@ namespace dort {
     TIMER_BVH_TRAVERSE_NODE,
     TIMER_BVH_TRAVERSE_ELEM,
     TIMER_POOL_WAIT,
+    TIMER_POOL_WORK,
     TIMER_POOL_JOB,
-    TIMER_POOL_SCHEDULE,
     _TIMER_END,
   };
 
@@ -145,6 +148,7 @@ namespace dort {
   public:
     StatTimer(StatDistribTime distrib_id);
     ~StatTimer();
+    void start();
     void stop();
   };
 
@@ -172,6 +176,7 @@ namespace dort {
   public:
     StatTimer(StatDistribTime) { }
     ~StatTimer() { }
+    void start() { }
     void stop() { }
   };
 
