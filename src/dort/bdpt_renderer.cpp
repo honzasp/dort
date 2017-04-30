@@ -102,6 +102,9 @@ namespace dort {
         light_pos_pdf, light_dir_pdf, LightRaySample(rng));
 
     std::vector<Vertex> walk;
+    if(light_pos_pdf == 0.f || light_dir_pdf == 0.f) {
+      return walk;
+    }
 
     Vertex y0;
     y0.p = light_ray.orig;
@@ -114,6 +117,7 @@ namespace dort {
     y0.bwd_pdf = SIGNALING_NAN;
     y0.alpha = light_radiance / (light_pos_pdf * light_pick_pdf);
     y0.is_delta = false;
+    assert(is_finite(y0.fwd_pdf));
     walk.push_back(std::move(y0));
 
     Spectrum prev_bsdf_f(1.f);
@@ -157,9 +161,8 @@ namespace dort {
       y.bwd_pdf = SIGNALING_NAN;
       y.alpha = prev_y.alpha * alpha_scale;
       y.is_delta = bsdf_flags & BSDF_DELTA;
-      if(y.alpha.is_black()) {
-        break;
-      }
+      if(y.alpha.is_black()) { break; }
+      assert(is_finite(y.fwd_pdf));
 
       prev_y.bwd_pdf = bwd_dir_pdf * abs_dot(prev_y.nn, wi) / dist_squared;
       prev_bsdf_f = bsdf_f;
@@ -181,6 +184,9 @@ namespace dort {
         ray, ray_pos_pdf, ray_dir_pdf, CameraSample(rng));
 
     std::vector<Vertex> walk;
+    if(ray_pos_pdf == 0.f || ray_dir_pdf == 0.f) {
+      return walk;
+    }
 
     Vertex z0;
     z0.p = ray.orig;
@@ -193,6 +199,7 @@ namespace dort {
     z0.bwd_pdf = SIGNALING_NAN;
     z0.alpha = importance / ray_pos_pdf;
     z0.is_delta = false;
+    assert(is_finite(z0.fwd_pdf));
     walk.push_back(std::move(z0));
 
     Spectrum prev_bsdf_f(1.f);
@@ -227,6 +234,7 @@ namespace dort {
         z_bg.bwd_pdf = SIGNALING_NAN;
         z_bg.alpha = prev_z.alpha * alpha_scale / bg_light_pdf;
         z_bg.is_delta = false;
+        assert(is_finite(z_bg.fwd_pdf));
         walk.push_back(std::move(z_bg));
         break; 
       }
@@ -238,9 +246,9 @@ namespace dort {
       BxdfFlags bsdf_flags;
       Spectrum bsdf_f = bsdf->sample_light_f(wo, BSDF_ALL,
           wi, wi_pdf, bsdf_flags, BsdfSample(rng));
-      if(wi_pdf == 0.f) { break; }
+      // if no direction was sampled (wi_pdf == 0.f), still add the vertex z and
+      // break the loop later
 
-      float bwd_dir_pdf = bsdf->camera_f_pdf(wo, wi, BSDF_ALL);
       float dist_squared = length_squared(isect.world_diff_geom.p - prev_z.p);
       if(dist_squared < 1e-9f) { break; }
 
@@ -251,15 +259,22 @@ namespace dort {
       z.bsdf = std::move(bsdf);
       z.area_light = isect.get_area_light();
       z.background_light = nullptr;
-      z.fwd_pdf = fwd_dir_pdf * abs_dot(z.nn, wo) / dist_squared;;
+      z.fwd_pdf = fwd_dir_pdf * abs_dot(z.nn, wo) / dist_squared;
       z.bwd_pdf = SIGNALING_NAN;
       z.alpha = prev_z.alpha * alpha_scale;
       z.is_delta = bsdf_flags & BSDF_DELTA;
-      if(z.alpha.is_black() && !z.area_light) {
+      if(z.alpha.is_black() && !z.area_light) { break; }
+      assert(is_finite(z.fwd_pdf));
+
+      if(wi_pdf == 0.f) {
+        prev_z.bwd_pdf = 0.f;
+        walk.push_back(std::move(z)); // the push invalidates prev_z
         break;
       }
 
+      float bwd_dir_pdf = z.bsdf->camera_f_pdf(wo, wi, BSDF_ALL);
       prev_z.bwd_pdf = bwd_dir_pdf * abs_dot(prev_z.nn, wo) / dist_squared;
+      assert(is_finite(prev_z.bwd_pdf));
       prev_bsdf_f = bsdf_f;
       fwd_dir_pdf = wi_pdf;
       ray = Ray(z.p, wi, isect.ray_epsilon);
@@ -504,6 +519,7 @@ namespace dort {
         x0_pivot_pdf = x0_dir_pdf * abs_dot(x0.nn, wi) / length_squared(x0.p - x1.p);
       }
     }
+    assert(is_finite(x0_pivot_pdf)); assert(x0_pivot_pdf >= 0.f);
 
     // computes the pdf of sampling point x[i] from x[i-1] (i.e., from light)
     // if i == 0 and the light is distant, this is solid angle pdf, otherwise it
@@ -545,6 +561,7 @@ namespace dort {
           }
         }
 
+        assert(is_finite(ray_pdf)); assert(ray_pdf >= 0.f);
         return ray_pdf / x0_pivot_pdf;
       } else if(i >= 2 && i < s) {
         // the BSDF sampling probability is cached in the light vertices
@@ -557,7 +574,9 @@ namespace dort {
         Vector bsdf_wi = normalize(xi.p - x.p);
         Vector bsdf_wo = normalize(xo.p - x.p);
         float wo_dir_pdf = x.bsdf->camera_f_pdf(bsdf_wo, bsdf_wi, BSDF_ALL);
-        return wo_dir_pdf * abs_dot(bsdf_wo, xo.nn) / length_squared(xo.p - x.p);
+        float dist_squared = length_squared(xo.p - x.p);
+        if(dist_squared == 0.f) { return 0.f; }
+        return wo_dir_pdf * abs_dot(bsdf_wo, xo.nn) / dist_squared;
       } else if(i >= 2 && i > s && i < s + t - 1) {
         // the backward BSDF sampling pdf is cached in the camera vertices
         return vertex_at(i).bwd_pdf;
@@ -595,7 +614,10 @@ namespace dort {
         } else {
           pivot_area_pdf = camera.pivot_importance_pdf(film_res, z0.p, z1.p);
         }
+        if(pivot_area_pdf == 0.f) { return 0.f; }
 
+        assert(is_finite(ray_area_pdf)); assert(ray_area_pdf >= 0.f);
+        assert(is_finite(pivot_area_pdf)); assert(pivot_area_pdf > 0.f);
         return ray_area_pdf / pivot_area_pdf;
       } else if(i < s + t - 2 && i >= s) {
         // the forward BSDF sampling pdf is cached in the camera vertices
@@ -636,8 +658,8 @@ namespace dort {
       // vertices
       float fwd_pdf = pdf_light(s + j - 1);
       float bwd_pdf = pdf_camera(s + j - 1);
-      assert(fwd_pdf >= 0.f); assert(is_finite(fwd_pdf));
-      assert(bwd_pdf >= 0.f); assert(is_finite(bwd_pdf));
+      assert(is_finite(fwd_pdf)); assert(fwd_pdf >= 0.f);
+      assert(is_finite(bwd_pdf)); assert(bwd_pdf >= 0.f);
       if(bwd_pdf == 0.f) { break; }
       r_light *= fwd_pdf / bwd_pdf;
 
@@ -655,8 +677,8 @@ namespace dort {
 
       float fwd_pdf = pdf_camera(s - j);
       float bwd_pdf = pdf_light(s - j);
-      assert(fwd_pdf >= 0.f); assert(is_finite(fwd_pdf));
-      assert(bwd_pdf >= 0.f); assert(is_finite(bwd_pdf));
+      assert(is_finite(fwd_pdf)); assert(fwd_pdf >= 0.f);
+      assert(is_finite(bwd_pdf)); assert(bwd_pdf >= 0.f);
       if(bwd_pdf == 0.f) { break; }
       r_camera *= fwd_pdf / bwd_pdf;
 
@@ -666,7 +688,7 @@ namespace dort {
       inv_weight_sum += r_camera;
     }
 
-    assert(inv_weight_sum >= 1.f); assert(is_finite(inv_weight_sum));
+    assert(is_finite(inv_weight_sum)); assert(inv_weight_sum >= 1.f);
     return 1.f / inv_weight_sum;
   }
 

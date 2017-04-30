@@ -6,8 +6,10 @@ namespace dort {
   {
     float t0 = ray.t_min;
     float t1 = ray.t_max;
-    uint32_t hit_axis = -1u;
-    bool hit_negative = false;
+    uint32_t hit_t0_axis = -1u;
+    uint32_t hit_t1_axis = -1u;
+    bool hit_t0_negative = false;
+    bool hit_t1_negative = false;
 
     for(uint32_t axis = 0; axis < 3; ++axis) {
       float inv_dir = 1.f / ray.dir.v[axis];
@@ -20,25 +22,38 @@ namespace dort {
       }
 
       if(t_near > t0) {
-        hit_axis = axis;
-        hit_negative = negative;
         t0 = t_near;
+        hit_t0_axis = axis;
+        hit_t0_negative = negative;
       }
       if(t_far < t1) {
         t1 = t_far;
+        hit_t1_axis = axis;
+        hit_t1_negative = negative;
       }
       if(t0 > t1) {
         return false;
       }
     }
 
-    if(hit_axis == -1u) {
+    float t_hit;
+    uint32_t hit_axis;
+    bool hit_negative;
+    if(hit_t0_axis != -1u) {
+      t_hit = t0;
+      hit_axis = hit_t0_axis;
+      hit_negative = hit_t0_negative;
+    } else if(hit_t1_axis != -1u) {
+      t_hit = t1;
+      hit_axis = hit_t1_axis;
+      hit_negative = hit_t1_negative;
+    } else {
       return false;
     }
 
-    out_t_hit = t0;
-    out_ray_epsilon = 1e-3f;
-    Point p = out_diff_geom.p = ray.point_t(t0);
+    out_t_hit = t_hit;
+    out_ray_epsilon = 1e-3f * t_hit;
+    Point p = out_diff_geom.p = ray.point_t(t_hit);
     out_diff_geom.nn = Normal(Vec3::axis(hit_axis, hit_negative ? 1.f : -1.f));
 
     if(hit_axis == 0) {
