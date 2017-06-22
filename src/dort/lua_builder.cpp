@@ -1,3 +1,29 @@
+/// Construction of scenes for rendering.
+// This API is used to build a `Scene`. Scenes are composed from `Primitive`s,
+// but most of the functions in this module create a `Primitive` and add it to
+// the scene in a single function. This way, most primitives are not exposed to
+// the Lua code, which simplifies memory management -- the primitives are always
+// owned by the `Scene` and references to them cannot be shared. (In terms of
+// implementation, we can use `unique_ptr` instead of `shared_ptr` for
+// primitives.)
+//
+// However, sometimes it is desirable to add a single primitive into a scene
+// multiple times. This can be accomplished by @{frame} (or the more primitive
+// @{push_frame}, @{pop_frame}), which creates a new `Primitive` that consists
+// of any number of other primitives. This primitive can then be added to the
+// scene multiple times with very little cost, thus allowing scenes with very
+// large number of individual primitives using bounded memory.
+// 
+// The rendering API is defined in @{dort.render}. For description of other
+// parts of scenes, see:
+//
+// - @{dort.camera} for `Camera`
+// - @{dort.geometry} for `Transform`
+// - @{dort.light} for `Light`
+// - @{dort.shape} for `Shape`, `Mesh` and `PlyMesh`
+// - @{dort.grid} for `Grid`
+//
+// @module dort.builder
 #include "dort/bvh_primitive.hpp"
 #include "dort/camera.hpp"
 #include "dort/ctx.hpp"
@@ -73,11 +99,17 @@ namespace dort {
     return 1;
   }
 
+  /// Make a new `Builder`.
+  // @function make
   int lua_builder_make(lua_State* l) {
     lua_push_builder(l, std::make_shared<Builder>());
     return 1;
   }
 
+  /// Create a `Scene` from the `Builder` `B`.
+  // The builder cannot be reused again.
+  // @function build_scene
+  // @param B
   int lua_builder_build_scene(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
 
@@ -113,12 +145,22 @@ namespace dort {
     return 1;
   }
 
+  /// Push the current state to the stack of builder `B`.
+  // The state includes the current transform, material and other options. It is
+  // often more convenient to use `block`.
+  // @function push_state
+  // @param B
+  // @within State
   int lua_builder_push_state(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     builder->state_stack.push_back(builder->state);
     return 0;
   }
 
+  /// Restore state of builder `B` previously pushed by `push_state`.
+  // @function pop_state
+  // @param B
+  // @within State
   int lua_builder_pop_state(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     if(builder->state_stack.empty()) {
@@ -129,6 +171,13 @@ namespace dort {
     return 0;
   }
 
+  /// Start collecting an aggregate primitive.
+  // Primitives added to the builder `B` after this call will be collected and
+  // made into a single aggregate primitive in a matching call to `pop_frame`.
+  // Note that the transform in the frame is reset to identity.
+  // @function push_frame
+  // @param B
+  // @within Frame
   int lua_builder_push_frame(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
 
@@ -143,6 +192,13 @@ namespace dort {
     return 0;
   }
 
+  /// Collect the aggregate primitive.
+  // Returns a `Primitive` that aggregates all primitives added to the builder
+  // `B` since the previous call to `push_frame`. Also restores the state to the
+  // point when `push_frame` was called (as if by `pop_state`).
+  // @function pop_frame
+  // @param B
+  // @within Frame
   int lua_builder_pop_frame(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
 
@@ -163,6 +219,11 @@ namespace dort {
     return 1;
   }
 
+  /// Replaces the transform of builder `B` with `transform`.
+  // @function set_transform
+  // @param B
+  // @param transform
+  // @within State
   int lua_builder_set_transform(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     const Transform& trans = lua_check_transform(l, 2);
@@ -170,12 +231,21 @@ namespace dort {
     return 0;
   }
 
+  /// Get the current transform relative to the frame.
+  // @function get_transform
+  // @param B
+  // @within State
   int lua_builder_get_transform(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     lua_push_transform(l, builder->state.local_to_frame);
     return 1;
   }
 
+  /// Set the current material.
+  // @function set_material
+  // @param B
+  // @param material
+  // @within State
   int lua_builder_set_material(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto material = lua_check_material(l, 2);
@@ -183,12 +253,22 @@ namespace dort {
     return 0;
   }
 
+  /// Get the current material.
+  // @function get_material
+  // @param B
+  // @within State
   int lua_builder_get_material(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     lua_push_material(l, builder->state.material);
     return 1;
   }
 
+  /// Set the default camera to `camera`.
+  // The default camera is used when no other camera is specified for rendering.
+  // @function set_camera
+  // @param B
+  // @param camera
+  // @within Adding
   int lua_builder_set_camera(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto camera = lua_check_camera(l, 2);
@@ -196,10 +276,25 @@ namespace dort {
     return 0;
   }
 
+  /// Set option `opt` to `value`.
+  // The available options are:
+  //
+  // - `bvh_split_method` -- defines the method for separating primitives when
+  // splitting a BVH node, possible values are `sah` (surface area heuristic) or
+  // `middle` (split the primitives in the geometric center).
+  // - `bvh_leaf_size` and `bvh_max_leaf_size` -- sets the usual and maximal number
+  // of primitives in the leaves of the BVH tree. The algorithm may make leaves
+  // larger or smaller, but they will never be larger than the maximum.
+  //
+  // @function set_option
+  // @param B
+  // @param key
+  // @param value
+  // @within State
   int lua_builder_set_option(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     std::string option = luaL_checkstring(l, 2);
-    if(option == "bvh split method") {
+    if(option == "bvh_split_method") {
       std::string method = luaL_checkstring(l, 3);
       if(method == "sah") {
         builder->state.bvh_opts.split_method = BvhSplitMethod::Sah;
@@ -208,9 +303,9 @@ namespace dort {
       } else {
         luaL_error(l, "unknown bvh split method: %s", method.c_str());
       }
-    } else if(option == "bvh leaf size") {
+    } else if(option == "bvh_leaf_size") {
       builder->state.bvh_opts.leaf_size = luaL_checkinteger(l, 3);
-    } else if(option == "bvh max leaf size") {
+    } else if(option == "bvh_max_leaf_size") {
       builder->state.bvh_opts.max_leaf_size = luaL_checkinteger(l, 3);
     } else {
       luaL_error(l, "unknown option: %s", option.c_str());
@@ -218,6 +313,17 @@ namespace dort {
     return 0;
   }
 
+  /// Add a `Shape` primitive with optional `Light`.
+  // Adds a new geometric primitive with `shape`, positioned by the current
+  // transform and using the current material. If `light` is passed, the
+  // primitive will be associated with the light. Note that the light must be an
+  // area light and must correspond to the `shape`, otherwise the rendering
+  // results are unpredictable.
+  // @function add_shape
+  // @param B
+  // @param shape
+  // @param[opt] light
+  // @within Adding
   int lua_builder_add_shape(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto shape = lua_check_shape(l, 2);
@@ -241,6 +347,13 @@ namespace dort {
     return 0;
   }
 
+  /// Add a `Primitive`.
+  // Adds the `primitive` into the current frame, positioned with the current
+  // transform.
+  // @function add_primitive
+  // @param B
+  // @param primitive
+  // @within Adding
   int lua_builder_add_primitive(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto primitive = lua_check_primitive(l, 2);
@@ -250,6 +363,15 @@ namespace dort {
     return 0;
   }
 
+  /// Add a triangle primitive.
+  // Adds a single triangle from `mesh` at index `index`, using the current
+  // material, but ignoring the current transform -- the coordinates from the
+  // mesh are used directly.
+  // @function add_triangle
+  // @param B
+  // @param mesh
+  // @param index
+  // @within Adding
   int lua_builder_add_triangle(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto mesh = lua_check_mesh(l, 2);
@@ -267,6 +389,13 @@ namespace dort {
     return 0;
   }
 
+  /// Add a light.
+  // Adds `light` into the scene. Lights cannot be inserted into frames, so this
+  // function will fail if it is called after `push_frame` (or inside `frame`).
+  // @function add_light
+  // @param B
+  // @param light
+  // @within Adding
   int lua_builder_add_light(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     if(!builder->frame_stack.empty()) {
@@ -277,6 +406,15 @@ namespace dort {
     return 0;
   }
 
+  /// Read a PLY mesh and add its triangles.
+  // Reads a PLY mesh from file `file_name` and adds all triangles into the
+  // frame, using the current material. This allows us to avoid an intermediate
+  // representation of the mesh and directly add the triangles. The triangles
+  // are added as separate primitives into the frame.
+  // @function add_read_ply_mesh
+  // @param B
+  // @param file_name
+  // @within Meshes
   int lua_builder_add_read_ply_mesh(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
 
@@ -310,6 +448,16 @@ namespace dort {
     return 0;
   }
 
+  /// Read a PLY mesh and add it as an efficient specialized BVH.
+  // Reads a PLY mesh from `file_name` and adds it as a single primitive into
+  // the frame. The primitive uses a BVH tree specialized for triangles and for
+  // large meshes is much more efficient than separate primitives for each
+  // triangle. However, the triangles are not "visible" to the acceleration
+  // structure of the frame, so for smaller meshes the performance may be worse.
+  // @function add_read_ply_mesh_as_bvh
+  // @param B
+  // @param file_name
+  // @within Meshes
   int lua_builder_add_read_ply_mesh_as_bvh(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
 
@@ -343,6 +491,13 @@ namespace dort {
     return 0;
   }
 
+  /// Add a PLY mesh.
+  // Adds the triangles from the `ply_mesh` into the frame, using the current
+  // material.
+  // @function add_ply_mesh
+  // @param B
+  // @param ply_mesh
+  // @within Meshes
   int lua_builder_add_ply_mesh(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto ply_mesh = lua_check_ply_mesh(l, 2);
@@ -370,6 +525,14 @@ namespace dort {
     return 0;
   }
 
+  /// Add a PLY mesh as an efficient specialized BVH.
+  // Adds a PLY mesh as a single primitive into the frame. Similar
+  // considerations as `add_read_ply_mesh_as_bvh` apply.
+  // @function add_ply_mesh_as_bvh
+  // @param B
+  // @param ply_mesh
+  // @see add_ply_mesh_as_bvh
+  // @within Meshes
   int lua_builder_add_ply_mesh_as_bvh(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto ply_mesh = lua_check_ply_mesh(l, 2);
@@ -400,6 +563,25 @@ namespace dort {
     return 0;
   }
 
+  /// Add a grid of voxels.
+  // Adds a cubic grid of voxels. Positive voxels correspond to full cubes that
+  // are specified by a material for each of the six faces. Negative voxels are
+  // represented by primitives (inside the unit cube `(0,0,0),(1,1,1)`). Zero
+  // voxels are empty.
+  //
+  // The `params` are:
+  //
+  // - `grid` -- a `Grid` with the voxels.
+  // - `box` -- a `Boxi` giving the extent of the `grid` that should be added.
+  // - `cube_voxels` -- table of materials for positive voxels (full cubes),
+  //   where each item is a table with six materials for each side of the cube.
+  // - `primitive_voxels` -- table of primitives that represent the negative
+  //   voxels.
+  //
+  // @function add_voxel_grid
+  // @param B
+  // @param params
+  // @within Adding
   int lua_builder_add_voxel_grid(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto transform = builder->state.local_to_frame;
@@ -465,6 +647,15 @@ namespace dort {
     return 0;
   }
 
+  /// Make a triangle `Shape`.
+  // Creates a triangle shape from the `mesh` at `index`. This must refer to a
+  // builder `B` because all meshes must be registered with the builder to
+  // manage their lifetimes.
+  // @function make_triangle
+  // @param B
+  // @param mesh
+  // @param index
+  // @within Meshes
   int lua_builder_make_triangle(lua_State* l) {
     auto builder = lua_check_builder(l, 1);
     auto mesh = lua_check_mesh(l, 2);
@@ -475,6 +666,10 @@ namespace dort {
     return 1;
   }
 
+  /// Get the default camera of a `Scene`.
+  // @function get_scene_default_camera
+  // @param scene
+  // @within Scene
   int lua_builder_get_scene_default_camera(lua_State* l) {
     auto scene = lua_check_scene(l, 1);
     lua_push_camera(l, scene->default_camera);

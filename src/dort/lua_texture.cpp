@@ -1,3 +1,36 @@
+/// Textures.
+// A texture in its general form is simply a function `In -> Out`, where the
+// supported types for `In` are
+//
+// - `float`
+// - `Vec2`
+// - `Vec3`
+// - `Spectrum`
+// - `DiffGeom` -- an internal type that describes the local -- differential --
+// geometry at a point in scene
+//
+// and for `Out` these are:
+//
+// - `float`
+// - `Vec2`
+// - `Vec3`
+// - `Spectrum`
+//
+// This module provides a range of functions that define primitive
+// textures or compose multiple textures to form new textures.
+//
+// The textures are used when defining materials (see @{dort.material}) -- in
+// this case the input type is always `DiffGeom` and the output type is usually
+// `Spectrum` or `float`.
+//
+// The textures also have a few methods that support convenient binary
+// operators:
+//
+// - `__concat` (the `..` operator) -- @{compose}
+// - `__add` (the `+` operator) -- @{add}
+// - `__mul` (the '*' operator) -- @{multiply}
+//
+// @module dort.texture
 #include "dort/basic_textures.hpp"
 #include "dort/color_maps.hpp"
 #include "dort/image.hpp"
@@ -25,39 +58,150 @@ namespace dort {
     };
 
     const luaL_Reg texture_funs[] = {
+      /// Functional composition (`B -> C` and `A -> B`).
+      // If the type of `tex_1` is `B -> C` and the type of `tex_2` is `A -> B`,
+      // the resulting texture has type `A -> C`.
+      // @function compose
+      // @param tex_1
+      // @param tex_2
       {"compose", lua_texture_compose},
-      {"make_const_geom", lua_texture_make_const<const DiffGeom&>},
-      {"make_const_1d", lua_texture_make_const<float>},
-      {"make_const_2d", lua_texture_make_const<Vec2>},
-      {"make_const_3d", lua_texture_make_const<Vec3>},
-      {"make_identity_1d", lua_texture_make_identity<float>},
-      {"make_identity_2d", lua_texture_make_identity<Vec2>},
-      {"make_identity_3d", lua_texture_make_identity<Vec3>},
-      {"make_lerp", lua_texture_make_lerp},
-      {"make_checkerboard_1d", lua_texture_make_checkerboard<float>},
-      {"make_checkerboard_2d", lua_texture_make_checkerboard<Vec2>},
-      {"make_checkerboard_3d", lua_texture_make_checkerboard<Vec3>},
-      {"make_value_noise_1d", lua_texture_make_value_noise<float, float>},
-      {"make_value_noise_2d", lua_texture_make_value_noise<float, Vec2>},
-      {"make_value_noise_3d", lua_texture_make_value_noise<float, Vec3>},
-      {"make_value_noise_1d_of_2d", lua_texture_make_value_noise<Vec2, float>},
-      {"make_value_noise_2d_of_2d", lua_texture_make_value_noise<Vec2, Vec2>},
-      {"make_value_noise_3d_of_2d", lua_texture_make_value_noise<Vec2, Vec3>},
-      {"make_value_noise_1d_of_3d", lua_texture_make_value_noise<Vec3, float>},
-      {"make_value_noise_2d_of_3d", lua_texture_make_value_noise<Vec3, Vec2>},
-      {"make_value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
-      {"make_gain", lua_texture_make_gain},
-      {"make_bias", lua_texture_make_bias},
-      {"make_average", lua_texture_make_average},
-      {"make_image", lua_texture_make_image},
-      {"make_map_uv", lua_texture_map_make_uv},
-      {"make_map_xy", lua_texture_map_make_xy},
-      {"make_map_spherical", lua_texture_map_make_spherical},
-      {"make_map_cylindrical", lua_texture_map_make_cylindrical},
-      {"make_map_xyz", lua_texture_map_make_xyz},
-      {"make_color_map_grayscale", lua_texture_color_map_make_grayscale},
-      {"make_color_map_lerp", lua_texture_color_map_make_lerp},
-      {"make_color_map_spline", lua_texture_color_map_make_spline},
+
+      /// Add textures (`A -> B` and `A -> B`).
+      // The textures must have the same input and output types.
+      // @function add
+      // @param tex_1
+      // @param tex_2
+      {"add", lua_texture_add},
+
+      /// Multiply textures (`A -> B` and `A -> C`).
+      // The textures must have the same input type, and the output types must
+      // either match or at least one of `tex_1`, `tex_2` must output `float`.
+      // @function multiply
+      // @param tex_1
+      // @param tex_2
+      {"multiply", lua_texture_mul},
+
+      /// Make constant `float -> A`.
+      // The function always has value `x`, the output type `A` is inferred from
+      // the type of `x`.
+      // @function const_1d
+      // @param x
+      {"const_1d", lua_texture_make_const<float>},
+      /// Make constant `Vec2 -> A`.
+      // @function const_2d
+      // @param x
+      {"const_2d", lua_texture_make_const<Vec2>},
+      /// Make constant `Vec3 -> A`.
+      // @function const_2d
+      // @param x
+      {"const_3d", lua_texture_make_const<Vec3>},
+      /// Make constant `DiffGeom -> A`.
+      // @function const_geom
+      // @param x
+      {"const_geom", lua_texture_make_const<const DiffGeom&>},
+
+      /// Make identity `float -> float`.
+      // @function identity_1d
+      {"identity_1d", lua_texture_make_identity<float>},
+      /// Make identity `Vec2 -> Vec2`.
+      // @function identity_2d
+      {"identity_2d", lua_texture_make_identity<Vec2>},
+      /// Make identity `Vec3 -> Vec3`.
+      // @function identity_3d
+      {"identity_3d", lua_texture_make_identity<Vec3>},
+
+      /// Linear interpolation between textures.
+      //
+      // - `t` -- `A -> float`, determines the ratio between `tex_0` and `tex_1`
+      // (where 0 is only `tex_0` and 1 is only `tex_1`).
+      // - `tex_0`, `tex_1` -- `A -> B`, are the composed textures.
+      //
+      // The resulting texture has type `A -> B`.
+      //
+      // @function lerp
+      // @param params
+      {"lerp", lua_texture_make_lerp},
+
+      /// Checkerboard pattern `A -> B` (for `A = float`).
+      // Makes a texture that alternates between `even` and `odd` in a
+      // checkerboard pattern. The input type `A` can be `float`, `Vec2` or
+      // `Vec3`.
+      //
+      // - `check_size` -- the size of one check (1 by default)
+      // - `even`, `odd` -- `A -> B`, the two textures that alternate
+      //
+      // @function checkerboard_1d
+      // @param params
+      {"checkerboard_1d", lua_texture_make_checkerboard},
+      /// Checkerboard pattern `A -> B` (for `A = Vec2`).
+      // @function checkerboard_2d
+      // @param params
+      {"checkerboard_2d", lua_texture_make_checkerboard},
+      /// Checkerboard pattern `A -> B` (for `A = Vec3`).
+      // @function checkerboard_3d
+      // @param params
+      {"checkerboard_3d", lua_texture_make_checkerboard},
+
+      /// Value noise `A -> B` (for `A = float, B = float`).
+      // Makes a texture from multiple layers of "value noise". Each layer
+      // corresponds to an integral lattice of points with random values `B`,
+      // and the value at a particular point `A` is formed by interpolating the
+      // random values at nearby points of the lattice.
+      //
+      // `layers` defines any number of layers, each layer is defined by a
+      // table:
+      //
+      // - `frequency` -- the number of lattice points per unit of `A`
+      // - `weight` -- the relative weight of this layer w.r.t. other layers
+      //
+      // @function value_noise_1d
+      // @param layers
+      {"value_noise_1d", lua_texture_make_value_noise<float, float>},
+      /// Value noise `A -> B` (for `A = Vec2, B = float`).
+      // @function value_noise_2d
+      // @param layers
+      {"value_noise_2d", lua_texture_make_value_noise<float, Vec2>},
+      /// Value noise `A -> B` (for `A = Vec3, B = float`).
+      // @function value_noise_3d
+      // @param layers
+      {"value_noise_3d", lua_texture_make_value_noise<float, Vec3>},
+      /// Value noise `A -> B` (for `A = float, B = Vec2`).
+      // @function value_noise_1d_of_2d
+      // @param layers
+      {"value_noise_1d_of_2d", lua_texture_make_value_noise<Vec2, float>},
+      /// Value noise `A -> B` (for `A = Vec2, B = Vec2`).
+      // @function value_noise_2d_of_2d
+      // @param layers
+      {"value_noise_2d_of_2d", lua_texture_make_value_noise<Vec2, Vec2>},
+      /// Value noise `A -> B` (for `A = Vec3, B = Vec2`).
+      // @function value_noise_3d_of_2d
+      // @param layers
+      {"value_noise_3d_of_2d", lua_texture_make_value_noise<Vec2, Vec3>},
+      /// Value noise `A -> B` (for `A = float, B = Vec3`).
+      // @function value_noise_1d_of_3d
+      // @param layers
+      {"value_noise_1d_of_3d", lua_texture_make_value_noise<Vec3, float>},
+      /// Value noise `A -> B` (for `A = Vec2, B = Vec3`).
+      // @function value_noise_2d_of_3d
+      // @param layers
+      {"value_noise_2d_of_3d", lua_texture_make_value_noise<Vec3, Vec2>},
+      /// Value noise `A -> B` (for `A = Vec3, B = Vec3`).
+      // @function value_noise_3d_of_3d
+      // @param layers
+      {"value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
+
+      {"gain", lua_texture_make_gain},
+      {"bias", lua_texture_make_bias},
+      {"average", lua_texture_make_average},
+      {"image", lua_texture_make_image},
+      {"map_uv", lua_texture_map_make_uv},
+      {"map_xy", lua_texture_map_make_xy},
+      {"map_spherical", lua_texture_map_make_spherical},
+      {"map_cylindrical", lua_texture_map_make_cylindrical},
+      {"map_xyz", lua_texture_map_make_xyz},
+      {"color_map_grayscale", lua_texture_color_map_make_grayscale},
+      {"color_map_lerp", lua_texture_color_map_make_lerp},
+      {"color_map_spline", lua_texture_color_map_make_spline},
       {"render_2d", lua_texture_render_2d},
       {0, 0},
     };
@@ -128,6 +272,9 @@ namespace dort {
     if(lua_test_spectrum(l, 1)) {
       lua_tex.out_type = LuaTextureOut::Spectrum;
       lua_tex.texture = const_texture<Spectrum, In>(lua_check_spectrum(l, 1));
+    } else if(lua_test_vec2(l, 1)) {
+      lua_tex.out_type = LuaTextureOut::Vec2;
+      lua_tex.texture = const_texture<Vec2, In>(lua_check_vec2(l, 1));
     } else if(lua_isnumber(l, 1)) {
       lua_tex.out_type = LuaTextureOut::Float;
       lua_tex.texture = const_texture<float, In>(lua_tonumber(l, 1));
@@ -198,9 +345,9 @@ namespace dort {
       static void handle(LuaTexture& lua_tex, const LuaTexture& even_lua_tex,
           const LuaTexture& odd_lua_tex, float check_size)
       {
-        auto even_tex = even_lua_tex.get<Out, Vec2>();
-        auto odd_tex = odd_lua_tex.get<Out, Vec2>();
-        lua_tex.texture = checkerboard_texture<Out, Vec2>(
+        auto even_tex = even_lua_tex.get<Out, In>();
+        auto odd_tex = odd_lua_tex.get<Out, In>();
+        lua_tex.texture = checkerboard_texture<Out, In>(
             even_tex, odd_tex, check_size);
       }
     };

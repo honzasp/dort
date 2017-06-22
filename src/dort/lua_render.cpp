@@ -1,3 +1,5 @@
+/// Rendering.
+// @module dort.render
 #ifdef DORT_USE_GTK
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <gio/gio.h>
@@ -43,6 +45,60 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `RenderJob`.
+  // This is the entry point of all renderers in `dort`. The `params` specify
+  // all details of rendering:
+  //
+  // - `x_res`, `y_res` -- the resolution of the resulting bitmap (800, 600 by
+  // default).
+  // - `filter` -- the image reconstruction filter to use (1 px-wide box filter
+  // by default, corresponding to no filtering)
+  // - `sampler` -- the `Sampler` to use for rendering.
+  // - `renderer` -- the rendering method to use; each implies other parameters
+  // (see below)
+  // - `iterations` -- number of rendering iterations to run.
+  //
+  // The supported renderers are:
+  //
+  // - `dot` -- a trivial renderer that just visualizes the geometry without
+  // any lighting
+  // - `pt` (or `path`) -- path tracing
+  //    - `min_depth`, `max_depth` -- lower and upper bound on the number of
+  //    bounces
+  //    - `only_direct` -- compute only direct lighting and specular bounces
+  //    (so this is NOT equivalent to `max_depth = 1`)
+  //    - `sample_all_lights` -- compute the contribution from every light on
+  //    every bounce (otherwise samples a light randomly).
+  //    - `direct_strategy` -- strategy to use for computing the direct
+  //    lighting on every bounce: `mis` (sample from BSDF and from light and
+  //    combine using MIS), `bsdf` (sample from BSDF), `light` (sample from
+  //    light).
+  //
+  // - `lt` (or `light`) -- light tracing
+  //    - `min_depth`, `max_depth` -- lower and upper bound on the number of
+  //    bounces
+  //
+  // - `bdpt` -- bidirectional path tracing
+  //    - `min_depth`, `max_depth` -- lower and upper bound on the number of
+  //    bounces
+  //    - `use_t1_paths` -- if true, use paths with a single camera vertex
+  //    - `debug_image_dir` -- if set, dumps debug images with contributions
+  //    from each strategy into the given directory (which must exist!)
+  //
+  // - `vcm` -- vertex connection and merging
+  //    - `min_depth`, `max_depth` -- lower and upper bound on the number of
+  //    bounces
+  //    - `initial_radius` -- initial radius for gathering photons
+  //    - `alpha` -- the alpha parameter for shrinking radius (bias/variance
+  //    tradeoff for the photon contributions)
+  //    - `debug_image_dir` -- if set, dumps debug images with contributions
+  //    from each strategy into the given directory (which must exist!)
+  //    - `mode` -- the mode of operation: `vcm` (connect and merge), `vc` (only
+  //    connect), `vm` (only merge)
+  //   
+  // @function make
+  // @param scene
+  // @param params
   int lua_render_make(lua_State* l) {
     auto scene = lua_check_scene(l, 1);
 
@@ -166,6 +222,10 @@ namespace dort {
     return 1;
   }
 
+  /// Render a `RenderJob` synchronously.
+  // Blocks the thread until the rendering finishes.
+  // @function render_sync
+  // @param render_job
   int lua_render_render_sync(lua_State* l) {
     auto render_job = lua_check_render_job(l, 1);
     if(render_job->render_started) {
@@ -308,6 +368,16 @@ namespace dort {
     return 1;
   }
 
+  /// Get the rendered image.
+  // Returns the image rendered in the `render_job`, fails if the job has not
+  // been rendered.
+  //
+  // - `hdr` -- if true, returns `Image.RgbFloat`, otherwise returns
+  // `Image.Rgb8` (with no tonemapping).
+  // 
+  // @function get_image
+  // @param render_job
+  // @param params
   int lua_render_get_image(lua_State* l) {
     auto render_job = lua_check_render_job(l, 1);
     if(!render_job->render_finished) {

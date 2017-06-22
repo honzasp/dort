@@ -1,5 +1,3 @@
-require "dort/helpers"
-
 local dsl = {}
 
 for k,v in pairs(_G) do

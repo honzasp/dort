@@ -1,3 +1,12 @@
+/// Materials.
+// Most properties of materials can be textured (see @{dort.texture}), so that
+// the appearance of a material can vary. However, every time a function expects
+// a texture, a single value of the required type can be passed -- it will be
+// silently converted into a constant texture.
+//
+// The output types of the textures vary, but the input to all material
+// textures is always `DiffGeom`.
+// @module dort.material
 #include "dort/basic_textures.hpp"
 #include "dort/bump_material.hpp"
 #include "dort/dielectric_material.hpp"
@@ -35,6 +44,12 @@ namespace dort {
     return 1;
   }
 
+  /// Make a lambertian material.
+  //
+  // - `albedo` -- albedo of the BRDF (1 by default) (`Spectrum` texture)
+  //
+  // @function make_lambert
+  // @param params
   int lua_material_make_lambert(lua_State* l) {
     int p = 1;
     auto albedo = lua_param_texture_opt(l, p, "albedo", 
@@ -44,6 +59,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make an Oren-Nayar material.
+  //
+  // - `albedo` -- albedo of the BRDF (1 by default) (`Spectrum` texture)
+  // - `sigma` -- the roughness parameter (0.1 by default) (`float` texture)
+  //
+  // @function make_oren_nayar
+  // @param params
   int lua_material_make_oren_nayar(lua_State* l) {
     int p = 1;
     auto albedo = lua_param_texture_opt(l, p, "albedo", 
@@ -55,6 +77,12 @@ namespace dort {
     return 1;
   }
 
+  /// Make an ideal mirror material.
+  //
+  // - `albedo` -- albedo of the BRDF (1 by default) (`Spectrum` texture)
+  //
+  // @function make_mirror
+  // @param params
   int lua_material_make_mirror(lua_State* l) {
     int p = 1;
     auto albedo = lua_param_texture_opt(l, p, "albedo",
@@ -65,6 +93,21 @@ namespace dort {
     return 1;
   }
 
+  /// Make an ideal dielectric material.
+  //
+  // - `reflect_tint` -- non-physical multiplier for the reflected radiance (1
+  // by default) (`Spectrum` texture)
+  // - `transmit_tint` -- non-physical multiplier for the transmitted radiance
+  // (1 by default) (`Spectrum` texture)
+  // - `ior_inside` -- index of refraction inside the body (1.5 by default)
+  // - `ior_outside` -- index of refraction outside of the body (1.5 by default)
+  // - `is_thin` -- if true, the surface is assumed to be infinitely thin slab
+  // of dielectric with IOR `ior_inside` surrounded on both sides with
+  // `ior_outside`. The material cheaply accounts for multiple reflections
+  // inside the slab.
+  //
+  // @function make_dielectric
+  // @param params
   int lua_material_make_dielectric(lua_State* l) {
     int p = 1;
     auto reflect = lua_param_texture_opt(l, p, "reflect_tint",
@@ -81,6 +124,18 @@ namespace dort {
     return 1;
   }
 
+  /// Make a rough microfacet dielectric material.
+  //
+  // - `reflect_tint` -- non-physical multiplier for the reflected radiance (1
+  // by default) (`Spectrum` texture)
+  // - `transmit_tint` -- non-physical multiplier for the transmitted radiance
+  // (1 by default) (`Spectrum` texture)
+  // - `ior_inside` -- index of refraction inside the body (1.5 by default)
+  // - `ior_outside` -- index of refraction outside of the body (1.5 by default)
+  // - `distribution` -- the microfacet distribution, `beckmann` (default),
+  // `phong` or `ggx`.
+  // - `roughness` -- the roughness parameter for the microfacet distribution.
+  // (`float` texture)
   int lua_material_make_rough_dielectric(lua_State* l) {
     int p = 1;
     auto reflect = lua_param_texture_opt(l, p, "reflect_tint",
@@ -101,6 +156,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make a Phong material.
+  //
+  // - `albedo` -- the diffuse albedo of the BRDF (`Spectrum` texture)
+  // - `glossy_albedo` -- the glossy albedo of the BRDF (`Spectrum` texture)
+  // - `exponent` -- exponent of the Phong distribution (`float` texture)
+  //
+  // @function make_phong
+  // @param params
   int lua_material_make_phong(lua_State* l) {
     int p = 1;
     auto diffuse = lua_param_texture_opt(l, p, "albedo",
@@ -115,6 +178,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make a bump-mapped material.
+  //
+  // - `bump` -- the displacement (`float` texture)
+  // - `material` -- the substrate material
+  //
+  // @function make_bump
+  // @param params
   int lua_material_make_bump(lua_State* l) {
     int p = 1;
     auto displac = lua_param_texture(l, p, "bump").check<float>(l);

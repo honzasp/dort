@@ -1,3 +1,5 @@
+/// Lights.
+// @module dort.light
 #include "dort/beam_light.hpp"
 #include "dort/diffuse_light.hpp"
 #include "dort/directional_light.hpp"
@@ -32,6 +34,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make a point light.
+  //
+  // - `point` -- the location (`Point`) of the light
+  // - `intensity` -- intensity (`Spectrum`)
+  // - `transform` -- the light-to-world transform (identity by default)
+  //
+  // @function make_point
+  // @param params
   int lua_light_make_point(lua_State* l) {
     int p = 1;
     auto point = lua_param_point(l, p, "point");
@@ -43,6 +53,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make a directional light.
+  //
+  // - `direction` -- the direction (`Vector`) of the light
+  // - `radiance` -- the emitted radiance
+  // - `transform` -- the light-to-world transform (identity by default)
+  //
+  // @function make_directional
+  // @param params
   int lua_light_make_directional(lua_State* l) {
     int p = 1;
     auto direction = lua_param_vector(l, p, "direction");
@@ -55,6 +73,17 @@ namespace dort {
     return 1;
   }
 
+  /// Make a diffuse area light.
+  //
+  // - `shape` -- the `Shape` of the area light
+  // - `radiance` -- the radiance emitted in all directions from each point of
+  //   the `shape`.
+  // - `transform` -- the light-to-world transform (identity by default)
+  //
+  // Note that when using area lights, the scene must contain both the light and
+  // the shape linked to this light, otherwise some lighting may be lost.
+  // @function make_diffuse
+  // @param params
   int lua_light_make_diffuse(lua_State* l) {
     int p = 1;
     auto shape = lua_param_shape(l, p, "shape");
@@ -67,6 +96,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make a homogeneous infinite area light.
+  //
+  // - `radiance` -- the radiance incident at every point in the scene from the
+  //   infinite sphere surrounding the scene.
+  //
+  // @function make_infinite
+  // @param params
   int lua_light_make_infinite(lua_State* l) {
     int p = 1;
     auto radiance = lua_param_spectrum(l, p, "radiance");
@@ -76,6 +112,19 @@ namespace dort {
     return 1;
   }
 
+  /// Make an image-mapped infinite area light.
+  //
+  // - `image` -- the `Image.RgbFloat`, a HDR image mapped to the infinite
+  // sphere surrounding the scene.
+  // - `up` -- the `Vector` that determines the "up" direction for the sphere
+  // - `forward` -- the `Vector` that determines the "forward" direction for the
+  // sphere.
+  // - `scale` -- an optional `Spectrum` to scale the values from the `image` to
+  // radiance
+  // - `transform` -- the light-to-world transform (identity by default).
+  //
+  // @function make_environment
+  // @param params
   int lua_light_make_environment(lua_State* l) {
     int p = 1;
     auto image = lua_param_image_f(l, p, "image");
@@ -90,6 +139,15 @@ namespace dort {
     return 1;
   }
 
+  /// Make a single beam of light.
+  //
+  // - `point` -- the origin of the beam
+  // - `direction` -- the direction of the beam
+  // - `radiance` -- the radiance of the beam
+  // - `transform` -- the light-to-world transform
+  //
+  // @function make_beam
+  // @param params
   int lua_light_make_beam(lua_State* l) {
     int p = 1;
     auto pt = lua_param_point(l, p, "point");

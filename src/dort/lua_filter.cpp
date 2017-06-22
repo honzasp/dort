@@ -1,3 +1,5 @@
+/// Image filters for rendering.
+// @module dort.filter
 #include "dort/filter.hpp"
 #include "dort/lua_filter.hpp"
 #include "dort/lua_helpers.hpp"
@@ -24,6 +26,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make a box filter.
+  //
+  // - `radius`, `radius_x`, `radius_y` -- set the extent of the filter in
+  // pixels, either symmetric or separately for each dimension. The default
+  // radius is 0.5 px.
+  //
+  // @function make_box
+  // @param params
   int lua_filter_make_box(lua_State* l) {
     int p = 1;
     Vec2 radius = lua_filter_param_radius(l, p);
@@ -32,6 +42,12 @@ namespace dort {
     return 1;
   }
 
+  /// Make a triangle filter.
+  //
+  // - `radius`, `radius_x`, `radius_y` -- see `make_box`.
+  //
+  // @function make_triangle
+  // @param params
   int lua_filter_make_triangle(lua_State* l) {
     int p = 1;
     Vec2 radius = lua_filter_param_radius(l, p);
@@ -40,6 +56,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make a Gaussian filter.
+  //
+  // - `radius`, `radius_x`, `radius_y` -- see `make_box`.
+  // - `alpha` -- the exponent of the Gaussian (default 1).
+  //
+  // @function make_gaussian
+  // @param params
   int lua_filter_make_gaussian(lua_State* l) {
     int p = 1;
     Vec2 radius = lua_filter_param_radius(l, p);
@@ -49,6 +72,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make a Mitchell (polynomial) filter.
+  //
+  // - `radius`, `radius_x`, `radius_y` -- see `make_box`.
+  // - `b`, `c` -- the parameters of the Mitchell polynomial (default 0.4 and
+  // 0.3).
+  //
+  // @function make_mitchell
+  // @param params
   int lua_filter_make_mitchell(lua_State* l) {
     int p = 1;
     Vec2 radius = lua_filter_param_radius(l, p);
@@ -59,6 +90,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make a Lanczos sinc filter.
+  //
+  // - `radius`, `radius_x`, `radius_y` -- see `make_box`.
+  // - `tau` -- the tau parameter (default `sqrt(radius_x^2 + radius_y^2)`).
+  //
+  // @function make_lanczos_sinc
+  // @param params
   int lua_filter_make_lanczos_sinc(lua_State* l) {
     int p = 1;
     Vec2 radius = lua_filter_param_radius(l, p);

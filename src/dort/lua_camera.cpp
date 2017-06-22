@@ -1,3 +1,5 @@
+/// Cameras.
+// @module dort.camera
 #include "dort/camera.hpp"
 #include "dort/lua_builder.hpp"
 #include "dort/lua_camera.hpp"
@@ -26,6 +28,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make an orthographic camera.
+  // The `params` are:
+  //
+  // - `transform` -- the camera-to-world transform (identity by default).
+  // - `dimension` -- the size of the projecting rectangle in world space.
+  //
+  // @function make_ortho
+  // @param params
   int lua_camera_make_ortho(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
@@ -36,6 +46,14 @@ namespace dort {
     return 1;
   }
 
+  /// Make a pinhole camera.
+  // The `params` are:
+  //
+  // - `transform` -- the camera-to-world transform.
+  // - `fov` -- angle of the field-of-view in radians (pi/2 by default).
+  //
+  // @function make_pinhole
+  // @param params
   int lua_camera_make_pinhole(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform(l, p, "transform");
@@ -47,6 +65,16 @@ namespace dort {
     return 1;
   }
 
+  /// Make a thin lens camera.
+  // The `params` are:
+  //
+  // - `transform` -- the camera-to-world transform.
+  // - `lens_radius` -- the radius of the ideal thin lens.
+  // - `focal_distance` -- the distance to the plane of focus from the lens.
+  // - `fov` -- angle of the field-of-view in radians (pi/2 by default).
+  //
+  // @function make_thin_lens
+  // @param params
   int lua_camera_make_thin_lens(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform(l, p, "transform");

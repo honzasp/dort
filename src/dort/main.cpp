@@ -17,6 +17,7 @@
 #include "dort/lua_render.hpp"
 #include "dort/lua_sampler.hpp"
 #include "dort/lua_shape.hpp"
+#include "dort/lua_sources.hpp"
 #include "dort/lua_spectrum.hpp"
 #include "dort/lua_stats.hpp"
 #include "dort/lua_texture.hpp"
@@ -68,6 +69,18 @@ namespace dort {
         lua_setfield(l, -2, libname);
       };
 
+      auto load_ext = [&](const char* source_name) {
+        // TODO: handle errors here
+        auto source_pair = lua_sources.at(source_name);
+        const char* begin = source_pair.first;
+        const char* end = source_pair.second;
+        int status = luaL_loadbufferx(l, begin, end - begin, source_name, "b");
+        if(status != LUA_OK) {
+          lua_error(l);
+        }
+        lua_call(l, 0, 0);
+      };
+
       lua_newtable(l);
       load_sublib("builder", lua_open_builder);
       load_sublib("camera", lua_open_camera);
@@ -88,6 +101,9 @@ namespace dort {
       load_sublib("stats", lua_open_stats);
       load_sublib("texture", lua_open_texture);
       lua_setglobal(l, "dort");
+
+      load_ext("dort/builder_ext");
+      load_ext("dort/geometry_ext");
 
       assert(argc >= 2);
       const char* input_file = argv[1];

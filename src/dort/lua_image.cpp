@@ -1,3 +1,12 @@
+/// Raster images.
+// There are two types of images:
+//
+// - `Image.Rgb8` -- low dynamic range image, uses 8-bit integers for each
+//   channel.
+// - `Image.RgbFloat` -- high dynamic range images, uses 32-bit floats for each
+//   channel.
+//
+// @module dort.image
 #include "dort/convergence_test.hpp"
 #include "dort/image.hpp"
 #include "dort/lua_geometry.hpp"
@@ -37,6 +46,14 @@ namespace dort {
     return 1;
   }
 
+  /// Reads an image from file.
+  // Opens the file `file_name` and reads the image in the file. `params` are:
+  //
+  // - `hdr` -- if true, reads `Image.RgbFloat`, otherwise reads `Image.Rgb8`.
+  //
+  // @function read
+  // @param file_name
+  // @param params
   int lua_image_read(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     int p = 2;
@@ -60,6 +77,10 @@ namespace dort {
     return 1;
   }
 
+  /// Write an `Image.Rgb8` as PNG.
+  // @function write_png
+  // @param file_name
+  // @param image
   int lua_image_write_png(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     auto image = lua_check_image_8(l, 2);
@@ -74,6 +95,10 @@ namespace dort {
     return 0;
   }
 
+  /// Write an `Image.RgbFloat` as Radiance HDR file.
+  // @function write_rgbe
+  // @param file_name
+  // @param image
   int lua_image_write_rgbe(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     auto image = lua_check_image_f(l, 2);
@@ -88,6 +113,12 @@ namespace dort {
     return 0;
   }
 
+  /// Tonemap using the sRGB curve.
+  // Maps the input `Image.RgbFloat` into an `Image.Rgb8` using the sRGB curve.
+  // The image is premultiplied by `scale` (by default 1).
+  // @function tonemap_srgb
+  // @param image
+  // @param[opt] scale
   int lua_image_tonemap_srgb(lua_State* l) {
     auto image = lua_check_image_f(l, 1);
     float scale = lua_gettop(l) >= 2 ? luaL_checknumber(l, 2) : 1.0;
@@ -96,6 +127,14 @@ namespace dort {
     return 1;
   }
 
+  /// Tonemap using a gamma curve.
+  // Maps the input `Image.RgbFloat` into an `Image.Rgb8` using the gamma
+  // (exponential) curve with exponent `1/gamma`. The input image is optionally
+  // premultiplied by `scale`.
+  // @function tonemap_gamma
+  // @param image
+  // @param[opt] gamma
+  // @param[opt] scale
   int lua_image_tonemap_gamma(lua_State* l) {
     auto image = lua_check_image_f(l, 1);
     float gamma = lua_gettop(l) >= 2 ? luaL_checknumber(l, 2) : 1.0;
@@ -105,6 +144,10 @@ namespace dort {
     return 1;
   }
 
+  /// Get the resolution of the image.
+  // Returns the resolution as two return values `x` and `y`.
+  // @function get_res
+  // @param image
   int lua_image_get_res(lua_State* l) {
     uint32_t x_res, y_res;
     if(lua_test_image_8(l, 1)) {
@@ -124,6 +167,15 @@ namespace dort {
     return 2;
   }
 
+  /// Computes bias and variance of a `tested` image w.r.t. a `reference`.
+  // Computes the sum of `abs(p_ref - p_tested)` (bias) and the sum of `(p_ref -
+  // p_tested)^2` (variance), where `p_ref` and `p_tested` are the pixels of
+  // `reference` and `tested` in the rectangle `rect`. Returns the bias and
+  // variance as two return values.
+  // @function bias_variance
+  // @param reference
+  // @param tested
+  // @param rect
   int lua_image_bias_variance(lua_State* l) {
     auto ref_image = lua_check_image_f(l, 1);
     auto tested_image = lua_check_image_f(l, 2);
@@ -158,6 +210,24 @@ namespace dort {
     return 2;
   }
 
+  /// Applies a convergence test to `tested` image w.r.t. `reference`.
+  //
+  // The images are decomposed into tiles of various sizes and a simple
+  // statistical test is applied to each tile to determine whether the
+  // difference between `tested` and `reference` is only due to random noise.
+  // The `params` are:
+  //
+  // - `min_tile_size` -- minimum size of a tested tile.
+  // - `variation` -- variation of the reference image (`stddev / mean`).
+  // - `bias` -- maximum amount of tolerated bias, relative to the mean value (0
+  //   by default).
+  // - `p_value` -- desired probability that the test passes even though the
+  //   images are different.
+  //
+  // @function test_convergence
+  // @param reference
+  // @param tested
+  // @param params
   int lua_image_test_convergence(lua_State* l) {
     int p = 3;
     auto ref_image = lua_check_image_f(l, 1);

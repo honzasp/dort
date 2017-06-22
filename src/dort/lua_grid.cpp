@@ -1,3 +1,6 @@
+/// Voxel grid.
+// `Grid` is an infinite grid of 16-bit signed integers.
+// @module dort.grid
 #include "dort/grid.hpp"
 #include "dort/lua_geometry.hpp"
 #include "dort/lua_grid.hpp"
@@ -22,16 +25,28 @@ namespace dort {
     return 1;
   }
 
+  /// Make an empty grid.
+  // @function make
   int lua_grid_make(lua_State* l) {
     lua_push_grid(l, std::make_shared<Grid>());
     return 1;
   }
+
+  /// @type Grid
+
+  /// Get the value at `Vec3i` `pos`.
+  // @function get
+  // @param pos
   int lua_grid_get(lua_State* l) {
     auto grid = lua_check_grid(l, 1);
     Vec3i pos = lua_check_vec3i(l, 2);
     lua_pushinteger(l, grid->get(pos));
     return 1;
   }
+  /// Set the value at `Vec3i` `pos` to `value`.
+  // @function set
+  // @param pos
+  // @param value
   int lua_grid_set(lua_State* l) {
     auto grid = lua_check_grid(l, 1);
     Vec3i pos = lua_check_vec3i(l, 2);
@@ -39,6 +54,7 @@ namespace dort {
     grid->set(pos, item);
     return 0;
   }
+  /// @section end
 
   std::shared_ptr<Grid> lua_check_grid(lua_State* l, int idx) {
     return lua_check_shared_obj<Grid, GRID_TNAME>(l, idx);

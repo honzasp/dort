@@ -1,3 +1,5 @@
+/// Precise clock.
+// @module dort.chrono
 #include "dort/lua_chrono.hpp"
 #include "dort/lua_helpers.hpp"
 
@@ -19,11 +21,18 @@ namespace dort {
     return 1;
   }
 
+  /// Get the current `TimePoint`.
+  // @function now
   int lua_chrono_now(lua_State* l) {
     lua_push_time_point(l, LuaClock::now());
     return 1;
   }
 
+  /// Compute nanosecond difference between two `TimePoint`s.
+  // Returns the difference `second - first` in nanoseconds.
+  // @function difference_ns
+  // @param first
+  // @param second
   int lua_chrono_difference_ns(lua_State* l) {
     auto tp_1 = lua_check_time_point(l, 1);
     auto tp_2 = lua_check_time_point(l, 2);
@@ -32,6 +41,12 @@ namespace dort {
     return 1;
   }
 
+  /// Compute difference between two `TimePoint`s.
+  // Returns the difference `second - first` in seconds (using floating point,
+  // so that sub-second precision is available).
+  // @function difference_s
+  // @param first
+  // @param second
   int lua_chrono_difference_s(lua_State* l) {
     auto tp_1 = lua_check_time_point(l, 1);
     auto tp_2 = lua_check_time_point(l, 2);

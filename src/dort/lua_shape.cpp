@@ -1,3 +1,5 @@
+/// Shapes.
+// @module dort.shape
 #include "dort/cube_shape.hpp"
 #include "dort/cylinder_shape.hpp"
 #include "dort/disk_shape.hpp"
@@ -49,12 +51,21 @@ namespace dort {
     return 1;
   }
 
+  /// Compute the surface area of a `Shape`.
+  // @function get_area
+  // @param shape
   int lua_shape_get_area(lua_State* l) {
     auto shape = lua_check_shape(l, 1);
     lua_pushnumber(l, shape->area());
     return 1;
   }
 
+  /// Make a sphere `Shape`.
+  //
+  // - `radius` -- radius of the sphere
+  //
+  // @function make_sphere
+  // @param params
   int lua_shape_make_sphere(lua_State* l) {
     int p = 1;
     float radius = lua_param_float(l, p, "radius");
@@ -64,6 +75,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make a disk `Shape`.
+  //
+  // - `radius` -- radius of the circle in the XY plane
+  // - `z` -- the Z position of the disk (0 by default)
+  //
+  // @function make_disk
+  // @param params
   int lua_shape_make_disk(lua_State* l) {
     int p = 1;
     float radius = lua_param_float(l, p, "radius");
@@ -74,6 +92,13 @@ namespace dort {
     return 1;
   }
 
+  /// Make a cylinder `Shape`.
+  //
+  // - `radius` -- radius of the circle in the XY plane
+  // - `z_min`, `z_max` -- the Z extent of the cylinder (-1 to 1 by default)
+  //
+  // @function make_cylinder
+  // @param params
   int lua_shape_make_cylinder(lua_State* l) {
     int p = 1;
     float radius = lua_param_float(l, p, "radius");
@@ -85,6 +110,9 @@ namespace dort {
     return 1;
   }
 
+  /// Make a cube `Shape`.
+  // The cube extends from `(-1,-1,-1)` to `(1,1,1)`.
+  // @function make_cube
   int lua_shape_make_cube(lua_State* l) {
     static const std::shared_ptr<CubeShape> CUBE_SHAPE =
       std::make_shared<CubeShape>();
@@ -92,6 +120,12 @@ namespace dort {
     return 1;
   }
 
+  /// Make a polygon `Shape`.
+  //
+  // - `vertices` -- list of vertices of the polygon as `Vec2`s
+  //
+  // @function make_polygon
+  // @param params
   int lua_shape_make_polygon(lua_State* l) {
     int p = 1;
     std::vector<Vec2> vertices; {
@@ -112,6 +146,16 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Mesh`.
+  //
+  // - `points` -- list of points (`Point`s) in the mesh
+  // - `uvs` -- optional list of UV coordinates (`Vec2`s) for each point
+  // - `normals` -- optional list of normals (`Normal`s) for each point
+  // - `vertices` -- list of vertices as indices into `points`, each triple
+  // forms a triangle.
+  //
+  // @function make_mesh
+  // @param params
   int lua_shape_make_mesh(lua_State* l) {
     int p = 1;
     auto transform = lua_param_transform_opt(l, p, "transform", identity());
@@ -175,6 +219,9 @@ namespace dort {
     return 1;
   }
 
+  /// Read a `Mesh` from a PLY file.
+  // @function mesh_read
+  // @param file_name
   int lua_ply_mesh_read(lua_State* l) {
     const char* file_name = luaL_checkstring(l, 1);
     FILE* file = std::fopen(file_name, "r");

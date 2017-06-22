@@ -1,26 +1,11 @@
-local b = dort.builder
+--- @module dort.geometry
 local g = dort.geometry
 
-function dort.builder.block(B, callback)
-  b.push_state(B)
-  local result = callback(B)
-  b.pop_state(B)
-  return result
-end
-
-function dort.builder.frame(B, callback)
-  b.push_frame(B)
-  callback(B)
-  return b.pop_frame(B)
-end
-
-function dort.builder.add_diffuse_light(B, params)
-  local shape = params.shape
-  local light = dort.light.make_diffuse(params)
-  b.add_shape(B, shape, light)
-  b.add_light(B, light)
-end
-
+--- Rotation around `origin` by `angle` through the X axis.
+-- @function rotate_x_around
+-- @param angle
+-- @param origin
+-- @within Transform
 function dort.geometry.rotate_x_around(angle, origin)
   return 
     g.translate(origin:x(), origin:y(), origin:z()) *
@@ -28,6 +13,11 @@ function dort.geometry.rotate_x_around(angle, origin)
     g.translate(-origin:x(), -origin:y(), -origin:z())
 end
 
+--- Rotation around `origin` by `angle` through the Y axis.
+-- @function rotate_y_around
+-- @param angle
+-- @param origin
+-- @within Transform
 function dort.geometry.rotate_y_around(angle, origin)
   return 
     g.translate(origin:x(), origin:y(), origin:z()) *
@@ -35,6 +25,11 @@ function dort.geometry.rotate_y_around(angle, origin)
     g.translate(-origin:x(), -origin:y(), -origin:z())
 end
 
+--- Rotation around `origin` by `angle` through the Z axis.
+-- @function rotate_z_around
+-- @param angle
+-- @param origin
+-- @within Transform
 function dort.geometry.rotate_z_around(angle, origin)
   return 
     g.translate(origin:x(), origin:y(), origin:z()) *
@@ -42,6 +37,11 @@ function dort.geometry.rotate_z_around(angle, origin)
     g.translate(-origin:x(), -origin:y(), -origin:z())
 end
 
+--- Scale based in `origin`.
+-- @function scale_around
+-- @param scale
+-- @param origin
+-- @within Transform
 function dort.geometry.scale_around(scale, origin)
   return g.translate(origin:x(), origin:y(), origin:z()) *
     g.scale(scale) *

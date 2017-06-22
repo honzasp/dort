@@ -9,6 +9,7 @@ test/_bdpt_debug/
 test/_vcm_debug/
 _attic/
 .doxy/
+.ldoc/
 .tup/
 output.ppm
 output.png

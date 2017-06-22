@@ -1,3 +1,19 @@
+/// Vectors and transformations.
+// Beside the documented methods and functions, the vector types support the
+// following methods:
+//
+// - `__tostring` -- a human-readable representation of the type and the value
+// - `__eq` -- component-wise equality, also compares the type (for example,
+//   `point(1,2,3) ~= vector(1,2,3)`)
+// - `__add`, `__sub` and `__mul` -- supported when appropriate, the type is
+//   determined from the types of the arguments. Arithmetic operations between
+//   values of different types are supported only when they are meaningful (for
+//   example, `Point + Vector` produces a `Point`, while `Point + Normal` is
+//   meaningless).
+// - `x`, `y`, `z` return the corresponding components (of course, `z` is not
+//   available for two-dimensional types).
+//
+// @module dort.geometry
 #include "dort/box_i.hpp"
 #include "dort/geometry.hpp"
 #include "dort/lua_geometry.hpp"
@@ -205,6 +221,12 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Vector`.
+  // Called as `vector(x, y, z)` to initialize the three numeric components or
+  // as `vector(v)`, where `v` is another three-dimensional vector type.
+  // @function vector
+  // @param ...
+  // @within Constructors
   int lua_vector_make(lua_State* l) {
     if(lua_gettop(l) == 1) {
       if(lua_test_vector(l, 1)) {
@@ -224,6 +246,7 @@ namespace dort {
     lua_push_vector(l, Vector(x, y, z));
     return 1;
   }
+
   int lua_vector_get_x(lua_State* l) {
     lua_pushnumber(l, lua_check_vector(l, 1).v.x);
     return 1;
@@ -253,6 +276,12 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Point`.
+  // Called as `point(x, y, z)` to initialize the three components or as
+  // `point(v)` to initialize the point from another three dimensional vector.
+  // @function point
+  // @param ...
+  // @within Constructors
   int lua_point_make(lua_State* l) {
     if(lua_gettop(l) == 1) {
       if(lua_test_point(l, 1)) {
@@ -290,6 +319,12 @@ namespace dort {
     return 1;
   }
   
+  /// Make a `Normal`.
+  // Called as `normal(x, y, z)` to initialize the three components or as
+  // `normal(v)` to initialize the normal from another three dimensional vector.
+  // @function normal
+  // @param ...
+  // @within Constructors
   int lua_normal_make(lua_State* l) {
     if(lua_gettop(l) == 1) {
       if(lua_test_normal(l, 1)) {
@@ -327,10 +362,19 @@ namespace dort {
     return 1;
   }
 
+  /// Identity transform.
+  // @function identity
+  // @within Transform
   int lua_transform_identity(lua_State* l) {
     lua_push_transform(l, identity());
     return 1;
   }
+  /// Translation transform.
+  // Called either as `translate(x, y, z)` or as `translate(v)`, where `v` is a
+  // `Vector`.
+  // @function translate
+  // @param ...
+  // @within Transform
   int lua_transform_translate(lua_State* l) {
     if(lua_gettop(l) == 1) {
       lua_push_transform(l, translate(lua_check_vector(l, 1)));
@@ -342,6 +386,12 @@ namespace dort {
     }
     return 1;
   }
+  /// Scale transform.
+  // Called either as `scale(x, y, z)`, or as `scale(s)`, where the same scale
+  // factor `s` is used in all three axes.
+  // @function scale
+  // @param ...
+  // @within Transform
   int lua_transform_scale(lua_State* l) {
     if(lua_gettop(l) == 1) {
       lua_push_transform(l, scale(
@@ -354,18 +404,39 @@ namespace dort {
     }
     return 1;
   }
+  /// Rotation by `angle` through the X axis.
+  // @function rotate_x
+  // @param angle
+  // @within Transform
   int lua_transform_rotate_x(lua_State* l) {
     lua_push_transform(l, rotate_x(luaL_checknumber(l, 1)));
     return 1;
   }
+  /// Rotation by `angle` through the Y axis.
+  // @function rotate_y
+  // @param angle
+  // @within Transform
   int lua_transform_rotate_y(lua_State* l) {
     lua_push_transform(l, rotate_y(luaL_checknumber(l, 1)));
     return 1;
   }
+  /// Rotation by `angle` through the Z axis.
+  // @function rotate_z
+  // @param angle
+  // @within Transform
   int lua_transform_rotate_z(lua_State* l) {
     lua_push_transform(l, rotate_z(luaL_checknumber(l, 1)));
     return 1;
   }
+  /// Look-at transform.
+  // The transform has origin at the `Point` `eye`, rotated so that the Z axis
+  // goes through the `Point` `look` and Y axis point in the direction of
+  // `Vector` `up`.
+  // @function look_at
+  // @param eye
+  // @param look
+  // @param up
+  // @within Transform
   int lua_transform_look_at(lua_State* l) {
     Point eye = lua_check_point(l, 1);
     Point look = lua_check_point(l, 2);
@@ -373,6 +444,13 @@ namespace dort {
     lua_push_transform(l, look_at(eye, look, up));
     return 1;
   }
+  /// Stretch transform.
+  // Stretches the coordinate system so that points `(-1,-1,-1)` and `(1,1,1)`
+  // are positioned at `p1` and `p2`, respectively.
+  // @function stretch
+  // @param p1
+  // @param p2
+  // @within Transform
   int lua_transform_stretch(lua_State* l) {
     Point p1 = lua_check_point(l, 1);
     Point p2 = lua_check_point(l, 2);
@@ -412,6 +490,16 @@ namespace dort {
     return 1;
   }
 
+  /// @type Transform
+
+  /// Apply the transform.
+  // Applies the transform to `x`, which can be `Point` or `Vector`. If
+  // `inverse` is true, the inverse of the transform is applied. The function is
+  // also available as the `__call` method, so that transforms can be called as
+  // functions.
+  // @function apply
+  // @param x
+  // @param[opt] inverse
   int lua_transform_apply(lua_State* l) {
     const Transform& trans = lua_check_transform(l, 1);
     bool inv = false;
@@ -430,6 +518,10 @@ namespace dort {
     }
     return 1;
   }
+  /// Apply the inverse transform.
+  // Effectively calls `self:apply(x, true)`.
+  // @function apply_inv
+  // @param x
   int lua_transform_apply_inv(lua_State* l) {
     lua_pushboolean(l, true);
     lua_insert(l, 2);
@@ -439,6 +531,9 @@ namespace dort {
     lua_push_transform(l, lua_check_transform(l, 1).inverse());
     return 1;
   }
+  /// Compose two transforms.
+  // @function __mul
+  // @param other
   int lua_transform_mul(lua_State* l) {
     lua_push_transform(l,
         lua_check_transform(l, 1) *
@@ -453,7 +548,14 @@ namespace dort {
     }
     return 1;
   }
+  /// @section end
 
+  /// Make a `Vec3i`.
+  // @function vec3i
+  // @param x
+  // @param y
+  // @param z
+  // @within Constructors
   int lua_vec3i_make(lua_State* l) {
     int32_t x = luaL_checkinteger(l, 1);
     int32_t y = luaL_checkinteger(l, 2);
@@ -479,6 +581,11 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Vec2i`.
+  // @function vec2i
+  // @param x
+  // @param y
+  // @within Constructors
   int lua_vec2i_make(lua_State* l) {
     int32_t x = luaL_checkinteger(l, 1);
     int32_t y = luaL_checkinteger(l, 2);
@@ -499,6 +606,11 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Vec2`.
+  // @function vec2
+  // @param x
+  // @param y
+  // @within Constructors
   int lua_vec2_make(lua_State* l) {
     float x = luaL_checknumber(l, 1);
     float y = luaL_checknumber(l, 2);
@@ -519,6 +631,18 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Boxi`.
+  // Creates an axis-aligned box with integral bounds:
+  //
+  // - `boxi()` -- create an empty `Boxi`
+  // - `boxi(min, max)`, where `min` and `max` are `Vec3i` -- create a `Boxi`
+  //   spanned by the two vectors.
+  // - `boxi(x1, y1, z1, x2, y2, z2)` -- create a `Boxi` that spans the given
+  //   ranges of coordinates.
+  //
+  // @function boxi
+  // @param ...
+  // @within Constructors
   int lua_boxi_make(lua_State* l) {
     if(lua_gettop(l) == 0) {
       lua_push_boxi(l, Boxi());
@@ -537,11 +661,18 @@ namespace dort {
     }
     return 1;
   }
+
+  /// @type Boxi
+
+  /// Get the lower bound as `Vec3i`.
+  // @function min
   int lua_boxi_get_min(lua_State* l) {
     const Boxi& box = lua_check_boxi(l, 1);
     lua_push_vec3i(l, box.p_min);
     return 1;
   }
+  /// Get the upper bound as `Vec3i`.
+  // @function max
   int lua_boxi_get_max(lua_State* l) {
     const Boxi& box = lua_check_boxi(l, 1);
     lua_push_vec3i(l, box.p_max);
@@ -554,13 +685,29 @@ namespace dort {
         box.p_max.x, box.p_max.y, box.p_max.z);
     return 1;
   }
+  /// Test a `Vec3i` for inclusion in the box.
+  // @function contains
+  // @param v
   int lua_boxi_contains(lua_State* l) {
     const Boxi& box = lua_check_boxi(l, 1);
     const Vec3i& vec = lua_check_vec3i(l, 2);
     lua_pushboolean(l, box.contains(vec));
     return 1;
   }
+  /// @section end
 
+  /// Make a `Recti`.
+  // Creates an axis-aligned rectangle with integral bounds:
+  //
+  // - `recti()` -- create an empty `Recti`
+  // - `recti(min, max)`, where `min` and `max` are `Vec2i` -- create a `Recti`
+  //   spanned by the two vectors.
+  // - `recti(x1, y1, x2, y2)` -- create a `Recti` that spans the given ranges
+  //   of coorinates.
+  //
+  // @function recti
+  // @param ...
+  // @within Constructors
   int lua_recti_make(lua_State* l) {
     if(lua_gettop(l) == 0) {
       lua_push_recti(l, Recti());
@@ -577,11 +724,18 @@ namespace dort {
     }
     return 1;
   }
+
+  /// @type Recti
+
+  /// Get the lower bound as `Vec2i`.
+  // @function min
   int lua_recti_get_min(lua_State* l) {
     const Recti& rect = lua_check_recti(l, 1);
     lua_push_vec2i(l, rect.p_min);
     return 1;
   }
+  /// Get the upper bound as `Vec2i`.
+  // @function max
   int lua_recti_get_max(lua_State* l) {
     const Recti& rect = lua_check_recti(l, 1);
     lua_push_vec2i(l, rect.p_max);
@@ -593,6 +747,7 @@ namespace dort {
         rect.p_min.x, rect.p_min.y, rect.p_max.x, rect.p_max.y);
     return 1;
   }
+  /// @section end
 
   const Vector& lua_check_vector(lua_State* l, int idx) {
     return lua_check_managed_obj<Vector, VECTOR_TNAME>(l, idx);

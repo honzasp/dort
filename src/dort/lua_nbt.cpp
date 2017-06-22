@@ -1,3 +1,7 @@
+/// NBT (binary format used by Minecraft).
+// NBT (Named Binary Tag) is documented at
+// http://minecraft.gamepedia.com/NBT_format
+// @module dort.nbt
 #include "dort/lua_nbt.hpp"
 
 namespace dort {
@@ -10,6 +14,16 @@ namespace dort {
     return 1;
   }
 
+  /// Parse the NBT data in `str`.
+  // The NBT types are mapped to their Lua equivalents
+  //
+  // - all integers and floats are mapped to Lua numbers
+  // - strings and byte arrays are mapped to Lua strings
+  // - lists and objects are mapped to Lua tables
+  // - int array is mapped to Lua table
+  //
+  // @function read
+  // @param str
   int lua_nbt_read(lua_State* l) {
     size_t data_len;
     const char* data_buf = luaL_checklstring(l, 1, &data_len);

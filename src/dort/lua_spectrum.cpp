@@ -1,3 +1,5 @@
+/// Spectra (colors).
+// @module dort.spectrum
 #include "dort/spectrum.hpp"
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_spectrum.hpp"
@@ -30,6 +32,11 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Spectrum` from RGB.
+  // Can be called as `rgb(x)` to create a uniform spectrum using number `x`, or
+  // as `rgb(r, g, b)` to initialize the three components separately.
+  // @function rgb
+  // @param ...
   int lua_spectrum_rgb(lua_State* l) {
     if(lua_gettop(l) == 1) {
       float x = luaL_checknumber(l, 1);
@@ -43,6 +50,15 @@ namespace dort {
     return 1;
   }
 
+  /// Make a `Spectrum` from RGB hex integer.
+  // Can be called as:
+  //
+  // - `rgbh("#00ff00")` or `rgbh("00ff00")`
+  // - `rgbh(0, 255, 0)`
+  // - `rgbh(0x00ff00)`
+  //
+  // @function rgbh
+  // @param ...
   int lua_spectrum_rgbh(lua_State* l) {
     float red, green, blue;
 
@@ -67,18 +83,18 @@ namespace dort {
         hex = (hex << 4) + digit;
       }
 
-      red = float((hex >> 16) & 0xff) / 256.f;
-      green = float((hex >> 8) & 0xff) / 256.f;
-      blue = float(hex & 0xff) / 256.f;
+      red = float((hex >> 16) & 0xff) / 255.f;
+      green = float((hex >> 8) & 0xff) / 255.f;
+      blue = float(hex & 0xff) / 255.f;
     } else if(lua_isnumber(l, 1) && lua_isnumber(l, 2) && lua_isnumber(l, 3)) {
-      red = luaL_checknumber(l, 1) / 256.f;
-      green = luaL_checknumber(l, 2) / 256.f;
-      blue = luaL_checknumber(l, 3) / 256.f;
+      red = luaL_checknumber(l, 1) / 255.f;
+      green = luaL_checknumber(l, 2) / 255.f;
+      blue = luaL_checknumber(l, 3) / 255.f;
     } else if(lua_isinteger(l, 1)) {
       int32_t hex = luaL_checkinteger(l, 1);
-      red = float((hex >> 16) & 0xff) / 256.f;
-      green = float((hex >> 8) & 0xff) / 256.f;
-      blue = float(hex & 0xff) / 256.f;
+      red = float((hex >> 16) & 0xff) / 255.f;
+      green = float((hex >> 8) & 0xff) / 255.f;
+      blue = float(hex & 0xff) / 255.f;
     } else {
       return luaL_error(l, "Expected a string, an integer, or three numbers");
     }
@@ -87,26 +103,44 @@ namespace dort {
     return 1;
   }
 
+  /// @type Spectrum
+
+  /// Red component of RGB model.
+  // @function red
   int lua_spectrum_red(lua_State* l) {
     lua_pushnumber(l, lua_check_spectrum(l, 1).red());
     return 1;
   }
+  /// Green component of RGB model.
+  // @function green
   int lua_spectrum_green(lua_State* l) {
     lua_pushnumber(l, lua_check_spectrum(l, 1).green());
     return 1;
   }
+  /// Blue component of RGB model.
+  // @function blue
   int lua_spectrum_blue(lua_State* l) {
     lua_pushnumber(l, lua_check_spectrum(l, 1).blue());
     return 1;
   }
+  /// Spectrum addition.
+  // @function __add
+  // @param spectrum
   int lua_spectrum_add(lua_State* l) {
     lua_push_spectrum(l, lua_check_spectrum(l, 1) + lua_check_spectrum(l, 2));
     return 1;
   }
+  /// Spectrum subtraction.
+  // @function __sub
+  // @param spectrum
   int lua_spectrum_sub(lua_State* l) {
     lua_push_spectrum(l, lua_check_spectrum(l, 1) - lua_check_spectrum(l, 2));
     return 1;
   }
+  /// Spectrum multiplication.
+  // Spectra can also be multiplied by scalars (from both sides).
+  // @function __mul
+  // @param spectrum
   int lua_spectrum_mul(lua_State* l) {
     if(lua_isnumber(l, 2) && lua_test_spectrum(l, 1)) {
       lua_push_spectrum(l, lua_check_spectrum(l, 1) * luaL_checknumber(l, 2));
@@ -117,6 +151,9 @@ namespace dort {
     }
     return 1;
   }
+  /// Spectrum division.
+  // @function __div
+  // @param spectrum
   int lua_spectrum_div(lua_State* l) {
     if(lua_isnumber(l, 2) && lua_test_spectrum(l, 1)) {
       lua_push_spectrum(l, lua_check_spectrum(l, 1) / luaL_checknumber(l, 2));
@@ -127,6 +164,10 @@ namespace dort {
     }
     return 1;
   }
+  /// Spectrum equality.
+  // When either argument is not a spectrum, returns `false`.
+  // @function __eq
+  // @param other
   int lua_spectrum_eq(lua_State* l) {
     if(lua_test_spectrum(l, 1) ^ lua_test_spectrum(l, 2)) {
       lua_pushboolean(l, false);
@@ -135,6 +176,7 @@ namespace dort {
     }
     return 1;
   }
+  /// @section end
 
   const Spectrum& lua_check_spectrum(lua_State* l, int idx) {
     return lua_check_managed_obj<Spectrum, SPECTRUM_TNAME>(l, idx);

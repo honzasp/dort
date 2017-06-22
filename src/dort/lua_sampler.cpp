@@ -1,3 +1,8 @@
+/// Samplers.
+// The current state of samplers in `dort` is very very bad, both internals and
+// the API will have to be seriously refactored. For this reason, this module is
+// left undocumented.
+// @module dort.sampler
 #include "dort/lua_helpers.hpp"
 #include "dort/lua_params.hpp"
 #include "dort/lua_sampler.hpp"

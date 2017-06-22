@@ -1,3 +1,5 @@
+/// Access to the system environment.
+// @module dort.env
 #include "dort/ctx.hpp"
 #include "dort/lua_env.hpp"
 
@@ -12,6 +14,10 @@ namespace dort {
     return 1;
   }
 
+  /// Get the command-line arguments passed to the program.
+  // The arguments include neither the arguments interpreted by `dort` itself
+  // nor the name of the running script.
+  // @function get_argv
   int lua_env_get_argv(lua_State* l) {
     CtxG& ctx = *lua_get_ctx(l);
 
