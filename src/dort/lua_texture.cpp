@@ -20,15 +20,15 @@
 // textures or compose multiple textures to form new textures.
 //
 // The textures are used when defining materials (see @{dort.material}) -- in
-// this case the input type is always `DiffGeom` and the output type is usually
-// `Spectrum` or `float`.
+// this case the input type is always `DiffGeom`. To get a `Vec2` or `Vec3` from
+// the `DiffGeom`, one of the "Geometry mapping" textures may be used.
 //
 // The textures also have a few methods that support convenient binary
 // operators:
 //
 // - `__concat` (the `..` operator) -- @{compose}
 // - `__add` (the `+` operator) -- @{add}
-// - `__mul` (the '*' operator) -- @{multiply}
+// - `__mul` (the `*` operator) -- @{multiply}
 //
 // @module dort.texture
 #include "dort/basic_textures.hpp"
@@ -58,6 +58,9 @@ namespace dort {
     };
 
     const luaL_Reg texture_funs[] = {
+      /// Combinators.
+      // @section
+
       /// Functional composition (`B -> C` and `A -> B`).
       // If the type of `tex_1` is `B -> C` and the type of `tex_2` is `A -> B`,
       // the resulting texture has type `A -> C`.
@@ -81,35 +84,6 @@ namespace dort {
       // @param tex_2
       {"multiply", lua_texture_mul},
 
-      /// Make constant `float -> A`.
-      // The function always has value `x`, the output type `A` is inferred from
-      // the type of `x`.
-      // @function const_1d
-      // @param x
-      {"const_1d", lua_texture_make_const<float>},
-      /// Make constant `Vec2 -> A`.
-      // @function const_2d
-      // @param x
-      {"const_2d", lua_texture_make_const<Vec2>},
-      /// Make constant `Vec3 -> A`.
-      // @function const_2d
-      // @param x
-      {"const_3d", lua_texture_make_const<Vec3>},
-      /// Make constant `DiffGeom -> A`.
-      // @function const_geom
-      // @param x
-      {"const_geom", lua_texture_make_const<const DiffGeom&>},
-
-      /// Make identity `float -> float`.
-      // @function identity_1d
-      {"identity_1d", lua_texture_make_identity<float>},
-      /// Make identity `Vec2 -> Vec2`.
-      // @function identity_2d
-      {"identity_2d", lua_texture_make_identity<Vec2>},
-      /// Make identity `Vec3 -> Vec3`.
-      // @function identity_3d
-      {"identity_3d", lua_texture_make_identity<Vec3>},
-
       /// Linear interpolation between textures.
       //
       // - `t` -- `A -> float`, determines the ratio between `tex_0` and `tex_1`
@@ -121,6 +95,9 @@ namespace dort {
       // @function lerp
       // @param params
       {"lerp", lua_texture_make_lerp},
+
+      /// Checkerboard
+      // @section
 
       /// Checkerboard pattern `A -> B` (for `A = float`).
       // Makes a texture that alternates between `even` and `odd` in a
@@ -141,6 +118,9 @@ namespace dort {
       // @function checkerboard_3d
       // @param params
       {"checkerboard_3d", lua_texture_make_checkerboard},
+
+      /// Noise
+      // @section
 
       /// Value noise `A -> B` (for `A = float, B = float`).
       // Makes a texture from multiple layers of "value noise". Each layer
@@ -190,19 +170,157 @@ namespace dort {
       // @param layers
       {"value_noise_3d_of_3d", lua_texture_make_value_noise<Vec3, Vec3>},
 
+      /// Simple functions
+      // @section simple
+
+      /// Gain function `float -> float`.
+      // The _gain(x)_ function is defined as _gain(x) = bias(1-g, 2*x) * 0.5_
+      // if _x < 0.5_, _gain(x) = 1 - bias(1-g, 2 - 2*x) * 0.5_ if _x > 0.5_,
+      // where _g_ is a parameter.
+      // @function gain
+      // @param g
       {"gain", lua_texture_make_gain},
+
+      /// Bias function `float -> float`.
+      // The _bias(x)_ function is defined as _bias(x) = x / ((1/b - 2) * (1 -
+      // x) + 1)_, where _b_ is a parameter.
+      // @function bias
+      // @param b
       {"bias", lua_texture_make_bias},
+
+      /// Spectrum average `Spectrum -> float`.
+      // Maps spectra to the average value of the channels. (Currently, this is
+      // just arithmetic mean of the red, green and blue channels).
+      // @function average
       {"average", lua_texture_make_average},
+
+      /// Image texture
+      // @section image
+
+      /// Image texture `Vec2 -> Spectrum`.
+      // The texture maps the image into the rectangle `(0,0),(1,1)`, with the
+      // image repeating in both axes. `img` is a LDR image (`Image.Rgb8`).
+      // @function image
+      // @param img
       {"image", lua_texture_make_image},
+
+      /// Geometry mapping.
+      // @section map
+
+      /// UV texture mapping (`DiffGeom -> Vec2`).
+      // Gets the UV coordinates from the input geometry.
+      // @function map_uv
       {"map_uv", lua_texture_map_make_uv},
+
+      /// XY texture mapping (`DiffGeom -> Vec2`).
+      // Applies the inverse of the texture-to-world transform `transform` to
+      // the world coordinates of the input geometry and returns the XY
+      // coordinates.
+      // @function map_xy
+      // @param transform
       {"map_xy", lua_texture_map_make_xy},
+
+      /// Spherical texture mapping (`DiffGeom -> Vec2`).
+      // Applies the inverse of the texture-to-world transform `transform` to
+      // the world coordinates of the input geometry and returns the _(phi,
+      // theta)_ spherical coordinates.
+      // @function map_spherical
+      // @param transform
       {"map_spherical", lua_texture_map_make_spherical},
+
+      /// Spherical texture mapping (`DiffGeom -> Vec2`).
+      // Applies the inverse of the texture-to-world transform `transform` to
+      // the world coordinates of the input geometry and returns the _(phi, z)_
+      // cylindrical coordinates.
+      // @function map_cylindrical
+      // @param transform
       {"map_cylindrical", lua_texture_map_make_cylindrical},
+      //
+      /// XYZ texture mapping (`DiffGeom -> Vec2`).
+      // Applies the inverse of the texture-to-world transform `transform` to
+      // the world coordinates of the input geometry and returns the XYZ
+      // coordinates.
+      // @function map_xyz
+      // @param transform
       {"map_xyz", lua_texture_map_make_xyz},
+
+      /// Color mapping
+      // @section color_map
+
+      /// Grayscale color map (`float -> Spectrum`).
+      // Maps input _x_ into spectrum _x_.
+      // @function color_map_grayscale
       {"color_map_grayscale", lua_texture_color_map_make_grayscale},
+
+      /// Linear interpolation between spectra (`float -> Spectrum`).
+      // Maps input _x_ to _lerp(x, color_0, color_1)_.
+      // @function color_map_lerp
+      // @param color_0
+      // @param color_1
       {"color_map_lerp", lua_texture_color_map_make_lerp},
+
+      /// Spline color map (`float -> Spectrum`).
+      // Defines a spline that maps values between 0 and 1 to color values. The
+      // spline is defined by `knots`, which define the colors at regularly
+      // separated points in the range `[0, 1]`. The point 0 is defined by the
+      // second knot, the first knot affects only the derivative here
+      // (similarly, the point 1 is defined by the second to last knot); hence,
+      // at least 4 knots must be defined.
+      // @function color_map_spline
+      // @param knots
       {"color_map_spline", lua_texture_color_map_make_spline},
+
+      /// Rendering
+      // @section render
+
+      /// Render a texture into image.
+      // Renders the `texture` (of type `Vec2 -> Spectrum` or `Vec2 -> float`)
+      // into `Image.Rgb8`. The `params` are:
+      //
+      // - `res` (or `x_res` and `y_res`) -- the resolution of the output image
+      // (400 pixels by default)
+      // - `scale` (or `x_scale` and `y_scale`) -- the size of the rendered
+      // rectangle in the texture space (1 by default)
+      //
+      // @function render_2d
+      // @param texture
+      // @param params
       {"render_2d", lua_texture_render_2d},
+
+      /// Helpers
+      // @section helpers
+
+      /// Make constant `float -> A`.
+      // The function always has value `x`, the output type `A` is inferred from
+      // the type of `x`.
+      // @function const_1d
+      // @param x
+      {"const_1d", lua_texture_make_const<float>},
+      /// Make constant `Vec2 -> A`.
+      // @function const_2d
+      // @param x
+      {"const_2d", lua_texture_make_const<Vec2>},
+      /// Make constant `Vec3 -> A`.
+      // @function const_2d
+      // @param x
+      {"const_3d", lua_texture_make_const<Vec3>},
+      /// Make constant `DiffGeom -> A`.
+      // @function const_geom
+      // @param x
+      {"const_geom", lua_texture_make_const<const DiffGeom&>},
+
+      /// Make identity `float -> float`.
+      // @function identity_1d
+      {"identity_1d", lua_texture_make_identity<float>},
+      /// Make identity `Vec2 -> Vec2`.
+      // @function identity_2d
+      {"identity_2d", lua_texture_make_identity<Vec2>},
+      /// Make identity `Vec3 -> Vec3`.
+      // @function identity_3d
+      {"identity_3d", lua_texture_make_identity<Vec3>},
+
+      /// @section end
+
       {0, 0},
     };
 
@@ -617,9 +735,9 @@ namespace dort {
     uint32_t x_res = lua_param_uint32_opt(l, p, "x_res", res);
     uint32_t y_res = lua_param_uint32_opt(l, p, "y_res", res);
     float scale = lua_param_float_opt(l, p, "scale", 1.f);
-    float x_scale = lua_param_float_opt(l, p, "scale", 
+    float x_scale = lua_param_float_opt(l, p, "x_scale", 
         scale * float(y_res) / float(max(x_res, y_res)));
-    float y_scale = lua_param_float_opt(l, p, "scale", 
+    float y_scale = lua_param_float_opt(l, p, "y_scale", 
         scale * float(x_res) / float(max(x_res, y_res)));
     lua_params_check_unused(l, p);
 

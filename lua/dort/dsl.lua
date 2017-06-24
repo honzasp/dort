@@ -1,3 +1,7 @@
+--- Easy to use DSL for defining scenes.
+-- This module mostly reexports functions from other modules under different
+-- names.
+-- @module dort.dsl
 local dsl = {}
 
 for k,v in pairs(_G) do
