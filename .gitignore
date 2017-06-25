@@ -17,6 +17,7 @@ output.png
 /*.hdr
 /*.gif
 gmon.out
+core.*.*
 
 Session.vim
 .*.swp

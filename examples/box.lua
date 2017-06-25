@@ -3,13 +3,13 @@ local _ENV = require "dort/dsl"
 local s = 1e0
 
 local scene = define_scene(function()
-  local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
-  local green = matte_material { color = rgb(0, 0.5, 0) }
-  local red = matte_material { color = rgb(0.5, 0, 0) }
+  local white = matte_material { albedo = rgb(0.5, 0.5, 0.5) }
+  local green = matte_material { albedo = rgb(0, 0.5, 0) }
+  local red = matte_material { albedo = rgb(0.5, 0, 0) }
 
-  local mirror = mirror_material { color = rgb(1, 1, 1) }
-  local glass = glass_material { color = rgb(1, 1, 1) }
-  local glossy = phong_material { color = rgb(0.5), exponent = 50 }
+  local mirror = mirror_material { albedo = rgb(1, 1, 1) }
+  local glass = glass_material { albedo = rgb(1, 1, 1) }
+  local glossy = phong_material { albedo = rgb(0.5), exponent = 50 }
 
   local right_box = glossy
   local left_box = glossy

@@ -41,4 +41,7 @@ using (among others)
 - @{dort.texture} -- `Texture`
 - @{dort.spectrum} -- `Spectrum` (color)
 - @{dort.image} -- `Image.Rgb8` (LDR image) and `Image.RgbFloat` (HDR image)
+
+**Warning:** all functions that take as argument a table with named parameters
+(usually named `params`) _may mutate the table_.
 ]]

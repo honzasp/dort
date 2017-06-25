@@ -38,7 +38,10 @@ end
 function dort.builder.add_diffuse_light(B, params)
   local shape = params.shape
   local light = dort.light.make_diffuse(params)
-  b.add_shape(B, shape, light)
+  b.block(B, function()
+    b.set_material(B, dort.material.make_lambert { albedo = dort.spectrum.rgb(0) })
+    b.add_shape(B, shape, light)
+  end)
   b.add_light(B, light)
 end
 

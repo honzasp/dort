@@ -167,8 +167,7 @@ namespace dort {
   inline void stat_finish_thread() { }
   inline void stat_report_global(FILE*) { }
   inline void stat_reset_global() { }
-  inline void stat_enable(const std::string&) { }
-  inline void stat_disable(const std::string&) { }
+  inline void stat_enable(const std::string&, bool) { }
 
   inline void stat_count(StatCounter) { }
 

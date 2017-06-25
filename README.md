@@ -41,3 +41,12 @@ To obtain the documentation of the Lua API, install
 The generated documentation will be stored in `.ldoc/`. We do not publish the
 documentation on a public website because `dort` is not quite ready for this
 yet.
+
+## Samples
+
+Example Lua scripts that render images are stored in the `samples/` directory.
+Do not be deceived into opening `examples/`! It contains various files that have
+been used during development and that were convenient to store in git.
+
+Some historical images documenting the progress of development can be found in
+`images/`.
