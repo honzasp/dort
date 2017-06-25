@@ -1,4 +1,4 @@
-# Save as tup.config to take effect
+# Save as tup.config
 
 # Allow fast (optimized) builds?
 #CONFIG_FAST=y

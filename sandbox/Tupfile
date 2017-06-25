@@ -4,14 +4,14 @@ CXXFLAGS = -Wall -Wextra -std=c++11 -O2
 !clang_s = |> clang++ $(CXXFLAGS) -S %f -o %o |>
 !gcc_s = |> g++ $(CXXFLAGS) -S %f -o %o |>
 
-: mat_mul.cpp |> !clang |> mat_mul.clang~
-: mat_mul.cpp |> !gcc |> mat_mul.gcc~
-: float.cpp |> !clang |> float.clang~
-: float.cpp |> !gcc |> float.gcc~
-: virtual.cpp |> !clang |> virtual.clang~
-: virtual.cpp |> !gcc |> virtual.gcc~
-: copy.cpp |> !clang |> copy.clang~
-: copy.cpp |> !gcc |> copy.gcc~
-: copy.cpp |> !clang_s |> copy.clang.s~
-: chrono.cpp |> !clang |> chrono.clang~
-: chrono.cpp |> !gcc |> chrono.gcc~
+#: mat_mul.cpp |> !clang |> mat_mul.clang~
+#: mat_mul.cpp |> !gcc |> mat_mul.gcc~
+#: float.cpp |> !clang |> float.clang~
+#: float.cpp |> !gcc |> float.gcc~
+#: virtual.cpp |> !clang |> virtual.clang~
+#: virtual.cpp |> !gcc |> virtual.gcc~
+#: copy.cpp |> !clang |> copy.clang~
+#: copy.cpp |> !gcc |> copy.gcc~
+#: copy.cpp |> !clang_s |> copy.clang.s~
+#: chrono.cpp |> !clang |> chrono.clang~
+#: chrono.cpp |> !gcc |> chrono.gcc~
