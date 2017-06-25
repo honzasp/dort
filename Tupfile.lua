@@ -1,3 +1,10 @@
+-- The main build script for dort
+-- It should not be modified to configure the build; tup.config should be used
+-- for that (alternatively, this file should be updated to allow such
+-- configuration). See tup.config.default for available config options.
+
+-- Setup the build tools
+
 local cxx = "clang++"
 local objcopy = "objcopy"
 local pkg_config = "pkg-config"
@@ -18,8 +25,13 @@ local target_ldflags = {
   fast = "-flto -fuse-ld=gold",
 }
 
-local use_gtk = tup.getconfig("USE_GTK") != ""
+if tup.getconfig("CXX") != "" then
+  cxx = tup.getconfig("CXX")
+end
 
+-- Update the flags if we use Gtk
+
+local use_gtk = tup.getconfig("USE_GTK") != ""
 if use_gtk then
   local pkgs = "gobject-introspection-1.0 gmodule-2.0 gio-2.0 gdk-pixbuf-2.0 libffi"
   local pkg_libs = string.format("`%s --libs %s`", pkg_config, pkgs)
@@ -28,6 +40,8 @@ if use_gtk then
   cxxflags = cxxflags .. " -DDORT_USE_GTK -Wno-deprecated-register " .. pkg_cflags
   cflags = cflags .. " -DDORT_USE_GTK " .. pkg_cflags
 end
+
+-- Setup the build and source directories
 
 local build_dirs = {
   debug = "build/d",
@@ -51,9 +65,12 @@ local lua_subdirs = {
   "extern", "extern/lgi", "extern/lgi/override",
 }
 
+-- Compilation
+
 function compile_target(target)
   local build_dir = build_dirs[target]
 
+  -- Compile a C/C++ source into an object file
   function compile(lang, input_source, output_obj)
     local flags
     if lang == "c++" then
@@ -73,6 +90,7 @@ function compile_target(target)
     }
   end
 
+  -- Link object files into an executable
   function link(input_objs, output_exec)
     flags = ldflags .. " " .. target_ldflags[target]
     tup.definerule {
@@ -106,9 +124,12 @@ function compile_target(target)
     end
   end
 
+  -- Link the luac executable -- it is needed to compile the Lua sources
   local luac_exec = string.format("%s/luac_exec", build_dir)
   link(luac_objs, luac_exec)
 
+  -- Compile a Lua source into Lua bytecode (using the luac compiler built from
+  -- the source)
   function compile_lua(input_lua, output_luac)
     tup.definerule {
       command = string.format("^ luac %s %s^ %s -o %s %s",
@@ -119,6 +140,8 @@ function compile_target(target)
     }
   end
 
+  -- Save the binary data from input_file into object file output_obj, returns
+  -- symbols that delimit the begin and end of the data in the object file
   function binary_file_to_obj(input_file, output_obj)
     tup.definerule {
       command = string.format("^ objcopy %s %s^" ..
@@ -135,6 +158,8 @@ function compile_target(target)
     return symbol_begin, symbol_end
   end
 
+  -- Invoke the lua_sources.sh script that generates the static table of
+  -- Lua bytecodes in lua_sources.cpp
   function lua_sources_to_cxx(lua_sources, output_cxx)
     local command = {
       string.format("^ lua_sources.sh %s^", target),

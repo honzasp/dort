@@ -3,13 +3,8 @@
 
 namespace dort {
   struct Boxi {
-    union {
-      struct {
-        Vec3i p_min;
-        Vec3i p_max;
-      };
-      Vec3i p[2];
-    };
+    Vec3i p_min;
+    Vec3i p_max;
 
     Boxi():
       p_min(INT32_MAX, INT32_MAX, INT32_MAX),
@@ -25,7 +20,7 @@ namespace dort {
 
     const Vec3i& operator[](uint32_t i) const {
       assert(i <= 1);
-      return this->p[i];
+      return i == 0 ? this->p_min : this->p_max;
     }
 
     uint8_t max_axis() const {

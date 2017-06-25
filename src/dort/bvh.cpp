@@ -120,14 +120,14 @@ namespace dort {
     SplitInfo split;
     if(!make_leaf) {
       switch(ctx.opts.split_method) {
+        default:
+          assert("Bad split method");
         case BvhSplitMethod::Middle:
           split = Bvh::split_middle(ctx, node, axis, parallel_split);
           break;
         case BvhSplitMethod::Sah:
           split = Bvh::split_sah(ctx, node, axis, parallel_split);
           break;
-        default:
-          assert("Bad split method");
       }
 
       make_leaf = split.prefer_leaf && elem_count <= ctx.opts.max_leaf_size;

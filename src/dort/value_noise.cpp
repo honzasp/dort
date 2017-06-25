@@ -113,10 +113,10 @@ namespace dort {
   }
 
   float value_noise_hash(int32_t x, int32_t y, int32_t z, int32_t w) {
-    int32_t a = ((x << 11) ^ y + 99367 * (z << 9) ^ w);
-    int32_t b = ((y << 7) ^ z + 94649 * (w << 13) ^ x);
-    int32_t c = ((z << 13) ^ w + 92377 * (x << 7) ^ y);
-    int32_t d = ((w << 12) ^ x + 87613 * (y << 8) ^ z);
+    int32_t a = (((x << 11) ^ y) + 99367 * ((z << 9) ^ w));
+    int32_t b = (((y << 7) ^ z) + 94649 * ((w << 13) ^ x));
+    int32_t c = (((z << 13) ^ w) + 92377 * ((x << 7) ^ y));
+    int32_t d = (((w << 12) ^ x) + 87613 * ((y << 8) ^ z));
 
     int32_t m = (a * c * 100271);
     int32_t n = (b * d * 103217);

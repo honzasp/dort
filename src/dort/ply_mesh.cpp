@@ -20,8 +20,8 @@ namespace dort {
     }
 
     struct Ctx {
-      decltype(point_cb) point_cb;
-      decltype(face_cb) face_cb;
+      decltype(point_cb) point_cb_;
+      decltype(face_cb) face_cb_;
       Point point;
       uint32_t face_first_idx;
       uint32_t face_last_idx;
@@ -37,7 +37,7 @@ namespace dort {
 
       ctx->point.v[coord] = float(ply_get_argument_value(arg));
       if(coord == 2) {
-        ctx->point_cb(ctx->point);
+        ctx->point_cb_(ctx->point);
       }
       return 1;
     };
@@ -56,7 +56,7 @@ namespace dort {
       if(value_index == 0) {
         ctx->face_first_idx = index;
       } else if(value_index != 1) {
-        ctx->face_cb(ctx->face_first_idx, ctx->face_last_idx, index);
+        ctx->face_cb_(ctx->face_first_idx, ctx->face_last_idx, index);
       }
 
       ctx->face_last_idx = index;

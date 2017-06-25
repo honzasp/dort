@@ -36,13 +36,19 @@ namespace dort {
     uint32_t rect_x = rect.p_max.x - rect.p_min.x + 1;
     uint32_t rect_y = rect.p_max.y - rect.p_min.y + 1;
 
-    float filter_grid[rect_y][rect_x];
+    float filter_grid[rect_y * rect_x];
+    auto filter_w_at = [&](int32_t pix_x, int32_t pix_y) -> float& {
+      int32_t idx_x = pix_x - rect.p_min.x;
+      int32_t idx_y = pix_y - rect.p_min.y;
+      return filter_grid[idx_x * rect_y + idx_y];
+    };
+
     float filter_sum = 0.f;
     for(int32_t pix_y = rect.p_min.y; pix_y <= rect.p_max.y; ++pix_y) {
       for(int32_t pix_x = rect.p_min.x; pix_x <= rect.p_max.x; ++pix_x) {
         Vec2 filter_p(float(pix_x) + 0.5f - pos.x, float(pix_y) + 0.5f - pos.y);
         float filter_w = this->filter.evaluate(filter_p);
-        filter_grid[pix_y - rect.p_min.y][pix_x - rect.p_min.x] = filter_w;
+        filter_w_at(pix_x, pix_y) = filter_w;
         filter_sum += filter_w;
       }
     }
@@ -53,7 +59,7 @@ namespace dort {
     float inv_filter_sum = 1.f / filter_sum;
     for(int32_t pix_y = rect.p_min.y; pix_y <= rect.p_max.y; ++pix_y) {
       for(int32_t pix_x = rect.p_min.x; pix_x <= rect.p_max.x; ++pix_x) {
-        float filter_w = filter_grid[pix_y - rect.p_min.y][pix_x - rect.p_min.x];
+        float filter_w = filter_w_at(pix_x, pix_y);
         Film::Pixel& pixel = this->pixels.at(this->pixel_idx(pix_x, pix_y));
         pixel.splat.add_relaxed(radiance * (filter_w * inv_filter_sum));
       }

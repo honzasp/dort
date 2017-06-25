@@ -3,13 +3,8 @@
 
 namespace dort {
   struct Box {
-    union {
-      struct {
-        Point p_min;
-        Point p_max;
-      };
-      Point p[2];
-    };
+    Point p_min;
+    Point p_max;
 
     Box(): 
       p_min(INFINITY, INFINITY, INFINITY),
@@ -26,7 +21,7 @@ namespace dort {
 
     const Point& operator[](uint32_t i) const {
       assert(i <= 1);
-      return this->p[i];
+      return i == 0 ? this->p_min : this->p_max;
     }
 
     float area() const {

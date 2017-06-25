@@ -1,0 +1,14 @@
+# Save as tup.config to take effect
+
+# Allow fast (optimized) builds?
+#CONFIG_FAST=y
+
+# Allow slow (debug symbol) builds?
+#CONFIG_SLOW=y
+
+# Enable Gtk features in dort?
+#CONFIG_USE_GTK=y
+
+# Use the given C++ compiler
+#CONFIG_CXX=clang++
+#CONFIG_CXX=g++
