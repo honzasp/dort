@@ -7,7 +7,7 @@ The `dort` renderer is heavily influenced by [pbrt][pbrt].
 various parts of the renderer. The implementations of these classes are then
 largely independent of each other and of other parts of the system. The renderer
 itself if written in C++, but exports itself as a Lua library. The `dort` binary
-then serves as an interpreter of Lua programs that access this API.
+serves as an interpreter of Lua programs that access this API.
 
 ## Core
 
@@ -26,7 +26,7 @@ The core interfaces that form the basis of rendering are:
   `Primitive` (`ShapePrimitive`); however, for large triangle meshes a more
   efficient representation is available.
 
-- `Material` -- provides a `Bsdf` for any particular intersection of a
+- `Material` -- computes a `Bsdf` for a particular intersection of a
   `Primitive`, uses `Texture`s for parameters that vary in space.
 
 - `Bsdf` -- directly corresponds to the theoretical concept of a BSDF,
@@ -78,7 +78,7 @@ Some of the implemented `Primitives` are:
 
 - `TriangleShapePrimitive` -- corresponds to a single triangle in a triangle
   mesh (with the mesh data stored in a `Mesh` structure on side) and a reference
-  to a `Material`. This representation is much more effective than a
+  to a `Material`. This representation is much more efficient than a
   `ShapePrimitive` with a `TriangleShape`, because it does not store any
   transformation (the mesh is assumed to have been correctly transformed
   before).
@@ -88,15 +88,14 @@ Some of the implemented `Primitives` are:
   pointer-sized fields in every primitive.
 
 - `MeshBvhPrimitive` -- stores a list of triangles from a triangle mesh in an
-  efficient BVH structures. This is much more efficient than having a unique
+  efficient BVH structure. This is much more efficient than having a unique
   primitive per triangle (both in terms of memory and CPU use).
 
 ### Bsdfs, Lights and Cameras
 
 `Bsdf`s, `Light`s and `Camera`s all represent multi-dimensional functions that
-are terms of various integrals of light transport, and thus provide a set of
-methods for sampling from their distributions and for computing the probability
-densities.
+appear in the integrals of light transport, and provide a set of methods for
+sampling from their distributions and for computing the probability densities.
 
 We often work with directions represented as unit vectors. As a convention, _wi_
 always points to light and _wo_ always points to camera.
@@ -104,6 +103,7 @@ always points to light and _wo_ always points to camera.
 - **`Bsdf`** -- represents the surface scattering function _f(wi, wo)_ at a
   fixed point. It is separated into several lobes (diffuse, glossy and delta)
   that can be sampled independently.
+
   - `eval_f()` -- compute _f(wi, wo)_ for given _wi_ and _wo_.
   - `sample_light_f()` -- given, _wo_, sample _wi_. Used for bouncing rays from
     the camera to the light.
@@ -113,13 +113,18 @@ always points to light and _wo_ always points to camera.
     `sample_light_f()`).
   - `camera_f_pdf()` -- compute the pdf of sampling _wo_ given _wi_ from
     `sample_camera_f()`).
+
   Delta components in the BSDF are explicitly marked as delta lobes and are
-  always ignored by `light_f_pdf()` and `camera_f_pdf()`.
+  always ignored by `light_f_pdf()` and `camera_f_pdf()`. We chose to explicitly
+  differentiate the light and camera probability densities to make the code of
+  the renderers simpler; this allows us to side-step most of the pits and
+  pitfalls associated with "adjoint BSDFs".
 
 - **`Light`** -- is an emittor. We represent emittors as functions _Le(x, wo)_
   or _Li(x, wi)_ that represent the radiance emitted from point _x_ in direction
   _wo_, respectively the light that is incident at point _x_ from direction
   _wi_.
+
   - `sample_ray_radiance()` -- samples _x_ and _wo_ (a ray) from the
     distribution of _Le(x, wo)_. This is used to shoot random rays into the
     scene for renderers that use light tracing.
@@ -134,6 +139,7 @@ always points to light and _wo_ always points to camera.
     `sample_ray_radiance()`.
   -  `pivot_radiance_pdf()` -- computes the pdf of sampling _wi_ given _x_ from
      `sample_pivot_radiance()`.
+
   Delta lights may have delta distributions both in the positional and
   directional distributions (or both), which is communicated using flags
   associated with the light. There is also a special kind of distant lights that
@@ -144,6 +150,7 @@ always points to light and _wo_ always points to camera.
   lights, they define functions _We(x, wi)_ and _Wi(x, wo)_ that model the
   distribution of emitted, respectively incident importance. However, they also
   associate a film position with each pair _(x, wi)_.
+
   - `sample_ray_importance()` -- samples _x_ and _wi_ (a ray) from the
     distribution of _We(x, wi)_ given a film position. This is used to shoot
     camera rays into the scene.
