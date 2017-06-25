@@ -94,8 +94,15 @@ namespace dort {
     lua_register_type(l, RNG_TNAME, rng_methods);
 
     luaL_newlib(l, math_funs);
+
+    /// +Infinity
+    // @field infinity
     constant("infinity", INFINITY);
+    /// Pi
+    // @field pi
     constant("pi", PI);
+    /// 2*Pi
+    // @field two_pi
     constant("two_pi", TWO_PI);
     return 1;
   }
