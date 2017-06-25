@@ -1,7 +1,6 @@
 # `dort`
 
-The `dort` renderer is heavily influenced by [pbrt][pbrt].
-[pbrt]: http://www.pbrt.org/
+The `dort` renderer is heavily influenced by [pbrt](http://www.pbrt.org/)
 
 `dort` is designed as a tight core of classes that provide interfaces between
 various parts of the renderer. The implementations of these classes are then
