@@ -108,7 +108,7 @@ namespace dort {
     auto filter = lua_param_filter_opt(l, p, "filter", 
         std::make_shared<BoxFilter>(Vec2(0.5f, 0.5f)));
     auto sampler = lua_param_sampler_opt(l, p, "sampler",
-        std::make_shared<RandomSampler>(1, 42))->split();
+        std::make_shared<RandomSampler>(1, 42))->split(42);
     auto method = lua_param_string_opt(l, p, "renderer", "pt");
     uint32_t iteration_count = lua_param_uint32_opt(l, p, "iterations", 1);
 
@@ -117,8 +117,6 @@ namespace dort {
     if(!camera) {
       return luaL_error(l, "No camera is set in the scene and no camera was given.");
     }
-
-    sampler->reseed(42); // TODO: temporary hack
 
     std::shared_ptr<Renderer> renderer;
     if(method == "dot") {

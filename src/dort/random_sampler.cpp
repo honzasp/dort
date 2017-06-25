@@ -27,7 +27,7 @@ namespace dort {
     }
   }
 
-  std::shared_ptr<Sampler> RandomSampler::split() {
-    return std::make_shared<RandomSampler>(*this, this->rng.split());
+  std::shared_ptr<Sampler> RandomSampler::split(uint32_t seed) {
+    return std::make_shared<RandomSampler>(*this, Rng(seed));
   }
 }

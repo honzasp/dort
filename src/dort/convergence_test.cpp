@@ -85,7 +85,7 @@ namespace dort {
     // ensure that we always report the first error
     std::atomic<uint32_t> error_depth(-1u);
 
-    fork_join(*ctx.pool, max_depth + 1, [&](uint32_t depth) {
+    parallel_for(*ctx.pool, max_depth + 1, [&](uint32_t depth) {
       if(error_depth.load() < depth) { return; }
       auto local_error = test_depth(depth);
       if(local_error.empty()) { return; }

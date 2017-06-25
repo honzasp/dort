@@ -16,32 +16,30 @@ namespace dort {
     uint64_t path_count = uint64_t(this->iteration_count) *
       this->film->res.x * this->film->res.y;
     uint32_t job_count = ctx.pool->thread_count() * 16;
-
-    std::vector<std::shared_ptr<Sampler>> samplers;
-    for(uint32_t i = 0; i < job_count; ++i) {
-      samplers.push_back(this->sampler->split());
-    }
     this->light_distrib = compute_light_distrib(*this->scene);
 
     std::mutex film_mutex;
     std::atomic<uint32_t> jobs_done(0);
-    fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
+    parallel_for(*ctx.pool, job_count, [&](uint32_t job_i) {
+      StatTimer t(TIMER_RENDERER_TILE);
       if(progress.is_cancelled()) { return; }
       uint64_t begin = uint64_t(job_i) * path_count / job_count;
       uint64_t end = uint64_t(job_i + 1) * path_count / job_count;
-      auto& sampler = *samplers.at(job_i);
+
+      std::unique_lock<std::mutex> sampler_lock(this->sampler_mutex);
+      auto job_sampler = this->sampler->split(job_i);
+      sampler_lock.unlock();
 
       for(uint64_t i = begin; i < end; ++i) {
-        this->sample_path(sampler);
+        this->sample_path(*job_sampler);
       }
 
       uint32_t done = jobs_done.fetch_add(1) + 1;
       progress.set_percent_done(float(done) / float(job_count));
-      {
-        std::unique_lock<std::mutex> film_lock(film_mutex);
-        this->film->splat_scale = float(job_count) / (float(done) 
-          * float(this->iteration_count));
-      }
+
+      std::unique_lock<std::mutex> film_lock(this->film_mutex);
+      this->film->splat_scale = float(job_count) / (float(done) 
+        * float(this->iteration_count));
     });
 
     this->film->splat_scale = 1.f / float(this->iteration_count);

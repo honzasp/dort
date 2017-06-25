@@ -44,7 +44,7 @@ namespace dort {
         });
     stat_sample_int(DISTRIB_INT_BVH_BUILD_SERIAL_COUNT, ctx.todo_serial.size());
 
-    fork_join(ctx.pool, ctx.todo_serial.size(), [&](uint32_t job) {
+    parallel_for(pool, ctx.todo_serial.size(), [&](uint32_t job) {
         Bvh::build_node(ctx, ctx.todo_serial.at(job), false);
     });
 
@@ -69,7 +69,7 @@ namespace dort {
     // TODO: use small_vector
     std::vector<Box> job_bounds(jobs);
     std::vector<Box> job_centroid_bounds(jobs);
-    fork_join(pool, jobs, [&](uint32_t job) {
+    parallel_for(pool, jobs, [&](uint32_t job) {
       uint32_t begin = uint64_t(job) * elems.size() / jobs;
       uint32_t end = uint64_t(job + 1) * elems.size() / jobs;
       Box bounds, centroid_bounds;
@@ -227,7 +227,7 @@ namespace dort {
       stat_sample_int(DISTRIB_INT_BVH_SPLIT_MIDDLE_JOBS, jobs);
     }
 
-    fork_join_or_serial(ctx.pool, !parallel, jobs, [&](uint32_t job) {
+    parallel_for_or_serial(ctx.pool, !parallel, jobs, [&](uint32_t job) {
       StatTimer t_in(parallel
           ? TIMER_BVH_SPLIT_MIDDLE_BOUNDS_IN_PARALLEL
           : TIMER_BVH_SPLIT_MIDDLE_BOUNDS_IN_SERIAL);
@@ -294,7 +294,7 @@ namespace dort {
           (end - begin) / ctx.opts.min_split_elems_per_thread);
 
     std::vector<std::vector<BucketInfo>> job_buckets(jobs);
-    fork_join_or_serial(ctx.pool, !parallel, jobs, [&](uint32_t job) {
+    parallel_for_or_serial(ctx.pool, !parallel, jobs, [&](uint32_t job) {
       std::vector<BucketInfo> buckets(bucket_count);
       uint32_t job_begin = begin + uint64_t(end - begin) * job / jobs;
       uint32_t job_end = begin + uint64_t(end - begin) * (job + 1) / jobs;

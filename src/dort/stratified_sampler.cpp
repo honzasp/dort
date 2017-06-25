@@ -53,8 +53,8 @@ namespace dort {
     }
   }
 
-  std::shared_ptr<Sampler> StratifiedSampler::split() {
-    return std::make_shared<StratifiedSampler>(*this, this->rng.split());
+  std::shared_ptr<Sampler> StratifiedSampler::split(uint32_t seed) {
+    return std::make_shared<StratifiedSampler>(*this, Rng(seed));
   }
 
   SampleIdx StratifiedSampler::request_sample_1d() {

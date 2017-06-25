@@ -5,13 +5,13 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
   geom_kind = geom_kind or "box"
   camera_kind = camera_kind or "pinhole"
   return define_scene(function()
-    local white = matte_material { color = rgb(0.5, 0.5, 0.5) }
-    local green = matte_material { color = rgb(0, 0.5, 0) }
-    local red = matte_material { color = rgb(0.5, 0, 0) }
-    local glossy_white = phong_material { color = rgb(0.5), exponent = 50 }
-    local glossy_red = phong_material { color = rgb(0.5, 0, 0), exponent = 50 }
-    local mirror = mirror_material { color = rgb(1) }
-    local glass = glass_material { color = rgb(1) }
+    local white = lambert_material { albedo = rgb(0.5, 0.5, 0.5) }
+    local green = lambert_material { albedo = rgb(0, 0.5, 0) }
+    local red = lambert_material { albedo = rgb(0.5, 0, 0) }
+    local glossy_white = phong_material { albedo = rgb(0.5), exponent = 50 }
+    local glossy_red = phong_material { albedo = rgb(0.5, 0, 0), exponent = 50 }
+    local mirror = mirror_material { }
+    local glass = dielectric_material { }
 
     local right_box = white
     local left_box = white
@@ -130,7 +130,7 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
 
     if light_kind == "area" then
       block(function() 
-        material(matte_material { color = rgb(0) })
+        material(lambert_material { albedo = rgb(0) })
         transform(translate(0, -1*s, 0))
         local m = mesh {
           points = {
@@ -156,7 +156,7 @@ function cornell_box_scene(surface_kind, light_kind, geom_kind, camera_kind)
     elseif light_kind == "sphere" then
       block(function()
         transform(translate(250*s, 400*s, 250*s))
-        material(matte_material { color = rgb(0) })
+        material(lambert_material { albedo = rgb(0) })
         local shape = sphere { radius = 20*s }
         local light = diffuse_light {
           radiance = rgb(100),
@@ -240,31 +240,6 @@ function cavern_scene()
   end)
 end
 
-function ball_scene()
-  local s = 1
-  return define_scene(function()
-    material(matte_material { color = rgb(0.5) })
-    add_shape(disk { radius = 2*s })
-    --[[
-    add_light(point_light {
-      point = point(0, 0, -3*s),
-      intensity = rgb(20),
-    })--]]
-    ---[[
-    add_light(directional_light {
-      direction = vector(0, 0, 1),
-      radiance = rgb(1),
-    }) --]]
-    camera(pinhole_camera {
-      transform = look_at(
-        point(0, 0, -3*s),
-        point(0, 0, 0),
-        vector(0, 1, 0)),
-      fov = pi * 0.5,
-    })
-  end)
-end
-
 out_dir = "comp"
 
 local res = 512
@@ -293,7 +268,7 @@ algos = {
     iterations = 4,
   }},
   --]]
-  ---[[
+  --[[
   {"lt", {
     min_depth = 0,
     max_depth = 3,
@@ -306,7 +281,7 @@ algos = {
     min_depth = 0,
     max_depth = 3,
     renderer = "pt",
-    iterations = 10,
+    iterations = 1,
   }},
   --[[
   {"lt_0", {renderer = "lt", min_depth = 0, max_depth = 0, iterations = 2}},
@@ -344,8 +319,8 @@ scenes = {
   --{"sphere_light", sphere_light_scene()},
   --{"light_disk", light_disk_scene()},
   {"diffuse_box", cornell_box_scene("diffuse", "area")},
-  {"diffuses_box", cornell_box_scene("diffuse", "sphere")},
-  {"diffused_box", cornell_box_scene("diffuse", "direction")},
+  --{"diffuses_box", cornell_box_scene("diffuse", "sphere")},
+  --{"diffused_box", cornell_box_scene("diffuse", "direction")},
   --{"glossy_box", cornell_box_scene("glossy", "area")},
   --{"glossyd_box", cornell_box_scene("glossy", "direction")},
   --{"deltad_box", cornell_box_scene("delta", "direction")},

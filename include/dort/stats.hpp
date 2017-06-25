@@ -44,11 +44,9 @@ namespace dort {
 
   enum StatDistribTime: uint32_t {
     TIMER_RENDER,
-    TIMER_RENDER_TILE,
-    TIMER_DIRECT_GET_RADIANCE,
-    TIMER_UNIFORM_SAMPLE_ALL_LIGHTS,
-    TIMER_ESTIMATE_DIRECT,
-    TIMER_TRACE_SPECULAR,
+    TIMER_RENDERER_TILE,
+    TIMER_RENDERER_LOCK_FILM,
+    TIMER_RENDERER_ADD_TILE,
     TIMER_SCENE_INTERSECT,
     TIMER_SCENE_INTERSECT_P,
     TIMER_FILM_ADD_SAMPLE,
@@ -74,18 +72,24 @@ namespace dort {
     TIMER_BVH_TRAVERSE_NODE,
     TIMER_BVH_TRAVERSE_ELEM,
     TIMER_POOL_WAIT,
+    TIMER_POOL_WORK,
     TIMER_POOL_JOB,
-    TIMER_POOL_SCHEDULE,
     _TIMER_END,
   };
 
   struct StatDistribTimeDef {
     const char* name;
-    uint32_t sample_probability;
+    uint32_t sample_period;
   };
 
   struct Stats {
+    struct Counter {
+      bool enabled = false;
+      uint64_t count = 0;
+    };
+
     struct DistribInt {
+      bool enabled = false;
       uint64_t count = 0;
       int64_t sum = 0;
       int64_t sum_squares = 0;
@@ -94,19 +98,22 @@ namespace dort {
     };
 
     struct DistribTime {
+      bool enabled = false;
+      uint32_t ticks_to_sample = 0;
       uint64_t total_count = 0;
       uint64_t sampled_count = 0;
       int64_t sum_ns = 0;
       int64_t sum_squares_ns = 0;
-      int64_t sum_overhead_ns = 0;
       int64_t min_ns = INT64_MAX;
       int64_t max_ns = INT64_MIN;
     };
 
     bool initialized = false;
-    std::vector<uint64_t> counters;
+    bool enabled = false;
+    std::vector<Counter> counters;
     std::vector<DistribInt> distrib_ints;
     std::vector<DistribTime> distrib_times;
+    DistribTime timer_overhead_distrib;
   };
 
   extern Stats GLOBAL_STATS;
@@ -125,9 +132,11 @@ namespace dort {
   void stat_finish_thread();
   void stat_report_global(FILE* output);
   void stat_reset_global();
+  bool stat_name_matches(const char* name, const std::string& word);
+  void stat_enable(const std::string& word, bool enable);
 
   inline void stat_count(StatCounter id) {
-    THREAD_STATS.counters.at(id) += 1;
+    THREAD_STATS.counters.at(id).count += 1;
   }
 
   class StatTimer {
@@ -135,9 +144,11 @@ namespace dort {
     int64_t time_0;
     bool active;
     bool measuring;
+    bool estimate_overhead;
   public:
     StatTimer(StatDistribTime distrib_id);
     ~StatTimer();
+    void start();
     void stop();
   };
 
@@ -156,6 +167,8 @@ namespace dort {
   inline void stat_finish_thread() { }
   inline void stat_report_global(FILE*) { }
   inline void stat_reset_global() { }
+  inline void stat_enable(const std::string&) { }
+  inline void stat_disable(const std::string&) { }
 
   inline void stat_count(StatCounter) { }
 
@@ -163,6 +176,7 @@ namespace dort {
   public:
     StatTimer(StatDistribTime) { }
     ~StatTimer() { }
+    void start() { }
     void stop() { }
   };
 

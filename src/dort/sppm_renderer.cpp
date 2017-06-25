@@ -41,7 +41,7 @@ namespace dort {
 
       std::mutex film_mutex;
       std::atomic<uint32_t> iterations_done(0);
-      fork_join(*ctx.pool, this->iteration_count, [&](uint32_t i) {
+      parallel_for(*ctx.pool, this->iteration_count, [&](uint32_t i) {
         if(progress.is_cancelled()) { return; }
 
         Film local_film(this->film->x_res, this->film->y_res, this->film->filter);
@@ -85,7 +85,7 @@ namespace dort {
     }
 
     std::mutex film_mutex;
-    fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
+    parallel_for(*ctx.pool, job_count, [&](uint32_t job_i) {
       uint32_t tile_x = job_i % layout_tiles.x;
       uint32_t tile_y = job_i / layout_tiles.x;
       Vec2 corner_0f = tile_size * Vec2(float(tile_x), float(tile_y));
@@ -233,7 +233,7 @@ namespace dort {
       }
     };
 
-    fork_join(*ctx.pool, job_count, [&](uint32_t job_i) {
+    parallel_for(*ctx.pool, job_count, [&](uint32_t job_i) {
       Rng rng(std::move(rngs.at(job_i)));
 
       std::vector<Photon> block_photons;

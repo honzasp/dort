@@ -1,10 +1,13 @@
 #include "dort/bdpt_renderer.hpp"
 #include "dort/camera.hpp"
+#include "dort/ctx.hpp"
 #include "dort/film.hpp"
 #include "dort/primitive.hpp"
+#include "dort/thread_pool.hpp"
 
 namespace dort {
   void BdptRenderer::render(CtxG& ctx, Progress&) {
+    StatTimer t(TIMER_RENDER);
     if(this->scene->lights.empty()) { return; }
 
     this->light_distrib = compute_light_distrib(*this->scene);
@@ -17,14 +20,17 @@ namespace dort {
     if(!this->debug_image_dir.empty()) {
       this->init_debug_films();
     }
+    this->film->splat_scale = 1.f;
 
-    for(uint32_t i = 0; i < this->iteration_count; ++i) {
-      this->film->splat_scale = 1.f / float(i + 1);
+    parallel_for(*ctx.pool, this->iteration_count, [&](uint32_t i) {
       this->iteration_tiled(ctx, [&](Vec2i pixel, Vec2& film_pos, Sampler& sampler) {
         film_pos = Vec2(pixel) + sampler.random_2d();
         return this->sample_path(*this->scene, film_pos, sampler);
       });
-    }
+
+      std::unique_lock<std::mutex> film_lock(this->film_mutex);
+      this->film->splat_scale = 1.f / float(i + 1);
+    });
 
     if(!this->debug_image_dir.empty()) {
       this->save_debug_films();

@@ -13,7 +13,7 @@ namespace dort {
     StratifiedSampler(const StratifiedSampler& parent, Rng rng);
     virtual void start_pixel() override final;
     virtual void start_pixel_sample() override final;
-    virtual std::shared_ptr<Sampler> split() override final;
+    virtual std::shared_ptr<Sampler> split(uint32_t seed) override final;
 
     virtual SampleIdx request_sample_1d() override;
     virtual SampleIdx request_sample_2d() override;
