@@ -109,15 +109,15 @@ namespace dort {
       //
       // @function checkerboard_1d
       // @param params
-      {"checkerboard_1d", lua_texture_make_checkerboard},
+      {"checkerboard_1d", lua_texture_make_checkerboard<float>},
       /// Checkerboard pattern `A -> B` (for `A = Vec2`).
       // @function checkerboard_2d
       // @param params
-      {"checkerboard_2d", lua_texture_make_checkerboard},
+      {"checkerboard_2d", lua_texture_make_checkerboard<Vec2>},
       /// Checkerboard pattern `A -> B` (for `A = Vec3`).
       // @function checkerboard_3d
       // @param params
-      {"checkerboard_3d", lua_texture_make_checkerboard},
+      {"checkerboard_3d", lua_texture_make_checkerboard<Vec3>},
 
       /// Noise
       // @section

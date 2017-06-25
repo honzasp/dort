@@ -4,6 +4,19 @@
 #include "dort/texture.hpp"
 
 namespace dort {
+  inline bool checkerboard_even_check(float x, float inv_check_size) {
+    return int32_t(x * inv_check_size) % 2 == 0;
+  }
+
+  inline bool checkerboard_even_check(Vec2 v, float inv_check_size) {
+    return (int32_t(v.x * inv_check_size) + int32_t(v.y * inv_check_size)) % 2 == 0;
+  }
+
+  inline bool checkerboard_even_check(Vec3 v, float inv_check_size) {
+    return (int32_t(v.x * inv_check_size) + int32_t(v.y * inv_check_size) +
+        int32_t(v.z * inv_check_size)) % 2 == 0;
+  }
+
   template<class Out, class In>
   std::shared_ptr<Texture<Out, In>> lerp_texture(
       std::shared_ptr<Texture<float, In>> tex_t,
@@ -29,19 +42,6 @@ namespace dort {
         return odd_tex->evaluate(x);
       }
     });
-  }
-
-  inline bool checkerboard_even_check(float x, float inv_check_size) {
-    return int32_t(x * inv_check_size) % 2 == 0;
-  }
-
-  inline bool checkerboard_even_check(Vec2 v, float inv_check_size) {
-    return (int32_t(v.x * inv_check_size) + int32_t(v.y * inv_check_size)) % 2 == 0;
-  }
-
-  inline bool checkerboard_even_check(Vec3 v, float inv_check_size) {
-    return (int32_t(v.x * inv_check_size) + int32_t(v.y * inv_check_size) +
-        int32_t(v.z * inv_check_size)) % 2 == 0;
   }
 
   inline std::shared_ptr<Texture<float, float>> gain_texture(float g) {
