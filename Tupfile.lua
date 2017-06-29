@@ -9,11 +9,11 @@ local cxx = "clang++"
 local objcopy = "objcopy"
 local pkg_config = "pkg-config"
 
-local includes = "-Iinclude -Iextern/rply -Iextern/stb -Iextern/lua -Iextern/lgi"
+local includes = "-Iinclude -Iextern/zlib -Iextern/rply -Iextern/stb -Iextern/lua -Iextern/lgi"
 local warnings = "-Wall -Wextra -Wstrict-aliasing"
 local cxxflags = "-x c++ -std=c++1y -pthread "..includes.." "..warnings
 local cflags   = "-x c -std=c11 -pthread "..includes.." "..warnings
-local ldflags  = "-pthread -lz -static-libstdc++ -static-libgcc"
+local ldflags  = "-pthread -static-libstdc++ -static-libgcc"
 local target_flags = {
   debug = "-g -O2 -DLUA_USE_APICHECK",
   slow  = "-g3 -O0 -DLUA_USE_APICHECK",
@@ -51,6 +51,7 @@ local build_dirs = {
 
 local source_dirs = {
   {"c++", "src/dort/*.cpp", "dort"},
+  {"c", "extern/zlib/*.c", "zlib"},
   {"c", "extern/rply/*.c", "rply"},
   {"c", "extern/lua/*.c", "lua"},
   {"c", "extern/luac/*.c", "luac"},
@@ -118,7 +119,7 @@ function compile_target(target)
       if subdir != "luac" then
         dort_objs[#dort_objs + 1] = output_obj
       end
-      if subdir == "luac" or subdir == "lua" then
+      if subdir == "luac" or subdir == "lua" or subdir == "zlib" then
         luac_objs[#luac_objs + 1] = output_obj
       end
     end
